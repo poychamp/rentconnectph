@@ -5,22 +5,29 @@ const query = ref('');
 const budget = ref('');
 const area = ref('');
 
+const heroImage = window.__ASSETS__?.hero;
+
 const budgets = ['Any', '< ₱10,000', '₱10,000 – ₱20,000', '₱20,000 – ₱30,000', '> ₱30,000'];
 const areas = ['Any', 'Carmen', 'Kauswagan', 'Lapasan', 'Macasandig', 'Nazareth', 'Pueblo de Oro', 'Indahag', 'Uptown'];
 </script>
 
 <template>
-    <section
-        class="relative isolate overflow-hidden text-white"
-        :style="{
-            backgroundImage:
-                'linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url(https://placehold.co/1920x900/1a1a1a/ffffff?text=CDO)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-        }"
-    >
-        <div class="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-12 md:py-20 lg:py-28">
-            <p class="text-xs md:text-sm font-semibold tracking-widest uppercase text-orange-400">
+    <section class="relative isolate overflow-hidden text-white bg-[#1b1410]">
+        <img
+            :src="heroImage"
+            alt="Cagayan de Oro skyline at dusk"
+            class="absolute inset-0 w-full h-full object-cover"
+        />
+        <div
+            class="absolute inset-0 mix-blend-multiply"
+            style="background: linear-gradient(135deg, rgba(255,140,66,0.78) 0%, rgba(229,114,43,0.72) 55%, rgba(122,45,10,0.85) 100%);"
+        ></div>
+        <div
+            class="absolute inset-0"
+            style="background: linear-gradient(rgba(0,0,0,0.15) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.35) 100%);"
+        ></div>
+        <div class="relative max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-12 md:py-20 lg:py-28">
+            <p class="text-xs md:text-sm font-semibold tracking-widest uppercase text-[#ffe3b0]">
                 <span class="md:hidden">Cagayan de Oro</span>
                 <span class="hidden md:inline">Cagayan de Oro · Misamis Oriental</span>
             </p>

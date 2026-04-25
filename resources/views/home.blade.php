@@ -22,6 +22,9 @@
 
     <script>
         window.__INITIAL_LISTINGS__ = @json($listings);
+        window.__ASSETS__ = {
+            hero: "{{ asset('img/cdo-hero.jpg') }}",
+        };
     </script>
 </head>
 <body class="font-sans antialiased">
