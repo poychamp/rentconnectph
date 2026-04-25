@@ -18,6 +18,9 @@ return new class extends Migration
             $table->unsignedTinyInteger('baths');
             $table->unsignedSmallInteger('sqft');
             $table->string('barangay', 80);
+            $table->decimal('latitude', 10, 7)->nullable();
+            $table->decimal('longitude', 10, 7)->nullable();
+            $table->text('description')->nullable();
             $table->boolean('is_verified')->default(false);
             $table->timestamp('verified_at')->nullable();
             $table->boolean('is_featured')->default(false);

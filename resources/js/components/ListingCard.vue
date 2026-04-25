@@ -1,11 +1,9 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 
 const props = defineProps({
     listing: { type: Object, required: true },
 });
-
-const favorited = ref(false);
 
 const formattedPrice = computed(() => {
     const formatted = new Intl.NumberFormat('en-PH').format(props.listing.price_monthly);
@@ -14,26 +12,14 @@ const formattedPrice = computed(() => {
 </script>
 
 <template>
-    <article class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden hover:shadow-md dark:hover:shadow-black/40 transition cursor-pointer">
+    <a :href="`/listings/${listing.uuid}`" class="block">
+        <article class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden hover:shadow-md dark:hover:shadow-black/40 transition cursor-pointer">
         <div class="relative aspect-video bg-gray-100 dark:bg-gray-800">
             <img :src="listing.image" :alt="listing.title" class="w-full h-full object-cover" />
             <span class="absolute top-3 left-3 inline-flex items-center gap-1 bg-emerald-500 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded">
                 <svg class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.707-9.293-4.5 4.5a1 1 0 0 1-1.414 0l-2-2a1 1 0 1 1 1.414-1.414L8.5 11.086l3.793-3.793a1 1 0 0 1 1.414 1.414Z" clip-rule="evenodd"/></svg>
                 Verified
             </span>
-            <button
-                @click="favorited = !favorited"
-                class="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 dark:bg-gray-900/80 backdrop-blur grid place-items-center hover:bg-white dark:hover:bg-gray-900 transition"
-                :aria-pressed="favorited"
-                aria-label="Favorite"
-            >
-                <svg v-if="favorited" class="w-5 h-5 text-orange-500" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 21s-7-4.35-7-10a4.5 4.5 0 0 1 8.4-2.3L12 9l-1.4-.3A4.5 4.5 0 0 1 19 11c0 5.65-7 10-7 10Z"/>
-                </svg>
-                <svg v-else class="w-5 h-5 text-gray-700 dark:text-gray-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 21s-7-4.35-7-10a4.5 4.5 0 0 1 8.4-2.3L12 9l-1.4-.3A4.5 4.5 0 0 1 19 11c0 5.65-7 10-7 10Z" stroke-linejoin="round"/>
-                </svg>
-            </button>
             <span class="absolute bottom-3 right-3 bg-black/60 text-white text-xs font-medium px-2 py-1 rounded">
                 4 photos
             </span>
@@ -43,7 +29,7 @@ const formattedPrice = computed(() => {
             <div class="flex items-start justify-between gap-3">
                 <h3 class="font-semibold text-gray-900 dark:text-white leading-snug truncate">{{ listing.title }}</h3>
                 <span class="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-full px-2 py-0.5">
-                    {{ listing.type }}
+                    {{ listing.type_label }}
                 </span>
             </div>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 inline-flex items-center gap-1">
@@ -69,5 +55,6 @@ const formattedPrice = computed(() => {
                 </span>
             </div>
         </div>
-    </article>
+        </article>
+    </a>
 </template>

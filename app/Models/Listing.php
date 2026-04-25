@@ -6,6 +6,7 @@ use App\Concerns\HasUuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -21,6 +22,9 @@ class Listing extends Model
         'baths',
         'sqft',
         'barangay',
+        'latitude',
+        'longitude',
+        'description',
         'display_image_id',
         'is_verified',
         'verified_at',
@@ -31,6 +35,8 @@ class Listing extends Model
         'is_verified' => 'boolean',
         'is_featured' => 'boolean',
         'verified_at' => 'datetime',
+        'latitude' => 'float',
+        'longitude' => 'float',
     ];
 
     public function images(): HasMany
@@ -41,6 +47,11 @@ class Listing extends Model
     public function displayImage(): BelongsTo
     {
         return $this->belongsTo(ListingImage::class, 'display_image_id');
+    }
+
+    public function amenities(): BelongsToMany
+    {
+        return $this->belongsToMany(Amenity::class)->orderBy('amenities.sort_order');
     }
 
     public function scopeVerified($query)

@@ -4,17 +4,29 @@ import './axios';
 import { createApp } from 'vue';
 import PrimeVue from 'primevue/config';
 import { RentConnectPreset } from './primevue';
-import App from './App.vue';
 
-const app = createApp(App);
+const el = document.getElementById('app');
 
-app.use(PrimeVue, {
-    theme: {
-        preset: RentConnectPreset,
-        options: {
-            darkModeSelector: '.dark',
-        },
-    },
-});
+if (el) {
+    const page = el.dataset.page || 'home';
 
-app.mount('#app');
+    const roots = {
+        home: () => import('./App.vue'),
+        'listing-detail': () => import('./ListingDetail.vue'),
+    };
+
+    const loadRoot = roots[page] || roots.home;
+
+    loadRoot().then(({ default: Root }) => {
+        createApp(Root)
+            .use(PrimeVue, {
+                theme: {
+                    preset: RentConnectPreset,
+                    options: {
+                        darkModeSelector: '.dark',
+                    },
+                },
+            })
+            .mount('#app');
+    });
+}
