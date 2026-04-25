@@ -14,7 +14,7 @@ const formattedPrice = computed(() => {
 </script>
 
 <template>
-    <article class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden hover:shadow-md dark:hover:shadow-black/40 transition">
+    <article class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden hover:shadow-md dark:hover:shadow-black/40 transition cursor-pointer">
         <div class="relative aspect-video bg-gray-100 dark:bg-gray-800">
             <img :src="listing.image" :alt="listing.title" class="w-full h-full object-cover" />
             <span class="absolute top-3 left-3 inline-flex items-center gap-1 bg-emerald-500 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded">
@@ -48,7 +48,7 @@ const formattedPrice = computed(() => {
             </div>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 inline-flex items-center gap-1">
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z"/></svg>
-                {{ listing.barangay }}, CDO
+                {{ listing.barangay_label }}, CDO
             </p>
             <p class="mt-3 text-lg font-bold">
                 <span class="text-orange-500">{{ formattedPrice }}</span>

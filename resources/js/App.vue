@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref } from 'vue';
 import Navbar from './components/Navbar.vue';
 import HeroSection from './components/HeroSection.vue';
 import ListingTypeFilter from './components/ListingTypeFilter.vue';
@@ -7,11 +7,10 @@ import ListingsSection from './components/ListingsSection.vue';
 import Footer from './components/Footer.vue';
 import BottomNav from './components/BottomNav.vue';
 
-const allListings = ref(window.__INITIAL_LISTINGS__ || []);
+const home = window.__INITIAL_HOME__ || { verified: [], recently: [] };
+const verified = ref(home.verified);
+const recently = ref(home.recently);
 const activeType = ref('All');
-
-const verified = computed(() => allListings.value.filter((l) => l.section === 'verified'));
-const recently = computed(() => allListings.value.filter((l) => l.section === 'recently'));
 </script>
 
 <template>
@@ -27,11 +26,13 @@ const recently = computed(() => allListings.value.filter((l) => l.section === 'r
                 :listings="verified"
                 show-view-all
             />
+            <hr class="border-gray-200 dark:border-gray-800" />
             <ListingsSection
                 title="Recently Verified"
                 :subtitle-desktop="'Fresh listings, all ground-checked within the last week'"
                 :subtitle-mobile="'Fresh listings, all ground-checked'"
                 :listings="recently"
+                show-view-all
             />
         </main>
         <Footer />

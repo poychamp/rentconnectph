@@ -21,7 +21,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <script>
-        window.__INITIAL_LISTINGS__ = @json($listings);
+        window.__INITIAL_HOME__ = @json($home);
         window.__ASSETS__ = {
             hero: "{{ asset('img/cdo-hero.jpg') }}",
         };
