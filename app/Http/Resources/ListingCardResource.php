@@ -23,6 +23,7 @@ class ListingCardResource extends JsonResource
             'barangay' => $this->barangay,
             'barangay_label' => Barangay::from($this->barangay)->label,
             'image' => $this->displayImage?->url,
+            'image_count' => $this->images_count ?? 0,
             'section' => $this->is_featured ? 'verified' : 'recently',
         ];
     }

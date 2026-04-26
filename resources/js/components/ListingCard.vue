@@ -21,7 +21,7 @@ const formattedPrice = computed(() => {
                 Verified
             </span>
             <span class="absolute bottom-3 right-3 bg-black/60 text-white text-xs font-medium px-2 py-1 rounded">
-                4 photos
+                {{ listing.image_count }} {{ listing.image_count === 1 ? 'photo' : 'photos' }}
             </span>
         </div>
 
