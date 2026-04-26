@@ -9,6 +9,8 @@ defineProps({
     },
 });
 
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+
 const sections = [
     {
         label: 'Operations',
@@ -105,15 +107,18 @@ const iconPaths = {
                 <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ user.name }}</p>
                 <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ user.role_label }}</p>
             </div>
-            <a
-                href="#"
-                class="p-1.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
-                title="Sign out"
-            >
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
-                </svg>
-            </a>
+            <form action="/admin/logout" method="POST" class="inline">
+                <input type="hidden" name="_token" :value="csrfToken">
+                <button
+                    type="submit"
+                    class="p-1.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition cursor-pointer"
+                    title="Sign out"
+                >
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+                    </svg>
+                </button>
+            </form>
         </div>
     </aside>
 </template>

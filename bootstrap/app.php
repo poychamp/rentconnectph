@@ -18,7 +18,15 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->alias([
+            'guest.admin' => \App\Http\Middleware\Admin\RedirectIfAuthenticatedAdmin::class,
+        ]);
+
+        // Override the default Authenticate middleware redirect: send all unauthed
+        // hits to admin.login. Today, admin is the only route group using auth
+        // middleware so this callback only ever fires for /admin paths anyway.
+        // When a public-facing auth (broker / renter portal) lands, branch here.
+        $middleware->redirectGuestsTo(fn () => route('admin.login'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

@@ -1,9 +1,30 @@
 <script setup>
-import { ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import AdminLogo from './components/admin/AdminLogo.vue';
 import AdminDarkModeToggle from './components/admin/AdminDarkModeToggle.vue';
 
 const showPassword = ref(false);
+const submitting   = ref(false);
+const loginError   = ref(null);
+const oldEmail     = ref('');
+
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+
+onMounted(() => {
+    const initial = window.__INITIAL_LOGIN__ ?? {};
+    oldEmail.value   = initial.oldEmail ?? '';
+    loginError.value = initial.loginError ?? null;
+});
+
+const inputErrorClass = computed(() => loginError.value
+    ? 'border-red-500 bg-red-50/60 dark:bg-red-950/30'
+    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
+);
+
+function onSubmit() {
+    submitting.value = true;
+    // No e.preventDefault — Vue just toggles loading state, the form does its native POST.
+}
 </script>
 
 <template>
@@ -26,7 +47,14 @@ const showPassword = ref(false);
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Welcome back</h1>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Sign in to your account to continue.</p>
 
-            <form class="mt-6 space-y-4">
+            <form
+                action="/admin/login"
+                method="POST"
+                @submit="onSubmit"
+                class="mt-6 space-y-4"
+            >
+                <input type="hidden" name="_token" :value="csrfToken">
+
                 <!-- Email -->
                 <div>
                     <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -36,27 +64,26 @@ const showPassword = ref(false);
                         id="email"
                         type="email"
                         name="email"
+                        :value="oldEmail"
+                        @input="oldEmail = $event.target.value"
                         placeholder="you@rentconnect.ph"
                         autocomplete="email"
-                        class="mt-1 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition"
+                        :class="['mt-1 w-full rounded-md border px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition', inputErrorClass]"
                     >
                 </div>
 
                 <!-- Password -->
                 <div>
-                    <div class="flex justify-between items-center">
-                        <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Password
-                        </label>
-                        <a href="#" class="text-sm text-orange-500 hover:text-orange-600">Forgot password?</a>
-                    </div>
+                    <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Password
+                    </label>
                     <div class="relative mt-1">
                         <input
                             id="password"
                             :type="showPassword ? 'text' : 'password'"
                             name="password"
                             autocomplete="current-password"
-                            class="w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3.5 py-2.5 pr-11 text-sm text-gray-900 dark:text-white focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition"
+                            :class="['w-full rounded-md border px-3.5 py-2.5 pr-11 text-sm text-gray-900 dark:text-white focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition', inputErrorClass]"
                         >
                         <button
                             type="button"
@@ -74,6 +101,20 @@ const showPassword = ref(false);
                             </svg>
                         </button>
                     </div>
+                    <div class="mt-1.5 flex justify-end">
+                        <a href="#" class="text-xs text-orange-500 hover:text-orange-600">Forgot password?</a>
+                    </div>
+                </div>
+
+                <!-- Error banner -->
+                <div
+                    v-if="loginError"
+                    class="flex items-center gap-2 rounded-md bg-red-50 dark:bg-red-950/30 px-3 py-2 text-sm text-red-700 dark:text-red-400"
+                >
+                    <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 9v4M12 17h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/>
+                    </svg>
+                    <span>{{ loginError }}</span>
                 </div>
 
                 <!-- Keep me signed in -->
@@ -81,6 +122,7 @@ const showPassword = ref(false);
                     <input
                         type="checkbox"
                         name="remember"
+                        value="1"
                         checked
                         class="rounded border-gray-300 text-orange-500 focus:ring-orange-500"
                     >
@@ -90,9 +132,17 @@ const showPassword = ref(false);
                 <!-- Sign In -->
                 <button
                     type="submit"
-                    class="w-full rounded-md bg-orange-500 hover:bg-orange-600 text-white font-medium py-2.5 transition"
+                    :disabled="submitting"
+                    :class="[
+                        'w-full rounded-md bg-orange-500 hover:bg-orange-600 text-white font-medium py-2.5 transition flex items-center justify-center gap-2',
+                        submitting && 'cursor-not-allowed opacity-90',
+                    ]"
                 >
-                    Sign In
+                    <svg v-if="submitting" class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-opacity="0.25"/>
+                        <path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                    </svg>
+                    {{ submitting ? 'Signing in...' : 'Sign In' }}
                 </button>
             </form>
         </div>
