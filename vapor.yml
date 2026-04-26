@@ -26,7 +26,6 @@ environments:
     storage: rentconnectph-dev-uploads
     build:
       - 'composer install --no-dev'
-      - 'php artisan cache:clear'
       - 'php artisan view:clear'
       - 'php artisan config:clear'
       - 'php artisan event:clear'
