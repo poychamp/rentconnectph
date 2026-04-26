@@ -26,5 +26,15 @@ environments:
     storage: rentconnectph-dev-uploads
     build:
       - 'composer install --no-dev'
-      - 'php artisan event:cache'
-      # - 'npm ci && npm run build && rm -rf node_modules'
+      - 'php artisan cache:clear'
+      - 'php artisan view:clear'
+      - 'php artisan config:clear'
+      - 'php artisan event:clear'
+      - 'php artisan route:clear'
+      - 'php artisan optimize'
+      - 'php artisan view:cache'
+      - 'npm ci && npm run build && rm -rf node_modules'
+    deploy:
+      # Dev is throwaway — wipe + reseed every deploy.
+      # Never use migrate:fresh on staging/production (would destroy data).
+      - 'php artisan migrate:fresh --force --seed'
