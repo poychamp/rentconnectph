@@ -17,6 +17,7 @@
     "dependencies": {
         "@primevue/themes": "^4.5.4",
         "@vitejs/plugin-vue": "^6.0.6",
+        "laravel-vapor": "^0.7.1",
         "mapbox-gl": "^3.22.0",
         "primevue": "^4.5.5",
         "vue": "^3.5.33"

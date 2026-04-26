@@ -1,5 +1,13 @@
 id: 75349
 name: RentConnectPH
+
+databases:
+  rentconnectph-dev-db:
+    type: rds
+    instance-class: db.t4g.micro
+    storage: 25
+    public: true     # public RDS endpoint so we can connect from laptop
+
 environments:
   production:
     memory: 1024
@@ -21,6 +29,7 @@ environments:
     memory: 1024
     cli-memory: 512
     runtime: 'php-8.4:al2023'
+    database: rentconnectph-dev-db
     storage: rentconnectph-dev-uploads
     build:
       - 'composer install --no-dev'

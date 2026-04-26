@@ -1,28 +1,54 @@
 <script setup>
-import { ref, watch, onUnmounted, inject } from 'vue';
+import { ref, reactive, watch, onUnmounted, inject } from 'vue';
+import Vapor from 'laravel-vapor';
 
 const MAX_PHOTOS = 20;
 
 const form = inject('addListingForm');
 
-// Each photo: { id (local random), file, url (objectURL), key (S3 key, set by Vapor.store in Phase 2) }
-// Phase 1 placeholder: key is null until Vapor wiring lands; we still mirror photos.length and the
-// local-preview URLs into form.photos so the submit dump shows order + filename intent.
+// Each photo: { id, file, url (objectURL preview), key (S3 key from Vapor.store), uploading, progress, error }
 const photos = ref([]);
 const fileInputRef = ref(null);
 const dragIndex = ref(null);
 const isDraggingFile = ref(false);
 
-// Mirror the photo list into the shared form payload as an array of { name, key } objects.
-// When Vapor.store() lands in Phase 2, `key` becomes the real S3 path and the dump
-// will show the actual storage references.
+// crypto.randomUUID() requires a secure context (https or localhost).
+// Local dev runs over http://rentconnectph.test, so fall back to a simple
+// non-cryptographic id — this is just a Vue :key, doesn't need to be secure.
+const genId = () => globalThis.crypto?.randomUUID?.()
+    ?? `p-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+
+// Mirror the photo list into the shared form payload — only photos that finished uploading
+// (have a real S3 key) get sent to the backend. In-progress / errored uploads stay client-side.
 watch(photos, (list) => {
-    form.photos = list.map(p => ({
-        name: p.file?.name ?? null,
-        size: p.file?.size ?? null,
-        key:  p.key ?? null,         // Phase 2: populated by Vapor.store(file).then(r => r.key)
-    }));
+    form.photos = list
+        .filter(p => p.key)
+        .map(p => ({
+            name: p.file?.name ?? null,
+            size: p.file?.size ?? null,
+            key:  p.key,
+        }));
 }, { deep: true });
+
+async function uploadToS3(photo) {
+    photo.uploading = true;
+    photo.progress = 0;
+    photo.error = null;
+
+    try {
+        const response = await Vapor.store(photo.file, {
+            signedStorageUrl: '/admin/vapor/signed-storage-url',
+            visibility: 'public-read',
+            progress: (p) => { photo.progress = Math.round(p * 100); },
+        });
+        photo.key = response.key;
+        photo.uploading = false;
+    } catch (err) {
+        photo.uploading = false;
+        photo.error = err?.message ?? 'Upload failed';
+        console.error('Vapor upload failed:', err);
+    }
+}
 
 function openPicker() {
     fileInputRef.value?.click();
@@ -58,11 +84,19 @@ function addFiles(files) {
     files.slice(0, remaining)
         .filter(f => f.type.startsWith('image/'))
         .forEach(file => {
-            photos.value.push({
-                id:   crypto.randomUUID(),
+            // Wrap in reactive() so Vue tracks property mutations during upload
+            // (uploading, progress, key, error) — without this the UI stays at 0%.
+            const photo = reactive({
+                id:        genId(),
                 file,
-                url:  URL.createObjectURL(file),
+                url:       URL.createObjectURL(file),
+                key:       null,
+                uploading: false,
+                progress:  0,
+                error:     null,
             });
+            photos.value.push(photo);
+            uploadToS3(photo);   // fire-and-forget; reactivity now propagates
         });
 }
 
@@ -161,7 +195,26 @@ onUnmounted(() => {
                     :src="photo.url"
                     :alt="'Photo ' + (idx + 1)"
                     class="w-full h-full object-cover"
+                    :class="photo.uploading || photo.error ? 'opacity-50' : ''"
                 >
+
+                <!-- Upload-in-progress overlay -->
+                <div
+                    v-if="photo.uploading"
+                    class="absolute inset-0 flex items-center justify-center bg-black/40"
+                >
+                    <div class="text-white text-xs font-semibold tabular-nums">{{ photo.progress }}%</div>
+                </div>
+
+                <!-- Upload error indicator -->
+                <div
+                    v-else-if="photo.error"
+                    class="absolute inset-x-0 bottom-0 bg-red-500/90 text-white text-[10px] px-1.5 py-1 truncate"
+                    :title="photo.error"
+                >
+                    Upload failed
+                </div>
+
                 <span
                     v-if="idx === 0"
                     class="absolute top-1.5 left-1.5 inline-flex items-center gap-1 rounded bg-gray-900/85 text-white text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5"
