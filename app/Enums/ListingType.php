@@ -10,6 +10,7 @@ use Spatie\Enum\Enum;
  * @method static self house()
  * @method static self condo()
  * @method static self bedspacer()
+ * @method static self other()
  */
 class ListingType extends Enum
 {
@@ -21,6 +22,7 @@ class ListingType extends Enum
             'house'     => 'House',
             'condo'     => 'Condo',
             'bedspacer' => 'Bedspacer',
+            'other'     => 'Other',
         ];
     }
 }
