@@ -1,0 +1,28 @@
+id: 75349
+name: RentConnectPH
+environments:
+  production:
+    memory: 1024
+    cli-memory: 512
+    runtime: 'php-8.4:al2023'
+    build:
+      - 'composer install --no-dev'
+      - 'php artisan event:cache'
+      # - 'npm ci && npm run build && rm -rf node_modules'
+  staging:
+    memory: 1024
+    cli-memory: 512
+    runtime: 'php-8.4:al2023'
+    build:
+      - 'composer install --no-dev'
+      - 'php artisan event:cache'
+      # - 'npm ci && npm run build && rm -rf node_modules'
+  dev:
+    memory: 1024
+    cli-memory: 512
+    runtime: 'php-8.4:al2023'
+    storage: rentconnectph-dev-uploads
+    build:
+      - 'composer install --no-dev'
+      - 'php artisan event:cache'
+      # - 'npm ci && npm run build && rm -rf node_modules'

@@ -35,7 +35,7 @@ onMounted(() => {
         container: mapEl.value,
         style: styleUrl(),
         center: [props.listing.longitude, props.listing.latitude],
-        zoom: 14,
+        zoom: 15,
         attributionControl: false,
     });
 

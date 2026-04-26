@@ -11,8 +11,9 @@ if (el) {
     const page = el.dataset.page || 'admin-login';
 
     const roots = {
-        'admin-login':     () => import('./AdminLogin.vue'),
-        'admin-dashboard': () => import('./AdminDashboard.vue'),
+        'admin-login':       () => import('./AdminLogin.vue'),
+        'admin-dashboard':   () => import('./AdminDashboard.vue'),
+        'admin-add-listing': () => import('./AdminAddListing.vue'),
     };
 
     const loadRoot = roots[page] || roots['admin-login'];

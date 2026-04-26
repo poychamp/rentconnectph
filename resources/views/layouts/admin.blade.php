@@ -20,6 +20,12 @@
 
     @vite(['resources/css/admin.css', 'resources/js/admin.js'])
 
+    <script>
+        window.__ASSETS__ = {
+            mapboxToken: "{{ config('services.mapbox.token') }}",
+        };
+    </script>
+
     @stack('scripts')
 </head>
 <body class="font-sans antialiased bg-gray-50 dark:bg-gray-950">

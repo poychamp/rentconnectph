@@ -11,29 +11,38 @@ defineProps({
 
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
 
+// Captured once at mount — site uses full page navigation (no SPA router) so pathname
+// is fixed for the lifetime of this component.
+const currentPath = window.location.pathname;
+
+function isActive(href) {
+    if (!href || href === '#') return false;
+    return currentPath === href;
+}
+
 const sections = [
     {
         label: 'Operations',
         items: [
-            { name: 'Dashboard',          href: '/admin', active: true,  icon: 'home' },
-            { name: 'Listings',           href: '#',      active: false, icon: 'list' },
-            { name: 'Admin Add Listing',  href: '#',      active: false, icon: 'plus', highlight: true },
-            { name: 'Scraper Queue',      href: '#',      active: false, icon: 'queue' },
-            { name: 'Leads',              href: '#',      active: false, icon: 'users' },
-            { name: 'Logistics',          href: '#',      active: false, icon: 'truck' },
+            { name: 'Dashboard',          href: '/admin', icon: 'home' },
+            { name: 'Listings',           href: '#',      icon: 'list' },
+            { name: 'Admin Add Listing',  href: '/admin/listings/admin-create', icon: 'plus' },
+            { name: 'Scraper Queue',      href: '#',      icon: 'queue' },
+            { name: 'Leads',              href: '#',      icon: 'users' },
+            { name: 'Logistics',          href: '#',      icon: 'truck' },
         ],
     },
     {
         label: 'Catalog',
         items: [
-            { name: 'Amenities', href: '#', active: false, icon: 'tag' },
+            { name: 'Amenities', href: '#', icon: 'tag' },
         ],
     },
     {
         label: 'Admin',
         items: [
-            { name: 'Users',    href: '#', active: false, icon: 'user-cog' },
-            { name: 'Settings', href: '#', active: false, icon: 'settings' },
+            { name: 'Users',    href: '#', icon: 'user-cog' },
+            { name: 'Settings', href: '#', icon: 'settings' },
         ],
     },
 ];
@@ -73,11 +82,9 @@ const iconPaths = {
                             :href="item.href"
                             :class="[
                                 'group flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition',
-                                item.active
+                                isActive(item.href)
                                     ? 'bg-slate-900 text-white dark:bg-orange-500'
-                                    : item.highlight
-                                        ? 'text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-950/30'
-                                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800',
+                                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800',
                             ]"
                         >
                             <svg
