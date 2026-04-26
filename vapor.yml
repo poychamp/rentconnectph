@@ -32,7 +32,7 @@ environments:
       - 'php artisan route:clear'
       - 'php artisan optimize'
       - 'php artisan view:cache'
-      - 'npm ci && npm run build && rm -rf node_modules'
+      - 'npm ci --legacy-peer-deps && npm run build && rm -rf node_modules'
     deploy:
       # Dev is throwaway — wipe + reseed every deploy.
       # Never use migrate:fresh on staging/production (would destroy data).
