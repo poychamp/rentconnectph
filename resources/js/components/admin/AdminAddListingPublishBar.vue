@@ -2,7 +2,10 @@
 import { ref, computed, inject, toRef } from 'vue';
 
 const form = inject('addListingForm');
-const featureOnHomepage = toRef(form, 'feature_on_homepage');
+const featureOnHomepage = toRef(form, 'is_featured');
+
+const { validateAll } = inject('addListingFormValidate', { validateAll: () => true });
+const scrollFormToTop = inject('scrollFormToTop', () => {});
 
 const submitting = ref(false);
 
@@ -11,28 +14,60 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? 
 const isMac = computed(() => /Mac|iPod|iPhone|iPad/.test(navigator.platform));
 const modKey = computed(() => isMac.value ? '⌘' : 'Ctrl');
 
-async function publish(intent = 'publish') {
+/**
+ * Append a hidden input to the form. Recursively unpacks objects and arrays
+ * into Laravel-style bracket notation: photos[0][key], amenities[], etc.
+ */
+function appendHidden(formEl, name, value) {
+    if (value === null || value === undefined) return;
+
+    if (Array.isArray(value)) {
+        value.forEach((item, i) => appendHidden(formEl, `${name}[${i}]`, item));
+        return;
+    }
+
+    if (typeof value === 'object') {
+        Object.entries(value).forEach(([k, v]) => appendHidden(formEl, `${name}[${k}]`, v));
+        return;
+    }
+
+    const input = document.createElement('input');
+    input.type  = 'hidden';
+    input.name  = name;
+    input.value = typeof value === 'boolean' ? (value ? '1' : '0') : String(value);
+    formEl.appendChild(input);
+}
+
+function publish(intent = 'publish') {
     if (submitting.value) return;
+
+    // Run client-side validation first — same rules as the server, but without
+    // the round-trip. Server still re-validates as the source of truth.
+    if (!validateAll()) {
+        scrollFormToTop();
+        return;
+    }
+
     submitting.value = true;
 
-    const payload = { ...form, intent };
+    // Build a hidden native form, submit it. Browser handles everything:
+    // redirect on success → next page loads with `success` flash + AdminToast.
+    // Validation failure → Laravel redirects back, Blade re-renders with $errors
+    // + old() (picked up by AdminAddListing.vue mount logic).
+    const formEl = document.createElement('form');
+    formEl.method = 'POST';
+    formEl.action = '/admin/listings/admin-create';
+    formEl.style.display = 'none';
 
-    const res = await fetch('/admin/listings/admin-create', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN':  csrfToken,
-            'Accept':        'text/html',
-        },
-        body: JSON.stringify(payload),
+    appendHidden(formEl, '_token', csrfToken);
+    appendHidden(formEl, 'intent', intent);
+
+    Object.entries(form).forEach(([key, value]) => {
+        appendHidden(formEl, key, value);
     });
 
-    // Phase 1 wiring check — backend dd's the payload. Replace the page with the dump
-    // so we can inspect it. Phase 2 will redirect on success / re-render on validation error.
-    const html = await res.text();
-    document.open();
-    document.write(html);
-    document.close();
+    document.body.appendChild(formEl);
+    formEl.submit();
 }
 </script>
 

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, inject } from 'vue';
+import { computed, inject, ref } from 'vue';
 import AdminNumberStepper from './AdminNumberStepper.vue';
 import AdminAddListingAmenityPills from './AdminAddListingAmenityPills.vue';
 import AdminAddListingPhotoUpload from './AdminAddListingPhotoUpload.vue';
@@ -12,6 +12,18 @@ defineProps({
 });
 
 const form = inject('addListingForm');
+const errors = inject('addListingFormErrors', ref({}));
+const { validateField, clearFieldError } = inject('addListingFormValidate', {
+    validateField: () => true,
+    clearFieldError: () => {},
+});
+
+// First message for a given field, or null. Laravel returns string[] per key.
+const errorFor = (field) => errors.value?.[field]?.[0] ?? null;
+
+// Tailwind classes appended to an input when its field has an error — swaps
+// the gray border for red and shifts the focus ring to red so it's obvious.
+const inputErrorClass = 'border-red-400 dark:border-red-500 focus:border-red-500 focus:ring-red-500';
 </script>
 
 <template>
@@ -29,8 +41,18 @@ const form = inject('addListingForm');
                         v-model="form.title"
                         type="text"
                         placeholder="e.g. Modern 2-BR Apartment in Pueblo de Oro"
-                        class="mt-1 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition"
+                        @focus="clearFieldError('title')"
+                        @blur="validateField('title')"
+                        :class="[
+                            'mt-1 w-full rounded-md border bg-white dark:bg-gray-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-1 outline-none transition',
+                            errorFor('title')
+                                ? inputErrorClass
+                                : 'border-gray-200 dark:border-gray-700 focus:border-orange-500 focus:ring-orange-500',
+                        ]"
                     >
+                    <p v-if="errorFor('title')" class="mt-1 text-xs text-red-600 dark:text-red-400">
+                        {{ errorFor('title') }}
+                    </p>
                 </div>
 
                 <div>
@@ -45,8 +67,16 @@ const form = inject('addListingForm');
                         v-model="form.description"
                         rows="4"
                         placeholder="Brief description — what makes this place special, nearby landmarks, etc."
-                        class="mt-1 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition resize-y"
+                        :class="[
+                            'mt-1 w-full rounded-md border bg-white dark:bg-gray-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-1 outline-none transition resize-y',
+                            errorFor('description')
+                                ? inputErrorClass
+                                : 'border-gray-200 dark:border-gray-700 focus:border-orange-500 focus:ring-orange-500',
+                        ]"
                     ></textarea>
+                    <p v-if="errorFor('description')" class="mt-1 text-xs text-red-600 dark:text-red-400">
+                        {{ errorFor('description') }}
+                    </p>
                 </div>
 
                 <AdminAddListingPhotoUpload />
@@ -62,11 +92,22 @@ const form = inject('addListingForm');
                         <select
                             id="listing-type"
                             v-model="form.listing_type"
-                            class="mt-1 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition"
+                            @focus="clearFieldError('listing_type')"
+                            @change="validateField('listing_type')"
+                            @blur="validateField('listing_type')"
+                            :class="[
+                                'mt-1 w-full rounded-md border bg-white dark:bg-gray-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white focus:ring-1 outline-none transition',
+                                errorFor('listing_type')
+                                    ? inputErrorClass
+                                    : 'border-gray-200 dark:border-gray-700 focus:border-orange-500 focus:ring-orange-500',
+                            ]"
                         >
                             <option value="" disabled>Select type...</option>
                             <option v-for="t in listingTypes" :key="t.value" :value="t.value">{{ t.label }}</option>
                         </select>
+                        <p v-if="errorFor('listing_type')" class="mt-1 text-xs text-red-600 dark:text-red-400">
+                            {{ errorFor('listing_type') }}
+                        </p>
                     </div>
 
                     <div>
@@ -81,10 +122,20 @@ const form = inject('addListingForm');
                                 type="number"
                                 min="0"
                                 placeholder="0"
-                                class="w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 pl-7 pr-16 py-2.5 text-sm text-right text-gray-900 dark:text-white placeholder-gray-400 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition"
+                                @focus="clearFieldError('monthly_rent')"
+                                @blur="validateField('monthly_rent')"
+                                :class="[
+                                    'w-full rounded-md border bg-white dark:bg-gray-800 pl-7 pr-16 py-2.5 text-sm text-right text-gray-900 dark:text-white placeholder-gray-400 focus:ring-1 outline-none transition',
+                                    errorFor('monthly_rent')
+                                        ? inputErrorClass
+                                        : 'border-gray-200 dark:border-gray-700 focus:border-orange-500 focus:ring-orange-500',
+                                ]"
                             >
                             <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 dark:text-gray-500 pointer-events-none">/ month</span>
                         </div>
+                        <p v-if="errorFor('monthly_rent')" class="mt-1 text-xs text-red-600 dark:text-red-400">
+                            {{ errorFor('monthly_rent') }}
+                        </p>
                     </div>
                 </div>
 
@@ -95,11 +146,22 @@ const form = inject('addListingForm');
                     <select
                         id="barangay"
                         v-model="form.barangay"
-                        class="mt-1 w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition"
+                        @focus="clearFieldError('barangay')"
+                        @change="validateField('barangay')"
+                        @blur="validateField('barangay')"
+                        :class="[
+                            'mt-1 w-full rounded-md border bg-white dark:bg-gray-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white focus:ring-1 outline-none transition',
+                            errorFor('barangay')
+                                ? inputErrorClass
+                                : 'border-gray-200 dark:border-gray-700 focus:border-orange-500 focus:ring-orange-500',
+                        ]"
                     >
                         <option value="" disabled>Select barangay...</option>
                         <option v-for="b in barangays" :key="b.value" :value="b.value">{{ b.label }}</option>
                     </select>
+                    <p v-if="errorFor('barangay')" class="mt-1 text-xs text-red-600 dark:text-red-400">
+                        {{ errorFor('barangay') }}
+                    </p>
                 </div>
 
                 <AdminAddListingMapPicker />
@@ -109,9 +171,31 @@ const form = inject('addListingForm');
         <!-- CARD 3 (FULL WIDTH BELOW) -->
         <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm p-6 space-y-5">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <AdminNumberStepper v-model="form.beds" label="Bedrooms" required />
-                <AdminNumberStepper v-model="form.baths" label="Bathrooms" required />
-                <AdminNumberStepper v-model="form.sqft" label="Floor area" suffix="sqft" required />
+                <AdminNumberStepper
+                    v-model="form.beds"
+                    label="Bedrooms"
+                    required
+                    :error="errorFor('beds')"
+                    @focus="clearFieldError('beds')"
+                    @blur="validateField('beds')"
+                />
+                <AdminNumberStepper
+                    v-model="form.baths"
+                    label="Bathrooms"
+                    required
+                    :error="errorFor('baths')"
+                    @focus="clearFieldError('baths')"
+                    @blur="validateField('baths')"
+                />
+                <AdminNumberStepper
+                    v-model="form.sqft"
+                    label="Floor area"
+                    suffix="sqft"
+                    required
+                    :error="errorFor('sqft')"
+                    @focus="clearFieldError('sqft')"
+                    @blur="validateField('sqft')"
+                />
             </div>
 
             <AdminAddListingAmenityPills :amenities="amenities" v-model="form.amenities" />

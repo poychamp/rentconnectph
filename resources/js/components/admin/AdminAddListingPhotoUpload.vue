@@ -1,12 +1,24 @@
 <script setup>
-import { ref, reactive, watch, onUnmounted, inject } from 'vue';
+import { ref, reactive, watch, onUnmounted, inject, computed } from 'vue';
 import Vapor from 'laravel-vapor';
 
 const MAX_PHOTOS = 20;
 
 const form = inject('addListingForm');
+const errors = inject('addListingFormErrors', ref({}));
+const { validateField } = inject('addListingFormValidate', { validateField: () => true });
 
-// Each photo: { id, file, url (objectURL preview), key (S3 key from Vapor.store), uploading, progress, error }
+// Surface any photo-related validation error: bag-level "photos" (required, array,
+// max:20) OR per-row "photos.0.key" / "photos.0" — show the first one we find.
+const photosError = computed(() => {
+    const bag = errors.value ?? {};
+    if (bag.photos?.[0]) return bag.photos[0];
+    const rowKey = Object.keys(bag).find(k => k.startsWith('photos.'));
+    return rowKey ? bag[rowKey][0] : null;
+});
+
+// Each photo: { id, file?, url (blob: for new uploads / S3 url for rehydrated),
+// key (S3 key from Vapor.store), name?, size?, uploading, progress, error }
 const photos = ref([]);
 const fileInputRef = ref(null);
 const dragIndex = ref(null);
@@ -18,17 +30,46 @@ const isDraggingFile = ref(false);
 const genId = () => globalThis.crypto?.randomUUID?.()
     ?? `p-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 
+// Rehydrate from form.photos when AdminAddListing pre-populated it from old()
+// after a validation failure. The original File objects are gone, but the S3 tmp/
+// uploads are still there — we reuse the keys + the server-injected GET url.
+if (Array.isArray(form.photos) && form.photos.length > 0) {
+    form.photos.forEach((p) => {
+        if (! p?.key) return;
+        photos.value.push(reactive({
+            id:        genId(),
+            file:      null,
+            url:       p.url ?? '',
+            key:       p.key,
+            name:      p.name ?? null,
+            size:      p.size ?? null,
+            uploading: false,
+            progress:  100,
+            error:     null,
+        }));
+    });
+}
+
 // Mirror the photo list into the shared form payload — only photos that finished uploading
 // (have a real S3 key) get sent to the backend. In-progress / errored uploads stay client-side.
 watch(photos, (list) => {
     form.photos = list
         .filter(p => p.key)
         .map(p => ({
-            name: p.file?.name ?? null,
-            size: p.file?.size ?? null,
+            name: p.file?.name ?? p.name ?? null,
+            size: p.file?.size ?? p.size ?? null,
             key:  p.key,
         }));
 }, { deep: true });
+
+// Re-validate the photos field whenever the count changes, but only if there's
+// already a photos error showing — that way the error clears the moment a photo
+// finishes uploading (or appears the moment the last one is removed).
+watch(() => form.photos?.length, () => {
+    if (errors.value?.photos || Object.keys(errors.value ?? {}).some(k => k.startsWith('photos.'))) {
+        validateField('photos');
+    }
+});
 
 async function uploadToS3(photo) {
     photo.uploading = true;
@@ -103,7 +144,10 @@ function addFiles(files) {
 function remove(id) {
     const idx = photos.value.findIndex(p => p.id === id);
     if (idx === -1) return;
-    URL.revokeObjectURL(photos.value[idx].url);
+    const url = photos.value[idx].url;
+    if (typeof url === 'string' && url.startsWith('blob:')) {
+        URL.revokeObjectURL(url);
+    }
     photos.value.splice(idx, 1);
 }
 
@@ -118,7 +162,11 @@ function onDrop(targetIdx) {
 }
 
 onUnmounted(() => {
-    photos.value.forEach(p => URL.revokeObjectURL(p.url));
+    photos.value.forEach((p) => {
+        if (typeof p.url === 'string' && p.url.startsWith('blob:')) {
+            URL.revokeObjectURL(p.url);
+        }
+    });
 });
 </script>
 
@@ -153,9 +201,11 @@ onUnmounted(() => {
             style="border-width: 1.5px;"
             :class="[
                 'mt-1 w-full text-center rounded-[10px] border-dashed px-4 py-3.5 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed',
-                isDraggingFile
-                    ? 'border-orange-400 bg-orange-50 dark:border-orange-500 dark:bg-orange-950/30'
-                    : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800',
+                photosError
+                    ? 'border-red-400 dark:border-red-500 bg-red-50 dark:bg-red-950/20'
+                    : isDraggingFile
+                        ? 'border-orange-400 bg-orange-50 dark:border-orange-500 dark:bg-orange-950/30'
+                        : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800',
             ]"
         >
             <span class="inline-flex items-center gap-2.5 text-[13px] text-gray-600 dark:text-gray-300">
@@ -177,6 +227,10 @@ onUnmounted(() => {
                 </span>
             </span>
         </button>
+
+        <p v-if="photosError" class="mt-1 text-xs text-red-600 dark:text-red-400">
+            {{ photosError }}
+        </p>
 
         <ul
             v-if="photos.length > 0"

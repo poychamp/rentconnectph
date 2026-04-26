@@ -24,7 +24,6 @@ const activeType = ref('All');
                 :subtitle-desktop="'Hand-picked by RentConnectPH this week'"
                 :subtitle-mobile="'Hand-picked by RentConnectPH'"
                 :listings="verified"
-                show-view-all
             />
             <hr class="border-gray-200 dark:border-gray-800" />
             <ListingsSection

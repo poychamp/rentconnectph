@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount, watch, inject, toRef } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, watch, inject, toRef } from 'vue';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
@@ -12,7 +12,15 @@ const form = inject('addListingForm');
 const lat = toRef(form, 'latitude');
 const lng = toRef(form, 'longitude');
 
-const search = ref('');
+const errors = inject('addListingFormErrors', ref({}));
+const latError = computed(() => errors.value?.latitude?.[0] ?? null);
+const lngError = computed(() => errors.value?.longitude?.[0] ?? null);
+
+const { validateField, clearFieldError } = inject('addListingFormValidate', {
+    validateField: () => true,
+    clearFieldError: () => {},
+});
+
 const geoError = ref(null);
 
 const mapEl = ref(null);
@@ -79,21 +87,28 @@ function useMyLocation() {
     );
 }
 
-// Manual lat/lng edits → move pin
+// Manual lat/lng edits → move pin. Wrapped because Mapbox's setLngLat throws
+// on out-of-range coords, and we want to keep the inputs editable even when the
+// user has typed something invalid (so they can correct it).
 watch([lat, lng], ([newLat, newLng]) => {
     if (newLat == null || newLng == null) return;
     if (!map) return;
-    if (!marker) {
-        marker = new mapboxgl.Marker({ color: '#f97316', draggable: true })
-            .setLngLat([newLng, newLat])
-            .addTo(map);
-        marker.on('dragend', () => {
-            const ll = marker.getLngLat();
-            lat.value = parseFloat(ll.lat.toFixed(7));
-            lng.value = parseFloat(ll.lng.toFixed(7));
-        });
-    } else {
-        marker.setLngLat([newLng, newLat]);
+    try {
+        if (!marker) {
+            marker = new mapboxgl.Marker({ color: '#f97316', draggable: true })
+                .setLngLat([newLng, newLat])
+                .addTo(map);
+            marker.on('dragend', () => {
+                const ll = marker.getLngLat();
+                lat.value = parseFloat(ll.lat.toFixed(7));
+                lng.value = parseFloat(ll.lng.toFixed(7));
+            });
+        } else {
+            marker.setLngLat([newLng, newLat]);
+        }
+    } catch (err) {
+        // Out-of-range coords — keep the inputs as-is so the user can fix them.
+        console.warn('Mapbox setLngLat rejected coordinates:', { lat: newLat, lng: newLng, err });
     }
 });
 
@@ -141,38 +156,49 @@ onBeforeUnmount(() => {
                 Pin location
             </label>
             <span class="text-xs text-gray-400 dark:text-gray-500">
-                optional · click map, search, or type coords
+                optional · click map or type coords
             </span>
         </div>
 
         <div class="mt-1 grid grid-cols-2 gap-2">
-            <input
-                v-model.number="lat"
-                type="number"
-                step="any"
-                placeholder="Latitude (e.g. 8.4542)"
-                class="w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition"
-            >
-            <input
-                v-model.number="lng"
-                type="number"
-                step="any"
-                placeholder="Longitude (e.g. 124.6411)"
-                class="w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition"
-            >
-        </div>
-
-        <div class="mt-2 relative">
-            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="11" cy="11" r="8"/>
-                <path d="m21 21-4.3-4.3"/>
-            </svg>
-            <input
-                v-model="search"
-                type="text"
-                placeholder="Search address, land..."
-                class="w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 pl-9 pr-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition"
-            >
+            <div>
+                <input
+                    v-model.number="lat"
+                    type="number"
+                    step="any"
+                    placeholder="Latitude (e.g. 8.4542)"
+                    @focus="clearFieldError('latitude')"
+                    @blur="validateField('latitude')"
+                    :class="[
+                        'w-full rounded-md border bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-1 outline-none transition',
+                        latError
+                            ? 'border-red-400 dark:border-red-500 focus:border-red-500 focus:ring-red-500'
+                            : 'border-gray-200 dark:border-gray-700 focus:border-orange-500 focus:ring-orange-500',
+                    ]"
+                >
+                <p v-if="latError" class="mt-1 text-xs text-red-600 dark:text-red-400">
+                    {{ latError }}
+                </p>
+            </div>
+            <div>
+                <input
+                    v-model.number="lng"
+                    type="number"
+                    step="any"
+                    placeholder="Longitude (e.g. 124.6411)"
+                    @focus="clearFieldError('longitude')"
+                    @blur="validateField('longitude')"
+                    :class="[
+                        'w-full rounded-md border bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-1 outline-none transition',
+                        lngError
+                            ? 'border-red-400 dark:border-red-500 focus:border-red-500 focus:ring-red-500'
+                            : 'border-gray-200 dark:border-gray-700 focus:border-orange-500 focus:ring-orange-500',
+                    ]"
+                >
+                <p v-if="lngError" class="mt-1 text-xs text-red-600 dark:text-red-400">
+                    {{ lngError }}
+                </p>
+            </div>
         </div>
 
         <div class="mt-2 rounded-md overflow-hidden border border-gray-200 dark:border-gray-700">
@@ -194,7 +220,7 @@ onBeforeUnmount(() => {
         </p>
 
         <div class="mt-2 flex items-center justify-between text-xs">
-            <p class="text-gray-500 dark:text-gray-400">Click on the map or search to drop a pin.</p>
+            <p class="text-gray-500 dark:text-gray-400">Click on the map to drop a pin.</p>
             <button
                 type="button"
                 @click="useMyLocation"

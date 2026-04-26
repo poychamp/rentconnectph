@@ -4,6 +4,7 @@ import './axios';
 import { createApp } from 'vue';
 import PrimeVue from 'primevue/config';
 import { RentConnectPreset } from './primevue';
+import AdminToast from './components/admin/AdminToast.vue';
 
 const el = document.getElementById('app');
 
@@ -28,4 +29,12 @@ if (el) {
             })
             .mount('#app');
     });
+}
+
+// Toast — separate Vue root mounted on every admin page. Reads window.__FLASH__
+// (injected by layouts/admin.blade.php) and shows a toast for any session
+// success/error/info flash, then auto-dismisses after 4s.
+const toastEl = document.getElementById('admin-toast');
+if (toastEl) {
+    createApp(AdminToast).mount('#admin-toast');
 }

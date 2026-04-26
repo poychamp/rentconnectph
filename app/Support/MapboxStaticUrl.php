@@ -17,7 +17,7 @@ class MapboxStaticUrl
         }
 
         return sprintf(
-            'https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+f97316(%F,%F)/%F,%F,14/%dx%d@2x?access_token=%s',
+            'https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+f97316(%.7F,%.7F)/%.7F,%.7F,14/%dx%d@2x?access_token=%s',
             $lng,
             $lat,
             $lng,

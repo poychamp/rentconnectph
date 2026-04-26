@@ -6,8 +6,9 @@ const props = defineProps({
     min:      { type: Number, default: 0 },
     max:      { type: Number, default: null },
     suffix:   { type: String, default: null },
+    error:    { type: String, default: null },
 });
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits(['update:modelValue', 'blur', 'focus']);
 
 function dec() {
     const next = Math.max(props.min, (Number(props.modelValue) || 0) - 1);
@@ -37,7 +38,12 @@ function onTyped(event) {
         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
             {{ label }}<span v-if="required" class="text-red-500"> *</span>
         </label>
-        <div class="mt-1 flex items-center justify-between rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2.5 py-1.5">
+        <div
+            :class="[
+                'mt-1 flex items-center justify-between rounded-md border bg-white dark:bg-gray-800 px-2.5 py-1.5',
+                error ? 'border-red-400 dark:border-red-500' : 'border-gray-200 dark:border-gray-700',
+            ]"
+        >
             <button
                 type="button"
                 @click="dec"
@@ -54,6 +60,8 @@ function onTyped(event) {
                     type="number"
                     :value="modelValue"
                     @input="onTyped"
+                    @focus="emit('focus', $event)"
+                    @blur="emit('blur', $event)"
                     :min="min"
                     :max="max ?? undefined"
                     class="w-full bg-transparent text-center text-sm text-gray-900 dark:text-white font-medium tabular-nums focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -72,5 +80,8 @@ function onTyped(event) {
                 </svg>
             </button>
         </div>
+        <p v-if="error" class="mt-1 text-xs text-red-600 dark:text-red-400">
+            {{ error }}
+        </p>
     </div>
 </template>

@@ -12,13 +12,11 @@ class HomeController extends Controller
         $verified = Listing::with('displayImage')
             ->featured()
             ->verified()
-            ->limit(3)
             ->get();
 
         $recent = Listing::with('displayImage')
             ->recentlyVerified()
-            ->where('is_featured', false)
-            ->limit(5)
+            ->limit(6)
             ->get();
 
         $home = (new HomeResource(['verified' => $verified, 'recently' => $recent]))->resolve();

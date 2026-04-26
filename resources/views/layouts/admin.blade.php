@@ -24,11 +24,20 @@
         window.__ASSETS__ = {
             mapboxToken: "{{ config('services.mapbox.token') }}",
         };
+
+        // Flash messages — picked up by AdminToast (mounted in admin.js on every page).
+        // Reads session('success') / session('error') / session('info') if any are set.
+        window.__FLASH__ = {
+            success: @json(session('success')),
+            error:   @json(session('error')),
+            info:    @json(session('info')),
+        };
     </script>
 
     @stack('scripts')
 </head>
 <body class="font-sans antialiased bg-gray-50 dark:bg-gray-950">
     <div id="app" data-page="@yield('page')"></div>
+    <div id="admin-toast"></div>
 </body>
 </html>

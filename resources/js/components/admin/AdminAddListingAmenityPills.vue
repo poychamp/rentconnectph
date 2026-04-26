@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, inject } from 'vue';
 
 const props = defineProps({
     amenities: { type: Array, required: true },
@@ -11,6 +11,16 @@ const emit = defineEmits(['update:modelValue']);
 const selected = ref([...props.modelValue]);
 
 const activeCount = computed(() => props.amenities.length);
+
+const errors = inject('addListingFormErrors', ref({}));
+// Pick up either bag-level errors (e.g. "amenities must be an array") or per-row
+// errors from validation like "amenities.0" — show whichever message comes first.
+const fieldError = computed(() => {
+    const bag = errors.value ?? {};
+    if (bag.amenities?.[0]) return bag.amenities[0];
+    const rowKey = Object.keys(bag).find(k => k.startsWith('amenities.'));
+    return rowKey ? bag[rowKey][0] : null;
+});
 
 // Duplicate of the public ListingDetailAmenities iconPaths map (no cross-domain import per CLAUDE.md)
 const iconPaths = {
@@ -48,7 +58,12 @@ function toggle(id) {
             </span>
         </div>
 
-        <ul class="mt-2 flex flex-wrap gap-2">
+        <ul
+            :class="[
+                'mt-2 flex flex-wrap gap-2',
+                fieldError ? 'rounded-md border border-red-400 dark:border-red-500 p-2' : '',
+            ]"
+        >
             <li v-for="amenity in amenities" :key="amenity.id">
                 <button
                     type="button"
@@ -77,5 +92,9 @@ function toggle(id) {
                 </button>
             </li>
         </ul>
+
+        <p v-if="fieldError" class="mt-1 text-xs text-red-600 dark:text-red-400">
+            {{ fieldError }}
+        </p>
     </div>
 </template>

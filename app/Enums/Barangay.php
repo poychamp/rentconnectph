@@ -13,6 +13,7 @@ use Spatie\Enum\Enum;
  * @method static self puebloDeOro()
  * @method static self indahag()
  * @method static self uptown()
+ * @method static self other()
  */
 class Barangay extends Enum
 {
@@ -27,6 +28,7 @@ class Barangay extends Enum
             'puebloDeOro' => 'pueblo_de_oro',
             'indahag' => 'indahag',
             'uptown' => 'uptown',
+            'other' => 'other',
         ];
     }
 
@@ -41,6 +43,7 @@ class Barangay extends Enum
             'pueblo_de_oro' => 'Pueblo de Oro',
             'indahag' => 'Indahag',
             'uptown' => 'Uptown',
+            'other' => 'Other',
         ];
     }
 }
