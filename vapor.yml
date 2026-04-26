@@ -1,13 +1,6 @@
 id: 75349
 name: RentConnectPH
 
-databases:
-  rentconnectph-dev-db:
-    type: rds
-    instance-class: db.t4g.micro
-    storage: 25
-    public: true     # public RDS endpoint so we can connect from laptop
-
 environments:
   production:
     memory: 1024
