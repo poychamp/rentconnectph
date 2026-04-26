@@ -2,6 +2,8 @@
 
 namespace App\Http\Resources;
 
+use App\Enums\Barangay;
+use App\Enums\ListingType;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class HomeResource extends JsonResource
@@ -11,6 +13,12 @@ class HomeResource extends JsonResource
         return [
             'verified' => ListingCardResource::collection($this->resource['verified']),
             'recently' => ListingCardResource::collection($this->resource['recently']),
+            'listingTypes' => collect(ListingType::toValues())
+                ->map(fn ($v) => ['value' => $v, 'label' => ListingType::from($v)->label])
+                ->values(),
+            'barangays' => collect(Barangay::toValues())
+                ->map(fn ($v) => ['value' => $v, 'label' => Barangay::from($v)->label])
+                ->values(),
         ];
     }
 }

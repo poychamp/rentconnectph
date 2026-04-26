@@ -1,5 +1,9 @@
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
+
+const props = defineProps({
+    barangays: { type: Array, default: () => [] },
+});
 
 const query = ref('');
 const budget = ref('');
@@ -8,7 +12,10 @@ const area = ref('');
 const heroImage = window.__ASSETS__?.hero;
 
 const budgets = ['Any', '< ₱10,000', '₱10,000 – ₱20,000', '₱20,000 – ₱30,000', '> ₱30,000'];
-const areas = ['Any', 'Carmen', 'Kauswagan', 'Lapasan', 'Macasandig', 'Nazareth', 'Pueblo de Oro', 'Indahag', 'Uptown'];
+const areas = computed(() => [
+    { value: 'Any', label: 'Any' },
+    ...props.barangays,
+]);
 </script>
 
 <template>
@@ -53,7 +60,7 @@ const areas = ['Any', 'Carmen', 'Kauswagan', 'Lapasan', 'Macasandig', 'Nazareth'
                     </select>
                     <select v-model="area" class="flex-1 md:flex-none md:w-44 bg-gray-50 md:bg-transparent rounded-lg px-3 py-2 text-sm border border-gray-200 md:border-0 outline-none">
                         <option value="">{{ 'CDO Areas' }}</option>
-                        <option v-for="a in areas" :key="a" :value="a">{{ a }}</option>
+                        <option v-for="a in areas" :key="a.value" :value="a.value">{{ a.label }}</option>
                     </select>
                 </div>
                 <a

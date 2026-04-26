@@ -16,6 +16,6 @@ class AppRole extends Enum
 
     protected static function labels(): array
     {
-        return ['super-admin' => 'Super Admin'];
+        return ['superAdmin' => 'Super Admin'];
     }
 }

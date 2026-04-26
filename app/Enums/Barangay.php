@@ -40,7 +40,7 @@ class Barangay extends Enum
             'lapasan' => 'Lapasan',
             'macasandig' => 'Macasandig',
             'nazareth' => 'Nazareth',
-            'pueblo_de_oro' => 'Pueblo de Oro',
+            'puebloDeOro' => 'Pueblo de Oro',
             'indahag' => 'Indahag',
             'uptown' => 'Uptown',
             'other' => 'Other',
