@@ -7,7 +7,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 const CDO_LAT = 8.4542;
 const CDO_LNG = 124.6411;
 
-// Bind to the shared addListingForm (provided by AdminAddListing.vue page root)
+// Bind to the shared addListingForm (provided by AdminListingCreate.vue / AdminListingEdit.vue page roots)
 const form = inject('addListingForm');
 const lat = toRef(form, 'latitude');
 const lng = toRef(form, 'longitude');

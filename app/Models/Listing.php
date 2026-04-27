@@ -18,6 +18,7 @@ class Listing extends Model
     public function toSearchableArray(): array
     {
         return [
+            'uuid'          => $this->uuid,
             'title'         => $this->title,
             'type'          => $this->type,
             'barangay'      => $this->barangay,

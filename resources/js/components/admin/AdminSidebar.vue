@@ -30,7 +30,7 @@ const sections = [
     {
         label: 'Listings',
         items: [
-            { name: 'Admin Add Listing',   href: '/admin/listings/admin-create', icon: 'plus' },
+            { name: 'Add Listing',         href: '/admin/listings/create', icon: 'plus' },
             { name: 'Verified Listings',   href: '/admin/verified-listings',     icon: 'shield-check' },
             { name: 'Unverified Listings', href: '/admin/unverified-listings',   icon: 'shield-question' },
         ],

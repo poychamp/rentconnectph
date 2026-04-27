@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
-@section('title', 'Admin Add Listing — RentConnectPH')
-@section('page', 'admin-add-listing')
+@section('title', 'Add Listing — RentConnectPH')
+@section('page', 'add-listing')
 
 @push('scripts')
 @php

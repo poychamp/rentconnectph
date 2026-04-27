@@ -6,12 +6,13 @@ use App\Models\Amenity;
 use App\Models\Listing;
 use App\Models\ListingImage;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Tests\SeedDatabaseAfterRefresh;
 use Tests\TestCase;
 
-class AdminCreateListingTest extends TestCase
+class AdminListingStoreTest extends TestCase
 {
     use RefreshDatabase, SeedDatabaseAfterRefresh;
 
@@ -52,6 +53,7 @@ class AdminCreateListingTest extends TestCase
             'amenities'    => [],
             'photos'       => [$this->seedTmpPhoto('photo-1')],
             'is_featured'  => false,
+            'is_verified'  => true,
             'intent'       => 'publish',
         ], $overrides);
     }
@@ -62,7 +64,7 @@ class AdminCreateListingTest extends TestCase
 
     public function test_it_redirects_guest_to_login(): void
     {
-        $response = $this->post(route('admin.listings.admin-store'), $this->validPayload());
+        $response = $this->post(route('admin.listings.store'), $this->validPayload());
 
         $response->assertRedirect(route('admin.login'));
     }
@@ -72,7 +74,7 @@ class AdminCreateListingTest extends TestCase
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
-        $response = $this->post(route('admin.listings.admin-store'), $this->validPayload());
+        $response = $this->post(route('admin.listings.store'), $this->validPayload());
 
         $response->assertRedirect();    // 302 success
         $response->assertSessionHasNoErrors();
@@ -90,7 +92,7 @@ class AdminCreateListingTest extends TestCase
         $payload = $this->validPayload();
         unset($payload['title']);
 
-        $this->post(route('admin.listings.admin-store'), $payload)
+        $this->post(route('admin.listings.store'), $payload)
              ->assertSessionHasErrors([
                  'title' => 'Title is required.',
              ]);
@@ -104,7 +106,7 @@ class AdminCreateListingTest extends TestCase
         $payload = $this->validPayload();
         unset($payload['listing_type']);
 
-        $this->post(route('admin.listings.admin-store'), $payload)
+        $this->post(route('admin.listings.store'), $payload)
              ->assertSessionHasErrors([
                  'listing_type' => 'Listing type is required.',
              ]);
@@ -118,7 +120,7 @@ class AdminCreateListingTest extends TestCase
         $payload = $this->validPayload();
         unset($payload['monthly_rent']);
 
-        $this->post(route('admin.listings.admin-store'), $payload)
+        $this->post(route('admin.listings.store'), $payload)
              ->assertSessionHasErrors([
                  'monthly_rent' => 'Monthly rent is required.',
              ]);
@@ -132,7 +134,7 @@ class AdminCreateListingTest extends TestCase
         $payload = $this->validPayload();
         unset($payload['barangay']);
 
-        $this->post(route('admin.listings.admin-store'), $payload)
+        $this->post(route('admin.listings.store'), $payload)
              ->assertSessionHasErrors([
                  'barangay' => 'Barangay is required.',
              ]);
@@ -146,7 +148,7 @@ class AdminCreateListingTest extends TestCase
         $payload = $this->validPayload();
         unset($payload['beds']);
 
-        $this->post(route('admin.listings.admin-store'), $payload)
+        $this->post(route('admin.listings.store'), $payload)
              ->assertSessionHasErrors([
                  'beds' => 'Bedrooms is required.',
              ]);
@@ -160,7 +162,7 @@ class AdminCreateListingTest extends TestCase
         $payload = $this->validPayload();
         unset($payload['baths']);
 
-        $this->post(route('admin.listings.admin-store'), $payload)
+        $this->post(route('admin.listings.store'), $payload)
              ->assertSessionHasErrors([
                  'baths' => 'Bathrooms is required.',
              ]);
@@ -174,7 +176,7 @@ class AdminCreateListingTest extends TestCase
         $payload = $this->validPayload();
         unset($payload['sqft']);
 
-        $this->post(route('admin.listings.admin-store'), $payload)
+        $this->post(route('admin.listings.store'), $payload)
              ->assertSessionHasErrors([
                  'sqft' => 'Floor area is required.',
              ]);
@@ -187,7 +189,7 @@ class AdminCreateListingTest extends TestCase
 
         $payload = $this->validPayload(['photos' => []]);
 
-        $this->post(route('admin.listings.admin-store'), $payload)
+        $this->post(route('admin.listings.store'), $payload)
              ->assertSessionHasErrors([
                  'photos' => 'At least one photo is required.',
              ]);
@@ -202,7 +204,7 @@ class AdminCreateListingTest extends TestCase
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
-        $this->post(route('admin.listings.admin-store'), $this->validPayload([
+        $this->post(route('admin.listings.store'), $this->validPayload([
             'listing_type' => 'mansion',
         ]))->assertSessionHasErrors([
             'listing_type' => 'Invalid listing type.',
@@ -214,7 +216,7 @@ class AdminCreateListingTest extends TestCase
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
-        $this->post(route('admin.listings.admin-store'), $this->validPayload([
+        $this->post(route('admin.listings.store'), $this->validPayload([
             'barangay' => 'mars',
         ]))->assertSessionHasErrors([
             'barangay' => 'Invalid barangay.',
@@ -226,7 +228,7 @@ class AdminCreateListingTest extends TestCase
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
-        $this->post(route('admin.listings.admin-store'), $this->validPayload([
+        $this->post(route('admin.listings.store'), $this->validPayload([
             'amenities' => [99999],
         ]))->assertSessionHasErrors([
             'amenities.0' => "One or more selected amenities don't exist.",
@@ -240,7 +242,7 @@ class AdminCreateListingTest extends TestCase
 
         // Security check — attacker submits a key NOT in tmp/ to try to
         // rename / repath an existing listing's image. Must be rejected.
-        $this->post(route('admin.listings.admin-store'), $this->validPayload([
+        $this->post(route('admin.listings.store'), $this->validPayload([
             'photos' => [[
                 'name' => 'evil.jpg',
                 'size' => 1234,
@@ -256,7 +258,7 @@ class AdminCreateListingTest extends TestCase
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
-        $this->post(route('admin.listings.admin-store'), $this->validPayload([
+        $this->post(route('admin.listings.store'), $this->validPayload([
             'latitude' => 200,
         ]))->assertSessionHasErrors([
             'latitude' => 'Latitude must be between -90 and 90.',
@@ -268,7 +270,7 @@ class AdminCreateListingTest extends TestCase
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
-        $this->post(route('admin.listings.admin-store'), $this->validPayload([
+        $this->post(route('admin.listings.store'), $this->validPayload([
             'longitude' => -300,
         ]))->assertSessionHasErrors([
             'longitude' => 'Longitude must be between -180 and 180.',
@@ -285,7 +287,7 @@ class AdminCreateListingTest extends TestCase
             $photos[] = $this->seedTmpPhoto("photo-{$i}");
         }
 
-        $this->post(route('admin.listings.admin-store'), $this->validPayload([
+        $this->post(route('admin.listings.store'), $this->validPayload([
             'photos' => $photos,
         ]))->assertSessionHasErrors([
             'photos' => 'Maximum 20 photos allowed.',
@@ -299,7 +301,7 @@ class AdminCreateListingTest extends TestCase
 
         // No custom message for beds.min in FRD spec — uses Laravel's default
         // ("The beds field must be at least 0.") so just assert field has an error.
-        $this->post(route('admin.listings.admin-store'), $this->validPayload([
+        $this->post(route('admin.listings.store'), $this->validPayload([
             'beds' => -1,
         ]))->assertSessionHasErrors('beds');
     }
@@ -313,7 +315,7 @@ class AdminCreateListingTest extends TestCase
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
-        $this->post(route('admin.listings.admin-store'), $this->validPayload([
+        $this->post(route('admin.listings.store'), $this->validPayload([
             'title'        => 'Modern 2-BR in Pueblo de Oro',
             'description'  => 'Lovely place.',
             'listing_type' => 'apartment',     // form 'listing_type' → DB 'type'
@@ -341,7 +343,7 @@ class AdminCreateListingTest extends TestCase
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
-        $this->post(route('admin.listings.admin-store'), $this->validPayload());
+        $this->post(route('admin.listings.store'), $this->validPayload());
 
         $listing = Listing::first();
         $this->assertTrue($listing->is_verified);
@@ -355,14 +357,14 @@ class AdminCreateListingTest extends TestCase
         $this->actingAs($admin, 'admin');
 
         // is_featured = true
-        $this->post(route('admin.listings.admin-store'), $this->validPayload([
+        $this->post(route('admin.listings.store'), $this->validPayload([
             'is_featured' => true,
             'photos'      => [$this->seedTmpPhoto('photo-true')],
         ]));
         $this->assertTrue(Listing::orderByDesc('id')->first()->is_featured);
 
         // is_featured = false
-        $this->post(route('admin.listings.admin-store'), $this->validPayload([
+        $this->post(route('admin.listings.store'), $this->validPayload([
             'is_featured' => false,
             'photos'      => [$this->seedTmpPhoto('photo-false')],
         ]));
@@ -374,7 +376,7 @@ class AdminCreateListingTest extends TestCase
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
-        $this->post(route('admin.listings.admin-store'), $this->validPayload([
+        $this->post(route('admin.listings.store'), $this->validPayload([
             'latitude'  => 8.4542,
             'longitude' => 124.6411,
         ]));
@@ -391,7 +393,7 @@ class AdminCreateListingTest extends TestCase
 
         // 7-decimal precision is the limit of the decimal(10,7) column —
         // also matches Mapbox's toFixed(7) on marker drag/click.
-        $this->post(route('admin.listings.admin-store'), $this->validPayload([
+        $this->post(route('admin.listings.store'), $this->validPayload([
             'latitude'  => 8.4542123,
             'longitude' => 124.6411567,
         ]));
@@ -413,7 +415,7 @@ class AdminCreateListingTest extends TestCase
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
-        $this->post(route('admin.listings.admin-store'), $this->validPayload([
+        $this->post(route('admin.listings.store'), $this->validPayload([
             'latitude'  => null,
             'longitude' => null,
         ]));
@@ -432,7 +434,7 @@ class AdminCreateListingTest extends TestCase
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
-        $this->post(route('admin.listings.admin-store'), $this->validPayload([
+        $this->post(route('admin.listings.store'), $this->validPayload([
             'photos' => [
                 $this->seedTmpPhoto('photo-a'),
                 $this->seedTmpPhoto('photo-b'),
@@ -454,7 +456,7 @@ class AdminCreateListingTest extends TestCase
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
-        $this->post(route('admin.listings.admin-store'), $this->validPayload([
+        $this->post(route('admin.listings.store'), $this->validPayload([
             'photos' => [
                 $this->seedTmpPhoto('photo-a'),
                 $this->seedTmpPhoto('photo-b'),
@@ -473,7 +475,7 @@ class AdminCreateListingTest extends TestCase
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
-        $this->post(route('admin.listings.admin-store'), $this->validPayload([
+        $this->post(route('admin.listings.store'), $this->validPayload([
             'photos' => [
                 $this->seedTmpPhoto('photo-a'),
                 $this->seedTmpPhoto('photo-b'),
@@ -491,7 +493,7 @@ class AdminCreateListingTest extends TestCase
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
-        $this->post(route('admin.listings.admin-store'), $this->validPayload([
+        $this->post(route('admin.listings.store'), $this->validPayload([
             'photos' => [
                 $this->seedTmpPhoto('photo-a'),
                 $this->seedTmpPhoto('photo-b'),
@@ -507,7 +509,7 @@ class AdminCreateListingTest extends TestCase
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
-        $this->post(route('admin.listings.admin-store'), $this->validPayload([
+        $this->post(route('admin.listings.store'), $this->validPayload([
             'photos' => [$this->seedTmpPhoto('photo-a')],
         ]));
 
@@ -529,7 +531,7 @@ class AdminCreateListingTest extends TestCase
         $a1 = Amenity::factory()->create();
         $a2 = Amenity::factory()->create();
 
-        $this->post(route('admin.listings.admin-store'), $this->validPayload([
+        $this->post(route('admin.listings.store'), $this->validPayload([
             'amenities' => [$a1->id, $a2->id],
         ]));
 
@@ -544,7 +546,7 @@ class AdminCreateListingTest extends TestCase
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
-        $this->post(route('admin.listings.admin-store'), $this->validPayload([
+        $this->post(route('admin.listings.store'), $this->validPayload([
             'amenities' => [],
         ]))->assertSessionHasNoErrors();
 
@@ -562,7 +564,7 @@ class AdminCreateListingTest extends TestCase
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
-        $this->post(route('admin.listings.admin-store'), $this->validPayload([
+        $this->post(route('admin.listings.store'), $this->validPayload([
             'intent' => 'publish',
         ]))->assertRedirect(route('admin.verified-listings.index'));
     }
@@ -572,9 +574,9 @@ class AdminCreateListingTest extends TestCase
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
-        $this->post(route('admin.listings.admin-store'), $this->validPayload([
+        $this->post(route('admin.listings.store'), $this->validPayload([
             'intent' => 'publish-and-add-another',
-        ]))->assertRedirect(route('admin.listings.admin-create'));
+        ]))->assertRedirect(route('admin.listings.create'));
     }
 
     public function test_it_flashes_success_message(): void
@@ -582,9 +584,68 @@ class AdminCreateListingTest extends TestCase
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
-        $this->post(route('admin.listings.admin-store'), $this->validPayload([
+        $this->post(route('admin.listings.store'), $this->validPayload([
             'title' => 'Pueblo Pad',
         ]))->assertSessionHas('success', fn ($msg) => str_contains($msg, 'Pueblo Pad'));
+    }
+
+    // =========================================================================
+    // is_verified toggle (new in FRD-014) — replaces hardcoded verified=true.
+    // =========================================================================
+
+    public function test_it_rejects_when_is_verified_missing(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        $payload = $this->validPayload();
+        unset($payload['is_verified']);
+
+        $this->post(route('admin.listings.store'), $payload)
+            ->assertSessionHasErrors(['is_verified' => 'Verified flag is required.']);
+    }
+
+    public function test_it_creates_verified_listing_with_now_timestamp_and_redirects_to_verified_when_is_verified_true(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        // Pad the window by 1 second on each side — MySQL `datetime` truncates to
+        // second precision while Carbon::now() captures microseconds, so a tight
+        // window can false-fail by hundreds of microseconds.
+        $before = Carbon::now()->subSecond();
+
+        $this->post(route('admin.listings.store'), $this->validPayload([
+            'title'       => 'Approved Place',
+            'is_verified' => true,
+        ]))->assertRedirect(route('admin.verified-listings.index'));
+
+        $after = Carbon::now()->addSecond();
+
+        $listing = Listing::where('title', 'Approved Place')->first();
+        $this->assertNotNull($listing);
+        $this->assertTrue((bool) $listing->is_verified);
+        $this->assertNotNull($listing->verified_at);
+        $this->assertTrue(
+            $listing->verified_at->between($before, $after),
+            'verified_at must be set to ~now() at create time'
+        );
+    }
+
+    public function test_it_creates_unverified_listing_with_null_verified_at_and_redirects_to_unverified_when_is_verified_false(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        $this->post(route('admin.listings.store'), $this->validPayload([
+            'title'       => 'Pending Review Place',
+            'is_verified' => false,
+        ]))->assertRedirect(route('admin.unverified-listings.index'));
+
+        $listing = Listing::where('title', 'Pending Review Place')->first();
+        $this->assertNotNull($listing);
+        $this->assertFalse((bool) $listing->is_verified);
+        $this->assertNull($listing->verified_at);
     }
 
     // =========================================================================
@@ -608,7 +669,7 @@ class AdminCreateListingTest extends TestCase
         ]);
 
         try {
-            $this->post(route('admin.listings.admin-store'), $payload);
+            $this->post(route('admin.listings.store'), $payload);
         } catch (\Throwable $e) {
             // Swallow — we expect a 500 from the S3 copy failure
         }

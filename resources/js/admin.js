@@ -14,8 +14,8 @@ if (el) {
     const roots = {
         'admin-login':              () => import('./AdminLogin.vue'),
         'admin-dashboard':          () => import('./AdminDashboard.vue'),
-        'admin-add-listing':        () => import('./AdminAddListing.vue'),
-        'admin-edit-listing':       () => import('./AdminEditListing.vue'),
+        'add-listing':              () => import('./AdminListingCreate.vue'),
+        'admin-edit-listing':       () => import('./AdminListingEdit.vue'),
         'admin-verified-listings':  () => import('./AdminVerifiedListings.vue'),
         'admin-unverified-listings': () => import('./AdminUnverifiedListings.vue'),
     };

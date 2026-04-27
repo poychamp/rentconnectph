@@ -15,10 +15,10 @@ Route::middleware('auth:admin')->group(function () {
     Route::get('/', [Admin\DashboardController::class, 'index'])->name('dashboard');
     Route::post('logout', [Admin\AuthController::class, 'logout'])->name('logout');
 
-    Route::get('listings/admin-create', [Admin\ListingController::class, 'adminCreate'])
-        ->name('listings.admin-create');
-    Route::post('listings/admin-create', [Admin\ListingController::class, 'adminStore'])
-        ->name('listings.admin-store');
+    Route::get('listings/create', [Admin\ListingController::class, 'create'])
+        ->name('listings.create');
+    Route::post('listings', [Admin\ListingController::class, 'store'])
+        ->name('listings.store');
 
     Route::get('listings/{listing:uuid}/edit', [Admin\ListingController::class, 'edit'])
         ->name('listings.edit');

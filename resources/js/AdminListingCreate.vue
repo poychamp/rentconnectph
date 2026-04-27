@@ -2,7 +2,6 @@
 import { ref, reactive, provide, computed, onMounted, nextTick } from 'vue';
 import AdminSidebar from './components/admin/AdminSidebar.vue';
 import AdminTopBar from './components/admin/AdminTopBar.vue';
-import AdminAddListingShortcutPill from './components/admin/AdminAddListingShortcutPill.vue';
 import AdminAddListingFormCard from './components/admin/AdminAddListingFormCard.vue';
 import AdminAddListingPublishBar from './components/admin/AdminAddListingPublishBar.vue';
 
@@ -45,6 +44,13 @@ const addListingForm = reactive({
     amenities:    Array.isArray(old?.amenities) ? old.amenities.map(Number) : [],
     photos:       Array.isArray(old?.photos)    ? old.photos                : [],
     is_featured:  old?.is_featured === '1' || old?.is_featured === true,
+    // Default to UNverified — verifying is a real moderation action, shouldn't
+    // be the silent default. Admin must consciously check the toggle to publish
+    // a listing as verified. After validation failure, Laravel's withInput
+    // populates old.is_verified as a string ('1' or '0') from the form's
+    // appendHidden boolean coercion — preserve the toggle state so the user
+    // doesn't lose it.
+    is_verified:  old?.is_verified === undefined ? false : (old.is_verified === '1' || old.is_verified === true),
 });
 
 // Per-field validation errors, keyed by Laravel field name (e.g. 'title', 'photos.0.key').
@@ -173,23 +179,12 @@ onMounted(() => {
         <AdminSidebar :user="user" />
 
         <div class="flex-1 flex flex-col min-w-0">
-            <AdminTopBar
-                title="Admin Add Listing"
-                subtitle="Direct admin entry — published & verified immediately"
-            />
+            <AdminTopBar title="Add Listing" />
 
-            <main ref="mainRef" class="flex-1 overflow-y-auto p-6 lg:p-10">
-                <AdminAddListingShortcutPill />
-                <h1 class="mt-3 text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
-                    Admin Add Listing
-                </h1>
-                <p class="mt-2 text-gray-500 dark:text-gray-400">
-                    Direct admin entry — published &amp; verified immediately. Skips broker review.
-                </p>
-
+            <main ref="mainRef" class="flex-1 overflow-y-auto px-6 pt-2 pb-6 lg:px-10 lg:pt-3 lg:pb-10">
                 <div
                     v-if="errorCount > 0"
-                    class="mt-6 rounded-md border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/30 px-4 py-3 flex items-start gap-3"
+                    class="rounded-md border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/30 px-4 py-3 flex items-start gap-3"
                     role="alert"
                 >
                     <svg class="w-5 h-5 text-red-500 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

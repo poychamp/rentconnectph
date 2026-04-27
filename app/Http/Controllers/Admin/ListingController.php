@@ -21,9 +21,9 @@ use Illuminate\View\View;
 
 class ListingController extends Controller
 {
-    public function adminCreate(): View
+    public function create(): View
     {
-        return view('admin.listings.admin-create', [
+        return view('admin.listings.create', [
             'amenities' => Amenity::orderBy('sort_order')->get(['id', 'name', 'slug', 'icon']),
             'listingTypes' => collect(ListingType::toValues())
                 ->map(fn ($v) => ['value' => $v, 'label' => ListingType::from($v)->label])
@@ -213,7 +213,7 @@ class ListingController extends Controller
             ->with('success', "Listing '{$listing->title}' updated.");
     }
 
-    public function adminStore(Request $request): RedirectResponse
+    public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'title'         => ['required', 'string', 'max:200'],
@@ -233,6 +233,7 @@ class ListingController extends Controller
             'photos.*.name' => ['nullable', 'string'],
             'photos.*.size' => ['nullable', 'integer'],
             'is_featured'   => ['nullable', 'boolean'],
+            'is_verified'   => ['required', 'boolean'],
             'intent'        => ['nullable', 'string', 'in:publish,publish-and-add-another'],
         ], [
             'title.required'        => 'Title is required.',
@@ -255,6 +256,7 @@ class ListingController extends Controller
             'amenities.*.exists'    => "One or more selected amenities don't exist.",
             'latitude.between'      => 'Latitude must be between -90 and 90.',
             'longitude.between'     => 'Longitude must be between -180 and 180.',
+            'is_verified.required'  => 'Verified flag is required.',
         ]);
 
         $intent = $validated['intent'] ?? 'publish';
@@ -271,8 +273,8 @@ class ListingController extends Controller
                 'sqft'          => $validated['sqft'],
                 'latitude'      => $validated['latitude'] ?? null,
                 'longitude'     => $validated['longitude'] ?? null,
-                'is_verified'   => true,
-                'verified_at'   => now(),
+                'is_verified'   => (bool) $validated['is_verified'],
+                'verified_at'   => $validated['is_verified'] ? Carbon::now() : null,
                 'is_featured'   => $validated['is_featured'] ?? false,
             ]);
 
@@ -309,12 +311,16 @@ class ListingController extends Controller
             }
         }
 
+        // intent=publish-and-add-another always returns to the create form.
+        // Otherwise, follow-the-data: land on the page where the new listing now lives.
         return match ($intent) {
             'publish-and-add-another' => redirect()
-                ->route('admin.listings.admin-create')
+                ->route('admin.listings.create')
                 ->with('success', "Listing '{$listing->title}' published. Add another below."),
             default => redirect()
-                ->route('admin.verified-listings.index')
+                ->route($validated['is_verified']
+                    ? 'admin.verified-listings.index'
+                    : 'admin.unverified-listings.index')
                 ->with('success', "Listing '{$listing->title}' published successfully."),
         };
     }
