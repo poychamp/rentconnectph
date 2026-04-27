@@ -116,7 +116,7 @@ return [
         'id' => env('ALGOLIA_APP_ID', ''),
         'secret' => env('ALGOLIA_SECRET', ''),
         'index-settings' => [
-            'listings' => [
+            env('SCOUT_PREFIX', '') . 'listings' => [
                 'attributesForFaceting' => ['filterOnly(is_verified)'],
                 'customRanking' => ['desc(verified_at)'],
             ],
