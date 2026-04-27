@@ -118,7 +118,6 @@ return [
         'index-settings' => [
             env('SCOUT_PREFIX', '') . 'listings' => [
                 'attributesForFaceting' => ['filterOnly(is_verified)'],
-                'customRanking' => ['desc(verified_at)'],
             ],
         ],
     ],
