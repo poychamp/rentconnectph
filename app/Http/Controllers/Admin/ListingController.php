@@ -9,11 +9,13 @@ use App\Http\Resources\AdminVerifiedListingResource;
 use App\Models\Amenity;
 use App\Models\Listing;
 use App\Models\ListingImage;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class ListingController extends Controller
@@ -29,6 +31,178 @@ class ListingController extends Controller
                 ->map(fn ($v) => ['value' => $v, 'label' => Barangay::from($v)->label])
                 ->values(),
         ]);
+    }
+
+    public function edit(Listing $listing): View
+    {
+        $listing->load(['images' => fn ($q) => $q->orderBy('sort_order'), 'amenities']);
+
+        return view('admin.listings.edit', [
+            'listing'      => $listing,
+            'listingTypes' => collect(ListingType::toValues())
+                ->map(fn ($v) => ['value' => $v, 'label' => ListingType::from($v)->label])
+                ->values(),
+            'barangays'    => collect(Barangay::toValues())
+                ->map(fn ($v) => ['value' => $v, 'label' => Barangay::from($v)->label])
+                ->values(),
+            'amenities'    => Amenity::orderBy('sort_order')->get(['id', 'name', 'slug', 'icon']),
+        ]);
+    }
+
+    public function update(Request $request, Listing $listing): RedirectResponse
+    {
+        $existingIds = $listing->images()->pluck('id')->all();
+
+        $validated = $request->validate([
+            'title'                => ['required', 'string', 'max:200'],
+            'description'          => ['nullable', 'string'],
+            'listing_type'         => ['required', 'string', Rule::in(ListingType::toValues())],
+            'monthly_rent'         => ['required', 'integer', 'min:1'],
+            'barangay'             => ['required', 'string', Rule::in(Barangay::toValues())],
+            'beds'                 => ['required', 'integer', 'min:0', 'max:20'],
+            'baths'                => ['required', 'integer', 'min:0', 'max:20'],
+            'sqft'                 => ['required', 'integer', 'min:1'],
+            'latitude'             => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude'            => ['nullable', 'numeric', 'between:-180,180'],
+            'amenities'            => ['nullable', 'array', 'max:50'],
+            'amenities.*'          => ['integer', 'exists:amenities,id'],
+            'photos'               => ['required', 'array', 'min:1', 'max:20'],
+            'photos.*'             => ['array'],
+            'photos.*.existing_id' => ['nullable', 'integer', Rule::in($existingIds)],
+            'photos.*.key'         => ['nullable', 'string', 'starts_with:tmp/'],
+            'photos.*.name'        => ['nullable', 'string'],
+            'photos.*.size'        => ['nullable', 'integer'],
+            'is_verified'          => ['required', 'boolean'],
+            'is_featured'          => ['nullable', 'boolean'],
+        ], [
+            'title.required'        => 'Title is required.',
+            'title.max'             => 'Title is too long (max 200 characters).',
+            'listing_type.required' => 'Listing type is required.',
+            'listing_type.in'       => 'Invalid listing type.',
+            'monthly_rent.required' => 'Monthly rent is required.',
+            'monthly_rent.min'      => 'Monthly rent must be at least ₱1.',
+            'barangay.required'     => 'Barangay is required.',
+            'barangay.in'           => 'Invalid barangay.',
+            'beds.required'         => 'Bedrooms is required.',
+            'baths.required'        => 'Bathrooms is required.',
+            'sqft.required'         => 'Floor area is required.',
+            'sqft.min'              => 'Floor area must be at least 1 sqft.',
+            'photos.required'          => 'At least one photo is required.',
+            'photos.min'               => 'At least one photo is required.',
+            'photos.max'               => 'Maximum 20 photos allowed.',
+            'photos.*.key.starts_with' => 'Invalid photo key.',
+            'amenities.*.exists'    => "One or more selected amenities don't exist.",
+            'latitude.between'      => 'Latitude must be between -90 and 90.',
+            'longitude.between'     => 'Longitude must be between -180 and 180.',
+            'is_verified.required'  => 'Verified flag is required.',
+        ]);
+
+        // Validation passed — but Laravel's wildcard validator reorders nested
+        // arrays in $validated, while $request->input(...) preserves the
+        // original input order. Photo iteration order matters (it determines
+        // sort_order + display_image_id), so we use the request input directly.
+        $photos = $request->input('photos', []);
+
+        // Each photo entry must have exactly one of {existing_id, key}.
+        foreach ($photos as $i => $photo) {
+            $hasExisting = isset($photo['existing_id']);
+            $hasKey      = isset($photo['key']) && $photo['key'] !== '';
+            if ($hasExisting === $hasKey) {
+                throw ValidationException::withMessages([
+                    "photos.{$i}" => 'Each photo must reference an existing photo or a new upload, not both or neither.',
+                ]);
+            }
+        }
+
+        // Photos missing from the submitted array were removed by the admin —
+        // capture URLs now (for post-commit S3 cleanup) and IDs for row deletion.
+        $submittedExistingIds = collect($photos)->pluck('existing_id')->filter()->all();
+        $removedImageIds = array_values(array_diff($existingIds, $submittedExistingIds));
+        $removedImageUrls = ListingImage::whereIn('id', $removedImageIds)->pluck('url')->all();
+
+        // is_verified transition: only update verified_at on actual transitions.
+        $wasVerified    = (bool) $listing->is_verified;
+        $willBeVerified = (bool) $validated['is_verified'];
+        $verifiedAt = match (true) {
+            ! $wasVerified && $willBeVerified => Carbon::now(),
+            $wasVerified && ! $willBeVerified => null,
+            default                           => $listing->verified_at,
+        };
+
+        DB::transaction(function () use ($listing, $validated, $photos, $verifiedAt, $removedImageIds) {
+            $listing->update([
+                'title'         => $validated['title'],
+                'description'   => $validated['description'] ?? null,
+                'type'          => $validated['listing_type'],
+                'price_monthly' => $validated['monthly_rent'],
+                'barangay'      => $validated['barangay'],
+                'beds'          => $validated['beds'],
+                'baths'         => $validated['baths'],
+                'sqft'          => $validated['sqft'],
+                'latitude'      => $validated['latitude'] ?? null,
+                'longitude'     => $validated['longitude'] ?? null,
+                'is_verified'   => (bool) $validated['is_verified'],
+                'verified_at'   => $verifiedAt,
+                'is_featured'   => $validated['is_featured'] ?? false,
+            ]);
+
+            if (! empty($removedImageIds)) {
+                ListingImage::whereIn('id', $removedImageIds)->delete();
+            }
+
+            $orderedImageIds = [];
+            foreach ($photos as $i => $photo) {
+                if (isset($photo['existing_id'])) {
+                    ListingImage::where('id', $photo['existing_id'])->update(['sort_order' => $i]);
+                    $orderedImageIds[] = (int) $photo['existing_id'];
+                    continue;
+                }
+
+                $tmpKey       = $photo['key'];
+                $filename     = basename($tmpKey);
+                $permanentKey = "listings/{$listing->uuid}/{$filename}";
+
+                $copied = Storage::disk('s3')->copy($tmpKey, $permanentKey);
+                if (! $copied) {
+                    throw new \RuntimeException("Failed to copy {$tmpKey} to {$permanentKey}");
+                }
+
+                $img = ListingImage::create([
+                    'listing_id' => $listing->id,
+                    'url'        => Storage::disk('s3')->url($permanentKey),
+                    'sort_order' => $i,
+                ]);
+                $orderedImageIds[] = $img->id;
+            }
+
+            $listing->update(['display_image_id' => $orderedImageIds[0]]);
+            $listing->amenities()->sync($validated['amenities'] ?? []);
+        });
+
+        // Best-effort tmp cleanup for new uploads (S3 lifecycle is the safety net).
+        foreach ($photos as $photo) {
+            if (! isset($photo['key'])) continue;
+            try {
+                Storage::disk('s3')->delete($photo['key']);
+            } catch (\Throwable $e) {
+                // Swallow — lifecycle handles it.
+            }
+        }
+
+        // Best-effort S3 cleanup for removed images. URLs captured pre-transaction.
+        // Failure here doesn't roll back the DB — orphan S3 files are acceptable.
+        foreach ($removedImageUrls as $url) {
+            try {
+                $key = ltrim(parse_url($url, PHP_URL_PATH) ?? '', '/');
+                if ($key) Storage::disk('s3')->delete($key);
+            } catch (\Throwable $e) {
+                // Swallow — orphan acceptable.
+            }
+        }
+
+        return redirect()
+            ->route('admin.verified-listings.index')
+            ->with('success', "Listing '{$listing->title}' updated.");
     }
 
     public function adminStore(Request $request): RedirectResponse

@@ -132,6 +132,14 @@ onMounted(() => {
         placePin(e.lngLat.lat, e.lngLat.lng);
     });
 
+    // Initial pin: if the form already has coords (edit page initial load),
+    // drop the marker and recenter. The lat/lng watcher only fires on CHANGE,
+    // so values present before mount need this explicit handling.
+    if (lat.value != null && lng.value != null) {
+        placePin(lat.value, lng.value);
+        map.jumpTo({ center: [lng.value, lat.value], zoom: 15 });
+    }
+
     const observer = new MutationObserver(() => {
         if (map) map.setStyle(styleUrl());
     });

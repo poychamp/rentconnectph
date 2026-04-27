@@ -20,6 +20,11 @@ Route::middleware('auth:admin')->group(function () {
     Route::post('listings/admin-create', [Admin\ListingController::class, 'adminStore'])
         ->name('listings.admin-store');
 
+    Route::get('listings/{listing:uuid}/edit', [Admin\ListingController::class, 'edit'])
+        ->name('listings.edit');
+    Route::put('listings/{listing:uuid}', [Admin\ListingController::class, 'update'])
+        ->name('listings.update');
+
     Route::get('verified-listings', [Admin\ListingController::class, 'verifiedIndex'])
         ->name('verified-listings.index');
 

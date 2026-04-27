@@ -38,7 +38,7 @@ const formattedDate = computed(() =>
                     View
                 </a>
 
-                <button type="button"
+                <a :href="`/admin/listings/${row.uuid}/edit`"
                     class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
                     title="Edit">
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -46,7 +46,7 @@ const formattedDate = computed(() =>
                         <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" />
                     </svg>
                     Edit
-                </button>
+                </a>
 
                 <button type="button"
                     class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 cursor-pointer"

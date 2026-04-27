@@ -30,36 +30,53 @@ const isDraggingFile = ref(false);
 const genId = () => globalThis.crypto?.randomUUID?.()
     ?? `p-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 
-// Rehydrate from form.photos when AdminAddListing pre-populated it from old()
-// after a validation failure. The original File objects are gone, but the S3 tmp/
-// uploads are still there — we reuse the keys + the server-injected GET url.
+// Rehydrate from form.photos. Two shapes are supported:
+// - {existing_id, url, sort_order}: photo already in DB (edit page initial load)
+// - {key, url, name, size}: new tmp/ S3 upload (create OR edit after redirect-back)
 if (Array.isArray(form.photos) && form.photos.length > 0) {
     form.photos.forEach((p) => {
-        if (! p?.key) return;
-        photos.value.push(reactive({
-            id:        genId(),
-            file:      null,
-            url:       p.url ?? '',
-            key:       p.key,
-            name:      p.name ?? null,
-            size:      p.size ?? null,
-            uploading: false,
-            progress:  100,
-            error:     null,
-        }));
+        if (p?.existing_id) {
+            photos.value.push(reactive({
+                id:          genId(),
+                file:        null,
+                url:         p.url ?? '',
+                key:         null,
+                existing_id: p.existing_id,
+                uploading:   false,
+                progress:    100,
+                error:       null,
+            }));
+            return;
+        }
+        if (p?.key) {
+            photos.value.push(reactive({
+                id:        genId(),
+                file:      null,
+                url:       p.url ?? '',
+                key:       p.key,
+                name:      p.name ?? null,
+                size:      p.size ?? null,
+                uploading: false,
+                progress:  100,
+                error:     null,
+            }));
+        }
     });
 }
 
-// Mirror the photo list into the shared form payload — only photos that finished uploading
-// (have a real S3 key) get sent to the backend. In-progress / errored uploads stay client-side.
+// Mirror the photo list into the shared form payload. Each item carries either
+// existing_id (for DB-backed photos on the edit page) or key (for new uploads).
+// In-progress / errored uploads stay client-side until they get a key.
 watch(photos, (list) => {
     form.photos = list
-        .filter(p => p.key)
-        .map(p => ({
-            name: p.file?.name ?? p.name ?? null,
-            size: p.file?.size ?? p.size ?? null,
-            key:  p.key,
-        }));
+        .filter(p => p.key || p.existing_id)
+        .map(p => p.existing_id
+            ? { existing_id: p.existing_id }
+            : {
+                name: p.file?.name ?? p.name ?? null,
+                size: p.file?.size ?? p.size ?? null,
+                key:  p.key,
+            });
 }, { deep: true });
 
 // Re-validate the photos field whenever the count changes, but only if there's

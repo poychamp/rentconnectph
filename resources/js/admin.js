@@ -15,6 +15,7 @@ if (el) {
         'admin-login':              () => import('./AdminLogin.vue'),
         'admin-dashboard':          () => import('./AdminDashboard.vue'),
         'admin-add-listing':        () => import('./AdminAddListing.vue'),
+        'admin-edit-listing':       () => import('./AdminEditListing.vue'),
         'admin-verified-listings':  () => import('./AdminVerifiedListings.vue'),
     };
 
