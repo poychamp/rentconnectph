@@ -17,6 +17,7 @@ defineProps({
                         <th class="px-4 py-3">Barangay</th>
                         <th class="px-4 py-3">Price</th>
                         <th class="px-4 py-3">Verified</th>
+                        <th class="px-4 py-3">Updated</th>
                         <th class="px-4 py-3 text-center">Actions</th>
                     </tr>
                 </thead>

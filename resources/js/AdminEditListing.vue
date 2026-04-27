@@ -30,6 +30,13 @@ const formData = ref({
     amenities:    initial?.amenities    ?? [],
 });
 
+// Origin tracking — picked up from ?from= on the edit URL (e.g.
+// /admin/listings/{uuid}/edit?from=unverified). Round-tripped through the form
+// so the update handler can redirect back to the page the admin was editing
+// from. Survives validation-failure redirect-back via oldInput.from.
+const fromParam = (new URLSearchParams(window.location.search)).get('from');
+const initialFrom = old?.from ?? fromParam ?? '';
+
 const addListingForm = reactive({
     title:        source.title        ?? '',
     description:  source.description  ?? '',
@@ -45,6 +52,7 @@ const addListingForm = reactive({
     photos:       Array.isArray(source.photos)    ? source.photos                : [],
     is_verified:  toBool(source.is_verified),
     is_featured:  toBool(source.is_featured),
+    from:         initialFrom,
 });
 
 const addListingFormErrors = ref(initial?.errors ?? {});

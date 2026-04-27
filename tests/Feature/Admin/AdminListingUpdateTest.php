@@ -315,6 +315,44 @@ class AdminListingUpdateTest extends TestCase
     }
 
     // =========================================================================
+    // Origin-aware redirect: ?from=unverified returns to unverified-listings,
+    // ?from=verified (or absent) returns to verified-listings. Lets the admin
+    // land back on the page they were editing from instead of always landing
+    // on Verified Listings.
+    // =========================================================================
+
+    public function test_it_redirects_to_origin_after_update_based_on_from_param(): void
+    {
+        $this->asAdmin();
+        $listing = $this->makeListing();
+
+        // from=unverified → land on Unverified Listings
+        $this->put(
+            route('admin.listings.update', $listing->uuid),
+            $this->validPayload($listing, ['from' => 'unverified'])
+        )->assertRedirect(route('admin.unverified-listings.index'));
+
+        // from=verified → land on Verified Listings
+        $this->put(
+            route('admin.listings.update', $listing->uuid),
+            $this->validPayload($listing, ['from' => 'verified'])
+        )->assertRedirect(route('admin.verified-listings.index'));
+
+        // no from → default to Verified Listings (preserves existing behavior)
+        $this->put(
+            route('admin.listings.update', $listing->uuid),
+            $this->validPayload($listing)
+        )->assertRedirect(route('admin.verified-listings.index'));
+
+        // Garbage from value → falls through to default (Verified). Don't 422
+        // on a UI-only field — just be defensive and ignore unknown values.
+        $this->put(
+            route('admin.listings.update', $listing->uuid),
+            $this->validPayload($listing, ['from' => 'random-garbage'])
+        )->assertRedirect(route('admin.verified-listings.index'));
+    }
+
+    // =========================================================================
     // is_verified transitions (3 — behaviorally distinct)
     // =========================================================================
 

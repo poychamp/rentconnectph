@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\Barangay;
 use App\Enums\ListingType;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\AdminUnverifiedListingResource;
 use App\Http\Resources\AdminVerifiedListingResource;
 use App\Models\Amenity;
 use App\Models\Listing;
@@ -200,8 +201,15 @@ class ListingController extends Controller
             }
         }
 
+        // Origin-aware redirect: ?from=unverified returns to Unverified Listings,
+        // anything else (including absent or unknown) returns to Verified Listings.
+        // The `from` field is UI routing metadata, not data — don't 422 on it.
+        $route = $request->input('from') === 'unverified'
+            ? 'admin.unverified-listings.index'
+            : 'admin.verified-listings.index';
+
         return redirect()
-            ->route('admin.verified-listings.index')
+            ->route($route)
             ->with('success', "Listing '{$listing->title}' updated.");
     }
 
@@ -317,7 +325,7 @@ class ListingController extends Controller
 
         $paginator = $q === ''
             ? Listing::where('is_verified', true)
-                ->orderBy('verified_at', 'desc')
+                ->orderBy('updated_at', 'desc')
                 ->paginate(10)
             : Listing::search($q)
                 ->where('is_verified', true)
@@ -329,6 +337,42 @@ class ListingController extends Controller
 
         return view('admin.listings.verified-index', [
             'verified' => $verified,
+        ]);
+    }
+
+    public function unverifiedIndex(Request $request): View
+    {
+        $q    = trim((string) $request->input('q', ''));
+        $sort = $request->input('sort');
+        $dir  = $request->input('dir');
+
+        // Sort and search are mutually exclusive. Algolia (Scout) can't orderBy
+        // arbitrary fields at query time — see CLAUDE.md "orderBy() is a no-op
+        // against Algolia". When the user requests a sort, drop q and go through
+        // Eloquent so the sort actually applies.
+        $hasSort = in_array($sort, ['created_at', 'updated_at'], true)
+                && in_array($dir,  ['asc',        'desc'],       true);
+
+        if ($hasSort) {
+            $paginator = Listing::where('is_verified', false)
+                ->orderBy($sort, $dir)
+                ->paginate(10);
+        } else {
+            $paginator = $q === ''
+                ? Listing::where('is_verified', false)
+                    ->orderBy('created_at', 'asc')
+                    ->paginate(10)
+                : Listing::search($q)
+                    ->where('is_verified', '0')
+                    ->paginate(10);
+        }
+
+        $unverified = AdminUnverifiedListingResource::collection($paginator)
+            ->response()
+            ->getData(true);
+
+        return view('admin.listings.unverified-index', [
+            'unverified' => $unverified,
         ]);
     }
 

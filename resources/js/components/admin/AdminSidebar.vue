@@ -24,13 +24,15 @@ const sections = [
     {
         label: 'Operations',
         items: [
-            { name: 'Dashboard',          href: '/admin', icon: 'home' },
-            { name: 'Listings',           href: '#',      icon: 'list' },
-            { name: 'Verified Listings',  href: '/admin/verified-listings', icon: 'shield-check' },
-            { name: 'Admin Add Listing',  href: '/admin/listings/admin-create', icon: 'plus' },
-            { name: 'Scraper Queue',      href: '#',      icon: 'queue' },
-            { name: 'Leads',              href: '#',      icon: 'users' },
-            { name: 'Logistics',          href: '#',      icon: 'truck' },
+            { name: 'Dashboard', href: '/admin', icon: 'home' },
+        ],
+    },
+    {
+        label: 'Listings',
+        items: [
+            { name: 'Admin Add Listing',   href: '/admin/listings/admin-create', icon: 'plus' },
+            { name: 'Verified Listings',   href: '/admin/verified-listings',     icon: 'shield-check' },
+            { name: 'Unverified Listings', href: '/admin/unverified-listings',   icon: 'shield-question' },
         ],
     },
     {
@@ -57,6 +59,7 @@ const iconPaths = {
     truck:    'M1 3h15v13H1zM16 8h4l3 3v5h-7zM5.5 21a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM18.5 21a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z',
     tag:      'M20.59 13.41 12 22l-9-9V3h10l8.59 8.59a2 2 0 0 1 0 2.83ZM7 7h.01',
     'shield-check': 'M20 13c0 5-3.5 7.5-8 9-4.5-1.5-8-4-8-9V5l8-3 8 3v8z M9 12l2 2 4-4',
+    'shield-question': 'M20 13c0 5-3.5 7.5-8 9-4.5-1.5-8-4-8-9V5l8-3 8 3v8z M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3 M12 17h.01',
     'user-cog': 'M12 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4 21v-2a4 4 0 0 1 4-4h4M19 14a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM19 8v2M19 18v2M22.4 9.6l-1.4 1.4M17 15l-1.4 1.4M22.4 18.4 21 17M17 13l-1.4-1.4',
     settings: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z',
 };

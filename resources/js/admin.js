@@ -17,6 +17,7 @@ if (el) {
         'admin-add-listing':        () => import('./AdminAddListing.vue'),
         'admin-edit-listing':       () => import('./AdminEditListing.vue'),
         'admin-verified-listings':  () => import('./AdminVerifiedListings.vue'),
+        'admin-unverified-listings': () => import('./AdminUnverifiedListings.vue'),
     };
 
     const loadRoot = roots[page] || roots['admin-login'];

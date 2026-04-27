@@ -25,11 +25,16 @@ class AdminVerifiedListingsTest extends TestCase
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
-        // 15 verified listings, spaced 1 day apart so verified_at sort is unambiguous
+        // 15 verified listings. verified_at and updated_at are intentionally
+        // INVERSE of each other so the default sort (updated_at DESC) returns
+        // a visibly different order than verified_at DESC would.
+        // i=0  → verified_at = today,            updated_at = 15 days ago (oldest update)
+        // i=14 → verified_at = 14 days ago,      updated_at = 1 day ago   (newest update)
         for ($i = 0; $i < 15; $i++) {
             Listing::factory()->create([
                 'is_verified' => true,
                 'verified_at' => Carbon::now()->subDays($i),
+                'updated_at'  => Carbon::now()->subDays(15 - $i),
                 'type'        => 'apartment',
                 'barangay'    => 'pueblo_de_oro',
             ]);
@@ -70,17 +75,33 @@ class AdminVerifiedListingsTest extends TestCase
         // Resource shape — keys + human-readable labels
         $first = $payload['data'][0];
         $this->assertEqualsCanonicalizing(
-            ['id', 'uuid', 'name', 'type_label', 'barangay_label', 'price', 'verified_at'],
+            ['id', 'uuid', 'name', 'type_label', 'barangay_label', 'price', 'verified_at', 'updated_at'],
             array_keys($first)
         );
         $this->assertSame('Apartment',     $first['type_label']);
         $this->assertSame('Pueblo de Oro', $first['barangay_label']);
 
-        // Sort order — newest verified_at first (DESC)
-        $verifiedAts = array_map(fn ($r) => $r['verified_at'], $payload['data']);
-        $expected = $verifiedAts;
+        // verified_at + updated_at must include time component (HH:MM:SS), not just date.
+        // Admins need to see exactly when a listing was verified and last touched.
+        $this->assertMatchesRegularExpression(
+            '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/',
+            $first['verified_at'],
+            'verified_at must be an ISO 8601 datetime with time component, not a date-only string'
+        );
+        $this->assertMatchesRegularExpression(
+            '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/',
+            $first['updated_at'],
+            'updated_at must be an ISO 8601 datetime with time component, not a date-only string'
+        );
+
+        // Sort order — newest updated_at first (DESC). Verified Listings is
+        // an "active catalog" view: most-recently-touched listings rise to the
+        // top, regardless of when they were originally verified. ISO 8601
+        // strings sort lexicographically the same as chronologically.
+        $updatedAts = array_map(fn ($r) => $r['updated_at'], $payload['data']);
+        $expected = $updatedAts;
         rsort($expected);
-        $this->assertSame($expected, $verifiedAts, 'Rows must be ordered by verified_at DESC');
+        $this->assertSame($expected, $updatedAts, 'Rows must be ordered by updated_at DESC');
 
         // Page 2 — remaining 5 rows
         $response2 = $this->get(route('admin.verified-listings.index', ['page' => 2]));

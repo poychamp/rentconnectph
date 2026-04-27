@@ -15,6 +15,13 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? 
 const listingUuid = window.__INITIAL_EDIT_LISTING__?.listingUuid ?? '';
 const formAction = computed(() => `/admin/listings/${listingUuid}`);
 
+// Cancel returns to the page the admin came from. Same `from` value the form
+// uses for its post-save redirect — keeps Cancel and Save symmetric.
+const cancelHref = computed(() => form.from === 'unverified'
+    ? '/admin/unverified-listings'
+    : '/admin/verified-listings'
+);
+
 const isMac = computed(() => /Mac|iPod|iPhone|iPad/.test(navigator.platform));
 const modKey = computed(() => isMac.value ? '⌘' : 'Ctrl');
 
@@ -75,7 +82,7 @@ function save() {
 <template>
     <div class="shrink-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 px-6 py-3 flex items-center gap-4">
         <a
-            href="/admin/verified-listings"
+            :href="cancelHref"
             class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition cursor-pointer"
         >
             Cancel

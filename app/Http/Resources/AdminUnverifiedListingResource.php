@@ -6,7 +6,7 @@ use App\Enums\Barangay;
 use App\Enums\ListingType;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class AdminVerifiedListingResource extends JsonResource
+class AdminUnverifiedListingResource extends JsonResource
 {
     public function toArray($request): array
     {
@@ -17,7 +17,7 @@ class AdminVerifiedListingResource extends JsonResource
             'type_label'     => ListingType::from($this->type)->label,
             'barangay_label' => Barangay::from($this->barangay)->label,
             'price'          => $this->price_monthly,
-            'verified_at'    => $this->verified_at?->toIso8601String(),
+            'created_at'     => $this->created_at?->toIso8601String(),
             'updated_at'     => $this->updated_at?->toIso8601String(),
         ];
     }
