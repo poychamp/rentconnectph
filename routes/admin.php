@@ -20,6 +20,9 @@ Route::middleware('auth:admin')->group(function () {
     Route::post('listings/admin-create', [Admin\ListingController::class, 'adminStore'])
         ->name('listings.admin-store');
 
+    Route::get('verified-listings', [Admin\ListingController::class, 'verifiedIndex'])
+        ->name('verified-listings.index');
+
     // Vapor's signed S3 URL endpoint — browser calls this to get a pre-signed URL,
     // then PUTs the file directly to S3. Gated to admins so non-admins can't generate URLs.
     Route::post('vapor/signed-storage-url', [\Laravel\Vapor\Http\Controllers\SignedStorageUrlController::class, 'store'])

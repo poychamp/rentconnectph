@@ -556,15 +556,15 @@ class AdminCreateListingTest extends TestCase
     // Redirect intent (3)
     // =========================================================================
 
-    public function test_it_redirects_to_dashboard_with_publish_intent(): void
+    public function test_it_redirects_to_verified_listings_with_publish_intent(): void
     {
-        // Until /admin/listings/{uuid} route exists, publish intent falls back to /admin
+        // Publish intent lands on the verified listings index — newly published listing appears at the top
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
         $this->post(route('admin.listings.admin-store'), $this->validPayload([
             'intent' => 'publish',
-        ]))->assertRedirect(route('admin.dashboard'));
+        ]))->assertRedirect(route('admin.verified-listings.index'));
     }
 
     public function test_it_redirects_to_empty_form_with_publish_and_add_another_intent(): void

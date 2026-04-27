@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\Barangay;
 use App\Enums\ListingType;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\AdminVerifiedListingResource;
 use App\Models\Amenity;
 use App\Models\Listing;
 use App\Models\ListingImage;
@@ -131,10 +132,377 @@ class ListingController extends Controller
                 ->route('admin.listings.admin-create')
                 ->with('success', "Listing '{$listing->title}' published. Add another below."),
             default => redirect()
-                // TODO: when admin.listings.show route exists, swap to:
-                //   ->route('admin.listings.show', $listing->uuid)
-                ->route('admin.dashboard')
+                ->route('admin.verified-listings.index')
                 ->with('success', "Listing '{$listing->title}' published successfully."),
         };
+    }
+
+    public function verifiedIndex(Request $request): View
+    {
+        $q = trim((string) $request->input('q', ''));
+
+        $paginator = Listing::search($q)
+            ->where('is_verified', true)
+            ->orderBy('verified_at', 'desc')
+            ->paginate(10);
+
+        $verified = AdminVerifiedListingResource::collection($paginator)
+            ->response()
+            ->getData(true);
+
+        return view('admin.listings.verified-index', [
+            'verified' => $verified,
+        ]);
+    }
+
+    private function mockVerifiedListings(): array
+    {
+        $base = [
+            [
+                'id'             => 1,
+                'uuid'           => '019dc5d9-ff77-7381-9755-e1006f2a0001',
+                'name'           => 'Cozy 2-BR Apartment in Carmen',
+                'type_label'     => 'Apartment',
+                'barangay_label' => 'Carmen',
+                'price'          => 8500,
+                'owner'          => 'Maria Santos',
+                'verified_at'    => '2026-03-26',
+                'status'         => 'on_site',
+                'is_featured'    => true,
+            ],
+            [
+                'id'             => 2,
+                'uuid'           => '019dc5d9-ff77-7381-9755-e1006f2a0002',
+                'name'           => 'Modern Condo Unit in Macasandig',
+                'type_label'     => 'Condo',
+                'barangay_label' => 'Macasandig',
+                'price'          => 15000,
+                'owner'          => 'Juan dela Cruz',
+                'verified_at'    => '2026-03-22',
+                'status'         => 'on_site',
+                'is_featured'    => false,
+            ],
+            [
+                'id'             => 3,
+                'uuid'           => '019dc5d9-ff77-7381-9755-e1006f2a0003',
+                'name'           => 'Spacious House in Kauswagan',
+                'type_label'     => 'House',
+                'barangay_label' => 'Kauswagan',
+                'price'          => 12000,
+                'owner'          => 'Ana Reyes',
+                'verified_at'    => '2026-03-18',
+                'status'         => 'on_site',
+                'is_featured'    => false,
+            ],
+            [
+                'id'             => 4,
+                'uuid'           => '019dc5d9-ff77-7381-9755-e1006f2a0004',
+                'name'           => 'Featured Studio Unit in Lapasan',
+                'type_label'     => 'Studio',
+                'barangay_label' => 'Lapasan',
+                'price'          => 6500,
+                'owner'          => 'Carlos Bautista',
+                'verified_at'    => '2026-03-15',
+                'status'         => 'on_site',
+                'is_featured'    => true,
+            ],
+            [
+                'id'             => 5,
+                'uuid'           => '019dc5d9-ff77-7381-9755-e1006f2a0005',
+                'name'           => 'Bedspace near Xavier University',
+                'type_label'     => 'Bedspacer',
+                'barangay_label' => 'Pueblo de Oro',
+                'price'          => 3500,
+                'owner'          => 'Ramon Cruz',
+                'verified_at'    => '2026-03-10',
+                'status'         => 'hidden',
+                'is_featured'    => false,
+            ],
+            [
+                'id'             => 6,
+                'uuid'           => '019dc5d9-ff77-7381-9755-e1006f2a0006',
+                'name'           => 'Two-Story Family Home in Nazareth',
+                'type_label'     => 'House',
+                'barangay_label' => 'Nazareth',
+                'price'          => 22000,
+                'owner'          => 'Patricia Lim',
+                'verified_at'    => '2026-03-05',
+                'status'         => 'hidden',
+                'is_featured'    => false,
+            ],
+            [
+                'id'             => 7,
+                'uuid'           => '019dc5d9-ff77-7381-9755-e1006f2a0007',
+                'name'           => 'Compact Studio near SM CDO',
+                'type_label'     => 'Studio',
+                'barangay_label' => 'Lapasan',
+                'price'          => 7200,
+                'owner'          => 'Liza Mendoza',
+                'verified_at'    => '2026-03-02',
+                'status'         => 'on_site',
+                'is_featured'    => false,
+            ],
+            [
+                'id'             => 8,
+                'uuid'           => '019dc5d9-ff77-7381-9755-e1006f2a0008',
+                'name'           => '1-BR Apartment in Camaman-an',
+                'type_label'     => 'Apartment',
+                'barangay_label' => 'Camaman-an',
+                'price'          => 9000,
+                'owner'          => 'Diego Torres',
+                'verified_at'    => '2026-02-28',
+                'status'         => 'on_site',
+                'is_featured'    => false,
+            ],
+            [
+                'id'             => 9,
+                'uuid'           => '019dc5d9-ff77-7381-9755-e1006f2a0009',
+                'name'           => 'Pueblo de Oro Condo (3-BR)',
+                'type_label'     => 'Condo',
+                'barangay_label' => 'Pueblo de Oro',
+                'price'          => 28000,
+                'owner'          => 'Sofia Garcia',
+                'verified_at'    => '2026-02-25',
+                'status'         => 'on_site',
+                'is_featured'    => true,
+            ],
+            [
+                'id'             => 10,
+                'uuid'           => '019dc5d9-ff77-7381-9755-e1006f2a000a',
+                'name'           => 'Bunkbed Space for Female Students',
+                'type_label'     => 'Bedspacer',
+                'barangay_label' => 'Carmen',
+                'price'          => 2800,
+                'owner'          => 'Rita Aquino',
+                'verified_at'    => '2026-02-22',
+                'status'         => 'hidden',
+                'is_featured'    => false,
+            ],
+            [
+                'id'             => 11,
+                'uuid'           => '019dc5d9-ff77-7381-9755-e1006f2a000b',
+                'name'           => 'Renovated Townhouse in Bulua',
+                'type_label'     => 'House',
+                'barangay_label' => 'Bulua',
+                'price'          => 18500,
+                'owner'          => 'Marco Villanueva',
+                'verified_at'    => '2026-02-18',
+                'status'         => 'on_site',
+                'is_featured'    => false,
+            ],
+            [
+                'id'             => 12,
+                'uuid'           => '019dc5d9-ff77-7381-9755-e1006f2a000c',
+                'name'           => '2-BR Apartment near Capitol University',
+                'type_label'     => 'Apartment',
+                'barangay_label' => 'Gusa',
+                'price'          => 11000,
+                'owner'          => 'Elena Pascual',
+                'verified_at'    => '2026-02-15',
+                'status'         => 'on_site',
+                'is_featured'    => false,
+            ],
+            [
+                'id'             => 13,
+                'uuid'           => '019dc5d9-ff77-7381-9755-e1006f2a000d',
+                'name'           => 'Loft-Style Studio in Macasandig',
+                'type_label'     => 'Studio',
+                'barangay_label' => 'Macasandig',
+                'price'          => 9500,
+                'owner'          => 'Andres Flores',
+                'verified_at'    => '2026-02-12',
+                'status'         => 'on_site',
+                'is_featured'    => false,
+            ],
+            [
+                'id'             => 14,
+                'uuid'           => '019dc5d9-ff77-7381-9755-e1006f2a000e',
+                'name'           => 'Family House in Kauswagan (4-BR)',
+                'type_label'     => 'House',
+                'barangay_label' => 'Kauswagan',
+                'price'          => 25000,
+                'owner'          => 'Beatriz Domingo',
+                'verified_at'    => '2026-02-08',
+                'status'         => 'hidden',
+                'is_featured'    => false,
+            ],
+            [
+                'id'             => 15,
+                'uuid'           => '019dc5d9-ff77-7381-9755-e1006f2a000f',
+                'name'           => 'Modern 1-BR Condo in Lapasan',
+                'type_label'     => 'Condo',
+                'barangay_label' => 'Lapasan',
+                'price'          => 13500,
+                'owner'          => 'Joel Ramirez',
+                'verified_at'    => '2026-02-05',
+                'status'         => 'on_site',
+                'is_featured'    => true,
+            ],
+            [
+                'id'             => 16,
+                'uuid'           => '019dc5d9-ff77-7381-9755-e1006f2a0010',
+                'name'           => 'Coed Bedspace in Patag',
+                'type_label'     => 'Bedspacer',
+                'barangay_label' => 'Patag',
+                'price'          => 3200,
+                'owner'          => 'Vicente Cruz',
+                'verified_at'    => '2026-02-01',
+                'status'         => 'on_site',
+                'is_featured'    => false,
+            ],
+            [
+                'id'             => 17,
+                'uuid'           => '019dc5d9-ff77-7381-9755-e1006f2a0011',
+                'name'           => 'Studio Apartment in Carmen Heights',
+                'type_label'     => 'Studio',
+                'barangay_label' => 'Carmen',
+                'price'          => 7800,
+                'owner'          => 'Camila Tan',
+                'verified_at'    => '2026-01-28',
+                'status'         => 'hidden',
+                'is_featured'    => false,
+            ],
+            [
+                'id'             => 18,
+                'uuid'           => '019dc5d9-ff77-7381-9755-e1006f2a0012',
+                'name'           => 'Quiet 3-BR House in Nazareth',
+                'type_label'     => 'House',
+                'barangay_label' => 'Nazareth',
+                'price'          => 19500,
+                'owner'          => 'Felix Navarro',
+                'verified_at'    => '2026-01-24',
+                'status'         => 'on_site',
+                'is_featured'    => false,
+            ],
+            [
+                'id'             => 19,
+                'uuid'           => '019dc5d9-ff77-7381-9755-e1006f2a0013',
+                'name'           => 'Premium Condo Unit in Pueblo',
+                'type_label'     => 'Condo',
+                'barangay_label' => 'Pueblo de Oro',
+                'price'          => 32000,
+                'owner'          => 'Isabella Reyes',
+                'verified_at'    => '2026-01-20',
+                'status'         => 'on_site',
+                'is_featured'    => false,
+            ],
+            [
+                'id'             => 20,
+                'uuid'           => '019dc5d9-ff77-7381-9755-e1006f2a0014',
+                'name'           => 'Single-Bed Lodging in Macasandig',
+                'type_label'     => 'Bedspacer',
+                'barangay_label' => 'Macasandig',
+                'price'          => 2500,
+                'owner'          => 'Eduardo Lim',
+                'verified_at'    => '2026-01-16',
+                'status'         => 'hidden',
+                'is_featured'    => false,
+            ],
+            [
+                'id'             => 21,
+                'uuid'           => '019dc5d9-ff77-7381-9755-e1006f2a0015',
+                'name'           => 'Roomy 2-BR Apartment in Gusa',
+                'type_label'     => 'Apartment',
+                'barangay_label' => 'Gusa',
+                'price'          => 10500,
+                'owner'          => 'Marisol Bautista',
+                'verified_at'    => '2026-01-12',
+                'status'         => 'on_site',
+                'is_featured'    => false,
+            ],
+            [
+                'id'             => 22,
+                'uuid'           => '019dc5d9-ff77-7381-9755-e1006f2a0016',
+                'name'           => 'Spacious Family Home in Bulua',
+                'type_label'     => 'House',
+                'barangay_label' => 'Bulua',
+                'price'          => 21000,
+                'owner'          => 'Octavio Mendez',
+                'verified_at'    => '2026-01-08',
+                'status'         => 'on_site',
+                'is_featured'    => false,
+            ],
+            [
+                'id'             => 23,
+                'uuid'           => '019dc5d9-ff77-7381-9755-e1006f2a0017',
+                'name'           => 'Studio with Balcony in Lapasan',
+                'type_label'     => 'Studio',
+                'barangay_label' => 'Lapasan',
+                'price'          => 8200,
+                'owner'          => 'Teresa Aguilar',
+                'verified_at'    => '2026-01-04',
+                'status'         => 'hidden',
+                'is_featured'    => false,
+            ],
+            [
+                'id'             => 24,
+                'uuid'           => '019dc5d9-ff77-7381-9755-e1006f2a0018',
+                'name'           => 'Affordable 1-BR Apartment in Camaman-an',
+                'type_label'     => 'Apartment',
+                'barangay_label' => 'Camaman-an',
+                'price'          => 7500,
+                'owner'          => 'Hector Salazar',
+                'verified_at'    => '2025-12-30',
+                'status'         => 'on_site',
+                'is_featured'    => false,
+            ],
+            [
+                'id'             => 25,
+                'uuid'           => '019dc5d9-ff77-7381-9755-e1006f2a0019',
+                'name'           => 'Bedspace for Working Professionals',
+                'type_label'     => 'Bedspacer',
+                'barangay_label' => 'Carmen',
+                'price'          => 3800,
+                'owner'          => 'Lourdes Castillo',
+                'verified_at'    => '2025-12-26',
+                'status'         => 'on_site',
+                'is_featured'    => false,
+            ],
+        ];
+
+        return array_merge($base, $this->generateMockListings(start: 26, count: 75));
+    }
+
+    private function generateMockListings(int $start, int $count): array
+    {
+        $titlePrefixes = ['Cozy', 'Modern', 'Spacious', 'Renovated', 'Premium', 'Affordable', 'Quiet', 'Bright', 'Newly Built', 'Charming'];
+        $types = [
+            ['label' => 'Apartment', 'noun' => 'Apartment'],
+            ['label' => 'Studio',    'noun' => 'Studio'],
+            ['label' => 'House',     'noun' => 'House'],
+            ['label' => 'Condo',     'noun' => 'Condo Unit'],
+            ['label' => 'Bedspacer', 'noun' => 'Bedspace'],
+        ];
+        $barangays = ['Carmen', 'Macasandig', 'Kauswagan', 'Lapasan', 'Pueblo de Oro', 'Nazareth', 'Bulua', 'Gusa', 'Patag', 'Camaman-an'];
+        $owners = [
+            'Maria Santos', 'Juan dela Cruz', 'Ana Reyes', 'Carlos Bautista', 'Ramon Cruz',
+            'Patricia Lim', 'Liza Mendoza', 'Diego Torres', 'Sofia Garcia', 'Rita Aquino',
+            'Marco Villanueva', 'Elena Pascual', 'Andres Flores', 'Beatriz Domingo', 'Joel Ramirez',
+        ];
+
+        $startDate = strtotime('2025-12-22');
+        $rows = [];
+
+        for ($i = 0; $i < $count; $i++) {
+            $id       = $start + $i;
+            $type     = $types[$i % count($types)];
+            $barangay = $barangays[$i % count($barangays)];
+            $prefix   = $titlePrefixes[$i % count($titlePrefixes)];
+
+            $rows[] = [
+                'id'             => $id,
+                'uuid'           => sprintf('019dc5d9-ff77-7381-9755-e1006f2a%04x', $id),
+                'name'           => "{$prefix} {$type['noun']} in {$barangay}",
+                'type_label'     => $type['label'],
+                'barangay_label' => $barangay,
+                'price'          => 5000 + (($i * 1500) % 25000),
+                'owner'          => $owners[$i % count($owners)],
+                'verified_at'    => date('Y-m-d', $startDate - $i * 4 * 86400),
+                'status'         => $i % 4 === 3 ? 'hidden' : 'on_site',
+                'is_featured'    => $i % 7 === 0,
+            ];
+        }
+
+        return $rows;
     }
 }

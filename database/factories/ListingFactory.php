@@ -7,6 +7,7 @@ use App\Enums\ListingType;
 use App\Models\Listing;
 use App\Models\ListingImage;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Arr;
 
 class ListingFactory extends Factory
 {
@@ -16,12 +17,12 @@ class ListingFactory extends Factory
     {
         return [
             'title' => fake()->streetName().' Suites',
-            'type' => ListingType::random()->value,
+            'type' => Arr::random(ListingType::toValues()),
             'price_monthly' => fake()->numberBetween(5000, 50000),
             'beds' => fake()->numberBetween(1, 4),
             'baths' => fake()->numberBetween(1, 3),
             'sqft' => fake()->numberBetween(12, 200),
-            'barangay' => Barangay::random()->value,
+            'barangay' => Arr::random(Barangay::toValues()),
             'is_verified' => true,
             'verified_at' => fake()->dateTimeBetween('-30 days', 'now'),
             'is_featured' => false,

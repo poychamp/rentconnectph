@@ -9,10 +9,22 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Laravel\Scout\Searchable;
 
 class Listing extends Model
 {
-    use HasUuid, HasFactory, SoftDeletes;
+    use HasUuid, HasFactory, SoftDeletes, Searchable;
+
+    public function toSearchableArray(): array
+    {
+        return [
+            'title'         => $this->title,
+            'type'          => $this->type,
+            'barangay'      => $this->barangay,
+            'price_monthly' => $this->price_monthly,
+            'is_verified'   => $this->is_verified,
+        ];
+    }
 
     protected $fillable = [
         'title',
