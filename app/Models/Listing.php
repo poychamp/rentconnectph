@@ -23,6 +23,7 @@ class Listing extends Model
             'barangay'      => $this->barangay,
             'price_monthly' => $this->price_monthly,
             'is_verified'   => $this->is_verified,
+            'verified_at'   => $this->verified_at?->getTimestamp(),
         ];
     }
 
