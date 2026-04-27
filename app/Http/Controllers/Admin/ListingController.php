@@ -142,8 +142,6 @@ class ListingController extends Controller
         $q = trim((string) $request->input('q', ''));
 
         $paginator = Listing::search($q)
-            ->where('is_verified', 1)
-            ->orderBy('verified_at', 'desc')
             ->paginate(10);
 
         $verified = AdminVerifiedListingResource::collection($paginator)
