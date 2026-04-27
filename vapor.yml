@@ -37,3 +37,4 @@ environments:
       # Dev is throwaway — wipe + reseed every deploy.
       # Never use migrate:fresh on staging/production (would destroy data).
       - 'php artisan migrate:fresh --force --seed'
+      - 'php artisan scout:sync-index-settings'
