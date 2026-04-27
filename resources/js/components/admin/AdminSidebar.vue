@@ -30,9 +30,10 @@ const sections = [
     {
         label: 'Listings',
         items: [
-            { name: 'Add Listing',         href: '/admin/listings/create', icon: 'plus' },
-            { name: 'Verified Listings',   href: '/admin/verified-listings',     icon: 'shield-check' },
-            { name: 'Unverified Listings', href: '/admin/unverified-listings',   icon: 'shield-question' },
+            { name: 'Add Listing',          href: '/admin/listings/create',         icon: 'plus' },
+            { name: 'Verified Listings',    href: '/admin/verified-listings',       icon: 'shield-check' },
+            { name: 'Unverified Listings',  href: '/admin/unverified-listings',     icon: 'shield-question' },
+            { name: 'Deactivated Listings', href: '/admin/deactivated-listings',    icon: 'archive' },
         ],
     },
     {
@@ -60,6 +61,7 @@ const iconPaths = {
     tag:      'M20.59 13.41 12 22l-9-9V3h10l8.59 8.59a2 2 0 0 1 0 2.83ZM7 7h.01',
     'shield-check': 'M20 13c0 5-3.5 7.5-8 9-4.5-1.5-8-4-8-9V5l8-3 8 3v8z M9 12l2 2 4-4',
     'shield-question': 'M20 13c0 5-3.5 7.5-8 9-4.5-1.5-8-4-8-9V5l8-3 8 3v8z M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3 M12 17h.01',
+    'archive': 'M21 8v13H3V8 M1 3h22v5H1z M10 12h4',
     'user-cog': 'M12 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4 21v-2a4 4 0 0 1 4-4h4M19 14a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM19 8v2M19 18v2M22.4 9.6l-1.4 1.4M17 15l-1.4 1.4M22.4 18.4 21 17M17 13l-1.4-1.4',
     settings: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z',
 };

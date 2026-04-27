@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\Barangay;
 use App\Enums\ListingType;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\AdminDeactivatedListingResource;
 use App\Http\Resources\AdminUnverifiedListingResource;
 use App\Http\Resources\AdminVerifiedListingResource;
 use App\Models\Amenity;
@@ -379,6 +380,32 @@ class ListingController extends Controller
 
         return view('admin.listings.unverified-index', [
             'unverified' => $unverified,
+        ]);
+    }
+
+    public function deactivatedIndex(Request $request): View
+    {
+        $q = trim((string) $request->input('q', ''));
+
+        $with = ['latestLifecycleEvent.actor'];
+
+        $paginator = $q === ''
+            ? Listing::deactivated()
+                ->with($with)
+                ->orderBy('deleted_at', 'desc')
+                ->paginate(10)
+            : Listing::search($q)
+                ->onlyTrashed()
+                ->where('is_verified', true)
+                ->query(fn ($builder) => $builder->with($with))
+                ->paginate(10);
+
+        $deactivated = AdminDeactivatedListingResource::collection($paginator)
+            ->response()
+            ->getData(true);
+
+        return view('admin.listings.deactivated-index', [
+            'deactivated' => $deactivated,
         ]);
     }
 
