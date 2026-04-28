@@ -9,6 +9,8 @@ use Spatie\Enum\Enum;
  * @method static self reactivated()
  * @method static self rejected()
  * @method static self reopened()
+ * @method static self created()
+ * @method static self updated()
  */
 class LifecycleEventType extends Enum
 {
@@ -19,6 +21,8 @@ class LifecycleEventType extends Enum
             'reactivated' => 'Reactivated',
             'rejected'    => 'Rejected',
             'reopened'    => 'Reopened',
+            'created'     => 'Created',
+            'updated'     => 'Updated',
         ];
     }
 }

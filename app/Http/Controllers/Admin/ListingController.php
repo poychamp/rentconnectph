@@ -140,7 +140,7 @@ class ListingController extends Controller
             default                           => $listing->verified_at,
         };
 
-        DB::transaction(function () use ($listing, $validated, $photos, $verifiedAt, $removedImageIds) {
+        DB::transaction(function () use ($request, $listing, $validated, $photos, $verifiedAt, $removedImageIds) {
             $listing->update([
                 'title'         => $validated['title'],
                 'description'   => $validated['description'] ?? null,
@@ -188,6 +188,16 @@ class ListingController extends Controller
 
             $listing->update(['display_image_id' => $orderedImageIds[0]]);
             $listing->amenities()->sync($validated['amenities'] ?? []);
+
+            ListingLifecycleEvent::create([
+                'listing_id' => $listing->id,
+                'event_type' => 'updated',
+                'actor_id'   => auth('admin')->id(),
+                'notes'      => json_encode(
+                    $request->except(['_token', '_method']),
+                    JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+                ),
+            ]);
         });
 
         // Best-effort tmp cleanup for new uploads (S3 lifecycle is the safety net).
@@ -382,7 +392,7 @@ class ListingController extends Controller
 
         $intent = $validated['intent'] ?? 'publish';
 
-        $listing = DB::transaction(function () use ($validated) {
+        $listing = DB::transaction(function () use ($request, $validated) {
             $listing = Listing::create([
                 'title'         => $validated['title'],
                 'description'   => $validated['description'] ?? null,
@@ -419,6 +429,16 @@ class ListingController extends Controller
 
             $listing->update(['display_image_id' => $createdImages->first()->id]);
             $listing->amenities()->sync($validated['amenities'] ?? []);
+
+            ListingLifecycleEvent::create([
+                'listing_id' => $listing->id,
+                'event_type' => 'created',
+                'actor_id'   => auth('admin')->id(),
+                'notes'      => json_encode(
+                    $request->except(['_token', '_method']),
+                    JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+                ),
+            ]);
 
             return $listing;
         });

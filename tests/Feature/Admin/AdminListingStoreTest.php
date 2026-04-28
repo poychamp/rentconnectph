@@ -5,6 +5,7 @@ namespace Tests\Feature\Admin;
 use App\Models\Amenity;
 use App\Models\Listing;
 use App\Models\ListingImage;
+use App\Models\ListingLifecycleEvent;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -676,5 +677,37 @@ class AdminListingStoreTest extends TestCase
 
         $this->assertSame(0, Listing::count(), 'No Listing rows should persist after rollback');
         $this->assertSame(0, ListingImage::count(), 'No ListingImage rows should persist after rollback');
+    }
+
+    // =========================================================================
+    // Lifecycle audit log
+    // =========================================================================
+
+    public function test_it_writes_a_created_lifecycle_event_after_storing_listing(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        $this->post(route('admin.listings.store'), $this->validPayload([
+            'title' => 'Modern 2-BR in Pueblo de Oro',
+        ]));
+
+        $listing = Listing::sole();
+
+        $events = ListingLifecycleEvent::where('listing_id', $listing->id)->get();
+        $this->assertCount(1, $events, 'Exactly one lifecycle event must land per store call');
+
+        $event = $events->first();
+        $this->assertSame('created', $event->event_type);
+        $this->assertSame($admin->id, $event->actor_id);
+        $this->assertNull($event->reason, 'Reason is null for created/updated events');
+
+        // notes is JSON-encoded request payload, with framework keys stripped.
+        $this->assertNotNull($event->notes);
+        $notes = json_decode($event->notes, true);
+        $this->assertIsArray($notes, 'notes must be valid JSON');
+        $this->assertSame('Modern 2-BR in Pueblo de Oro', $notes['title']);
+        $this->assertArrayNotHasKey('_token', $notes);
+        $this->assertArrayNotHasKey('_method', $notes);
     }
 }

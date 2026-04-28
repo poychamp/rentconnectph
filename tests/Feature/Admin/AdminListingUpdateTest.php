@@ -5,6 +5,7 @@ namespace Tests\Feature\Admin;
 use App\Models\Amenity;
 use App\Models\Listing;
 use App\Models\ListingImage;
+use App\Models\ListingLifecycleEvent;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -470,5 +471,37 @@ class AdminListingUpdateTest extends TestCase
 
         $this->assertSame($originalTitle, $listing->fresh()->title);
         $this->assertSame($originalImageCount, $listing->fresh()->images()->count());
+    }
+
+    // =========================================================================
+    // Lifecycle audit log
+    // =========================================================================
+
+    public function test_it_writes_an_updated_lifecycle_event_after_updating_listing(): void
+    {
+        $admin = $this->asAdmin();
+        $listing = $this->makeListing();
+
+        $this->put(
+            route('admin.listings.update', $listing->uuid),
+            $this->validPayload($listing, ['title' => 'New Title After Edit'])
+        );
+
+        $events = ListingLifecycleEvent::where('listing_id', $listing->id)
+            ->where('event_type', 'updated')
+            ->get();
+
+        $this->assertCount(1, $events, 'Exactly one updated event must land per update call');
+
+        $event = $events->first();
+        $this->assertSame($admin->id, $event->actor_id);
+        $this->assertNull($event->reason, 'Reason is null for created/updated events');
+
+        $this->assertNotNull($event->notes);
+        $notes = json_decode($event->notes, true);
+        $this->assertIsArray($notes, 'notes must be valid JSON');
+        $this->assertSame('New Title After Edit', $notes['title']);
+        $this->assertArrayNotHasKey('_token', $notes);
+        $this->assertArrayNotHasKey('_method', $notes);
     }
 }
