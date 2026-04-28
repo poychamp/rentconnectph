@@ -78,7 +78,7 @@ function submit() {
                 <button
                     type="button"
                     @click="submit"
-                    class="hidden md:inline-flex items-center justify-center bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-xl px-6 py-3 text-sm transition"
+                    class="hidden md:inline-flex items-center justify-center bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-xl px-6 py-3 text-sm transition cursor-pointer"
                 >
                     Search
                 </button>
