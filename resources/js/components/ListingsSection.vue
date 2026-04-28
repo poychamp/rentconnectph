@@ -22,8 +22,7 @@ defineProps({
             </div>
             <a
                 v-if="showViewAll"
-                href="#"
-                @click.prevent
+                href="/search"
                 class="shrink-0 text-sm font-medium text-orange-500 hover:text-orange-600"
             >
                 View all →

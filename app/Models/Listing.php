@@ -17,15 +17,29 @@ class Listing extends Model
 
     public function toSearchableArray(): array
     {
-        return [
+        $array = [
             'uuid'          => $this->uuid,
             'title'         => $this->title,
+            'description'   => $this->description,
             'type'          => $this->type,
             'barangay'      => $this->barangay,
             'price_monthly' => $this->price_monthly,
+            'beds'          => $this->beds,
+            'baths'         => $this->baths,
+            'sqft'          => $this->sqft,
             'is_verified'   => $this->is_verified ? '1' : '0',
             'verified_at'   => $this->verified_at?->getTimestamp(),
         ];
+
+        // Algolia-only: include relation-derived fields. Scout's database
+        // driver builds WHERE-LIKE on these keys as real columns; computed
+        // fields without a column would SQL-error. Algolia stores the JSON
+        // as-is and tokenizes naturally.
+        if (config('scout.driver') === 'algolia') {
+            $array['amenities'] = $this->amenities->pluck('name')->implode(' ');
+        }
+
+        return $array;
     }
 
     protected $fillable = [

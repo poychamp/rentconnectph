@@ -12,14 +12,13 @@ const verified = ref(home.verified);
 const recently = ref(home.recently);
 const listingTypes = ref(home.listingTypes);
 const barangays = ref(home.barangays);
-const activeType = ref('All');
 </script>
 
 <template>
     <div class="min-h-screen bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100 pb-20 md:pb-0">
         <Navbar />
         <HeroSection :barangays="barangays" />
-        <ListingTypeFilter :listing-types="listingTypes" :active="activeType" @change="(t) => (activeType = t)" />
+        <ListingTypeFilter :listing-types="listingTypes" />
         <main class="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 space-y-12 mt-8">
             <ListingsSection
                 title="Verified Listings"

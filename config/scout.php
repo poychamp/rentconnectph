@@ -120,6 +120,9 @@ return [
                 'attributesForFaceting' => [
                     'filterOnly(is_verified)',
                     'filterOnly(__soft_deleted)',
+                    'filterOnly(type)',
+                    'filterOnly(barangay)',
+                    'filterOnly(price_monthly)',
                 ],
             ],
         ],

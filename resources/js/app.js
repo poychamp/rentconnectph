@@ -13,6 +13,7 @@ if (el) {
     const roots = {
         home: () => import('./App.vue'),
         'listing-detail': () => import('./ListingDetail.vue'),
+        'search': () => import('./Search.vue'),
     };
 
     const loadRoot = roots[page] || roots.home;

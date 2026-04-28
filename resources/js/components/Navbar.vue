@@ -1,11 +1,13 @@
 <script setup>
 import DarkModeToggle from './DarkModeToggle.vue';
 
+const path = typeof window !== 'undefined' ? window.location.pathname : '/';
+
 const links = [
-    { label: 'Home', href: '#', active: true },
-    { label: 'Saved', href: '#' },
-    { label: 'Messages', href: '#' },
-    { label: 'About', href: '#' },
+    { label: 'Home',     href: '/',       match: (p) => p === '/' },
+    { label: 'Saved',    href: '#',       match: () => false },
+    { label: 'Messages', href: '#',       match: () => false },
+    { label: 'About',    href: '#',       match: () => false },
 ];
 </script>
 
@@ -31,8 +33,8 @@ const links = [
                         v-for="link in links"
                         :key="link.label"
                         :href="link.href"
-                        @click.prevent
-                        :class="[link.active ? 'text-orange-500' : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white']"
+                        @click="(e) => { if (link.href === '#') e.preventDefault(); }"
+                        :class="[link.match(path) ? 'text-orange-500' : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white']"
                     >
                         {{ link.label }}
                     </a>
