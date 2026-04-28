@@ -4,10 +4,9 @@ import DarkModeToggle from './DarkModeToggle.vue';
 const path = typeof window !== 'undefined' ? window.location.pathname : '/';
 
 const links = [
-    { label: 'Home',     href: '/',       match: (p) => p === '/' },
-    { label: 'Saved',    href: '#',       match: () => false },
-    { label: 'Messages', href: '#',       match: () => false },
-    { label: 'About',    href: '#',       match: () => false },
+    { label: 'Home',   href: '/',       match: (p) => p === '/' },
+    { label: 'Search', href: '/search', match: (p) => p.startsWith('/search') },
+    { label: 'About',  href: '/about',  match: (p) => p.startsWith('/about') },
 ];
 </script>
 
