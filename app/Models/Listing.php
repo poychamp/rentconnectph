@@ -43,11 +43,13 @@ class Listing extends Model
         'is_verified',
         'verified_at',
         'is_featured',
+        'featured_order',
     ];
 
     protected $casts = [
         'is_verified' => 'boolean',
         'is_featured' => 'boolean',
+        'featured_order' => 'integer',
         'verified_at' => 'datetime',
         'latitude' => 'float',
         'longitude' => 'float',

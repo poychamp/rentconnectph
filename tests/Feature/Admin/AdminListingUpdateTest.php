@@ -338,6 +338,12 @@ class AdminListingUpdateTest extends TestCase
             $this->validPayload($listing, ['from' => 'verified'])
         )->assertRedirect(route('admin.verified-listings.index'));
 
+        // from=featured → land on Featured Listings
+        $this->put(
+            route('admin.listings.update', $listing->uuid),
+            $this->validPayload($listing, ['from' => 'featured'])
+        )->assertRedirect(route('admin.featured-listings.index'));
+
         // no from → default to Verified Listings (preserves existing behavior)
         $this->put(
             route('admin.listings.update', $listing->uuid),

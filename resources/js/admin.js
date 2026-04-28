@@ -22,6 +22,7 @@ if (el) {
         'admin-restore-listing':    () => import('./AdminListingRestore.vue'),
         'admin-rejected-listings':  () => import('./AdminRejectedListings.vue'),
         'admin-reopen-listing':     () => import('./AdminListingReopen.vue'),
+        'admin-featured-listings':  () => import('./AdminFeaturedListings.vue'),
     };
 
     const loadRoot = roots[page] || roots['admin-login'];

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 
 // Reads window.__FLASH__ on mount and shows a toast for whichever flash key is set.
 // Auto-dismisses after 4s. Click X to dismiss early.
@@ -15,25 +15,41 @@ const TYPES = {
     info:    { iconBg: 'bg-blue-500',    iconPath: 'M12 16v-4M12 8h.01' },
 };
 
+let dismissTimer = null;
+
+function show(toastType, toastMessage) {
+    type.value = toastType;
+    message.value = toastMessage;
+    visible.value = true;
+
+    if (dismissTimer) clearTimeout(dismissTimer);
+    dismissTimer = setTimeout(() => { visible.value = false; }, 4000);
+}
+
+function onAdminToast(e) {
+    const detail = e.detail || {};
+    if (!detail.message) return;
+    show(detail.type ?? 'info', detail.message);
+}
+
 onMounted(() => {
     const flash = window.__FLASH__ ?? {};
 
     // Pick the first non-null flash to show. Order: error → success → info.
     if (flash.error) {
-        type.value = 'error';
-        message.value = flash.error;
+        show('error', flash.error);
     } else if (flash.success) {
-        type.value = 'success';
-        message.value = flash.success;
+        show('success', flash.success);
     } else if (flash.info) {
-        type.value = 'info';
-        message.value = flash.info;
-    } else {
-        return;
+        show('info', flash.info);
     }
 
-    visible.value = true;
-    setTimeout(() => { visible.value = false; }, 4000);
+    window.addEventListener('admin-toast', onAdminToast);
+});
+
+onBeforeUnmount(() => {
+    window.removeEventListener('admin-toast', onAdminToast);
+    if (dismissTimer) clearTimeout(dismissTimer);
 });
 
 function dismiss() {

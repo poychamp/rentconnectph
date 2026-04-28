@@ -13,6 +13,8 @@ class HomeController extends Controller
             ->withCount('images')
             ->featured()
             ->verified()
+            ->orderBy('featured_order')
+            ->orderBy('id')
             ->get();
 
         $recent = Listing::with('displayImage')

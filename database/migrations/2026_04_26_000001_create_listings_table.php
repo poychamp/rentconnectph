@@ -24,6 +24,7 @@ return new class extends Migration
             $table->boolean('is_verified')->default(false);
             $table->timestamp('verified_at')->nullable();
             $table->boolean('is_featured')->default(false);
+            $table->unsignedInteger('featured_order')->nullable();
             $table->unsignedBigInteger('display_image_id')->nullable();
             $table->timestamps();
             $table->softDeletes();
@@ -33,6 +34,7 @@ return new class extends Migration
             $table->index('barangay');
             $table->index(['is_featured', 'is_verified']);
             $table->index(['is_verified', 'verified_at']);
+            $table->index('featured_order');
         });
     }
 

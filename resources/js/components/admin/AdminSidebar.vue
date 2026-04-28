@@ -32,6 +32,7 @@ const sections = [
         items: [
             { name: 'Add Listing',          href: '/admin/listings/create',         icon: 'plus' },
             { name: 'Verified Listings',    href: '/admin/verified-listings',       icon: 'shield-check' },
+            { name: 'Featured Listings',    href: '/admin/featured-listings',       icon: 'star' },
             { name: 'Unverified Listings',  href: '/admin/unverified-listings',     icon: 'shield-question' },
             { name: 'Deactivated Listings', href: '/admin/deactivated-listings',    icon: 'archive' },
             { name: 'Rejected Listings',    href: '/admin/rejected-listings',       icon: 'circle-x' },
@@ -61,6 +62,7 @@ const iconPaths = {
     truck:    'M1 3h15v13H1zM16 8h4l3 3v5h-7zM5.5 21a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM18.5 21a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z',
     tag:      'M20.59 13.41 12 22l-9-9V3h10l8.59 8.59a2 2 0 0 1 0 2.83ZM7 7h.01',
     'shield-check': 'M20 13c0 5-3.5 7.5-8 9-4.5-1.5-8-4-8-9V5l8-3 8 3v8z M9 12l2 2 4-4',
+    'star': 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z',
     'shield-question': 'M20 13c0 5-3.5 7.5-8 9-4.5-1.5-8-4-8-9V5l8-3 8 3v8z M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3 M12 17h.01',
     'archive': 'M21 8v13H3V8 M1 3h22v5H1z M10 12h4',
     'circle-x': 'M2 12a10 10 0 1 0 20 0 10 10 0 0 0-20 0 M15 9l-6 6 M9 9l6 6',

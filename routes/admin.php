@@ -47,6 +47,12 @@ Route::middleware('auth:admin')->group(function () {
     Route::get('rejected-listings', [Admin\ListingController::class, 'rejectedIndex'])
         ->name('rejected-listings.index');
 
+    Route::get('featured-listings', [Admin\ListingController::class, 'featuredIndex'])
+        ->name('featured-listings.index');
+
+    Route::put('api/listings/featured-sort', [Admin\Api\ListingController::class, 'updateFeaturedOrder'])
+        ->name('api.listings.featured-sort');
+
     Route::get('listings/{listing:uuid}/reopen', [Admin\ListingController::class, 'showReopen'])
         ->withTrashed()
         ->name('listings.reopen.show');

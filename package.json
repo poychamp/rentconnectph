@@ -20,6 +20,7 @@
         "laravel-vapor": "^0.7.1",
         "mapbox-gl": "^3.22.0",
         "primevue": "^4.5.5",
-        "vue": "^3.5.33"
+        "vue": "^3.5.33",
+        "vuedraggable": "^4.1.0"
     }
 }

@@ -8,6 +8,7 @@ use App\Enums\LifecycleEventType;
 use App\Enums\ListingType;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\AdminDeactivatedListingResource;
+use App\Http\Resources\AdminFeaturedListingResource;
 use App\Http\Resources\AdminRejectedListingResource;
 use App\Http\Resources\AdminUnverifiedListingResource;
 use App\Http\Resources\AdminVerifiedListingResource;
@@ -210,12 +211,14 @@ class ListingController extends Controller
             }
         }
 
-        // Origin-aware redirect: ?from=unverified returns to Unverified Listings,
+        // Origin-aware redirect: ?from=<slice> returns to that slice's index,
         // anything else (including absent or unknown) returns to Verified Listings.
         // The `from` field is UI routing metadata, not data — don't 422 on it.
-        $route = $request->input('from') === 'unverified'
-            ? 'admin.unverified-listings.index'
-            : 'admin.verified-listings.index';
+        $route = match ($request->input('from')) {
+            'unverified' => 'admin.unverified-listings.index',
+            'featured'   => 'admin.featured-listings.index',
+            default      => 'admin.verified-listings.index',
+        };
 
         return redirect()
             ->route($route)
@@ -567,6 +570,50 @@ class ListingController extends Controller
         return redirect()
             ->route('admin.rejected-listings.index')
             ->with('success', "Listing '{$listing->title}' reopened.");
+    }
+
+    public function featuredIndex(Request $request): View
+    {
+        // Single load, eager-loading displayImage. Then a self-heal walk: irregular
+        // rows (null featured_order OR duplicate) get appended past max(featured_order)
+        // via in-memory bookkeeping — no extra max() query. Tie-break by id ASC: the
+        // lower-id duplicate keeps its value; later-id collisions get bumped.
+        $rows = Listing::with('displayImage')
+            ->featured()
+            ->verified()
+            ->orderBy('featured_order')
+            ->orderBy('id')
+            ->get();
+
+        $seen = [];
+        $kept = collect();
+        $irregular = collect();
+        foreach ($rows as $row) {
+            if ($row->featured_order === null || isset($seen[$row->featured_order])) {
+                $irregular->push($row);
+            } else {
+                $seen[$row->featured_order] = true;
+                $kept->push($row);
+            }
+        }
+
+        if ($irregular->isNotEmpty()) {
+            $maxOrder = empty($seen) ? 0 : max(array_keys($seen));
+            DB::transaction(function () use ($irregular, $maxOrder) {
+                foreach ($irregular as $i => $listing) {
+                    $listing->update(['featured_order' => $maxOrder + 1 + $i]);
+                }
+            });
+            $rows = $kept->concat($irregular);
+        }
+
+        $payload = AdminFeaturedListingResource::collection($rows)
+            ->response()
+            ->getData(true);
+
+        return view('admin.listings.featured-index', [
+            'featured' => $payload,
+        ]);
     }
 
     public function rejectedIndex(Request $request): View
