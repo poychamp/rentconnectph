@@ -417,7 +417,7 @@ class ListingController extends Controller
                     ->orderBy('created_at', 'asc')
                     ->paginate(10)
                 : Listing::search($q)
-                    ->where('is_verified', '0')
+                    ->where('is_verified', false)
                     ->paginate(10);
         }
 
