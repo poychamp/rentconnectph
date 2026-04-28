@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { onBeforeUnmount, ref, watch } from 'vue';
 
 const props = defineProps({
     barangays: { type: Array, default: () => [] },
@@ -18,7 +18,17 @@ const budgets = [
     { value: 'gt30k',  label: '> ₱30,000' },
 ];
 
-function submit() {
+const SEARCH_DEBOUNCE_MS = 1000;
+let debounceTimer = null;
+
+function clearDebounce() {
+    if (debounceTimer !== null) {
+        clearTimeout(debounceTimer);
+        debounceTimer = null;
+    }
+}
+
+function navigate() {
     const params = new URLSearchParams();
     const q = String(query.value || '').trim();
     if (q)            params.set('q', q);
@@ -27,6 +37,23 @@ function submit() {
     const qs = params.toString();
     window.location.assign(qs ? `/search?${qs}` : '/search');
 }
+
+function scheduleSubmit() {
+    clearDebounce();
+    debounceTimer = setTimeout(() => {
+        debounceTimer = null;
+        navigate();
+    }, SEARCH_DEBOUNCE_MS);
+}
+
+function submit() {
+    clearDebounce();
+    navigate();
+}
+
+watch([query, budget, area], scheduleSubmit);
+
+onBeforeUnmount(clearDebounce);
 </script>
 
 <template>

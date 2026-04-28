@@ -1,5 +1,5 @@
 <script setup>
-import { computed, inject } from 'vue';
+import { computed, inject, onBeforeUnmount, watch } from 'vue';
 
 const props = defineProps({
     barangays:    { type: Array, default: () => [] },
@@ -18,10 +18,34 @@ const budgets = [
 
 const areas = computed(() => props.barangays);
 
+const SEARCH_DEBOUNCE_MS = 1000;
+let debounceTimer = null;
+
+function clearDebounce() {
+    if (debounceTimer !== null) {
+        clearTimeout(debounceTimer);
+        debounceTimer = null;
+    }
+}
+
+function scheduleSubmit() {
+    clearDebounce();
+    debounceTimer = setTimeout(() => {
+        debounceTimer = null;
+        submit({});
+    }, SEARCH_DEBOUNCE_MS);
+}
+
 function emitSubmit() {
-    // Live state already current via v-model — pass empty patch.
+    clearDebounce();
     submit({});
 }
+
+if (live) {
+    watch([() => live.q, () => live.budget, () => live.area], scheduleSubmit);
+}
+
+onBeforeUnmount(clearDebounce);
 </script>
 
 <template>
