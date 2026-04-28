@@ -10,7 +10,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\SeedDatabaseAfterRefresh;
 use Tests\TestCase;
 
-class AdminListingDeactivatedTest extends TestCase
+class AdminListingDeactivatedViewTest extends TestCase
 {
     use RefreshDatabase, SeedDatabaseAfterRefresh;
 

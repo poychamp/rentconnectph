@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\Barangay;
+use App\Enums\DeactivationReason;
+use App\Enums\LifecycleEventType;
 use App\Enums\ListingType;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\AdminDeactivatedListingResource;
@@ -11,9 +13,11 @@ use App\Http\Resources\AdminVerifiedListingResource;
 use App\Models\Amenity;
 use App\Models\Listing;
 use App\Models\ListingImage;
+use App\Models\ListingLifecycleEvent;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -40,14 +44,17 @@ class ListingController extends Controller
         $listing->load(['images' => fn ($q) => $q->orderBy('sort_order'), 'amenities']);
 
         return view('admin.listings.edit', [
-            'listing'      => $listing,
-            'listingTypes' => collect(ListingType::toValues())
+            'listing'             => $listing,
+            'listingTypes'        => collect(ListingType::toValues())
                 ->map(fn ($v) => ['value' => $v, 'label' => ListingType::from($v)->label])
                 ->values(),
-            'barangays'    => collect(Barangay::toValues())
+            'barangays'           => collect(Barangay::toValues())
                 ->map(fn ($v) => ['value' => $v, 'label' => Barangay::from($v)->label])
                 ->values(),
-            'amenities'    => Amenity::orderBy('sort_order')->get(['id', 'name', 'slug', 'icon']),
+            'amenities'           => Amenity::orderBy('sort_order')->get(['id', 'name', 'slug', 'icon']),
+            'deactivationReasons' => collect(DeactivationReason::toValues())
+                ->map(fn ($v) => ['value' => $v, 'label' => DeactivationReason::from($v)->label])
+                ->values(),
         ]);
     }
 
@@ -212,6 +219,46 @@ class ListingController extends Controller
         return redirect()
             ->route($route)
             ->with('success', "Listing '{$listing->title}' updated.");
+    }
+
+    public function deactivate(Request $request, Listing $listing): RedirectResponse
+    {
+        // State guard FIRST — only verified-live listings can be deactivated.
+        // Unverified-live → future Reject endpoint, not this one. Already-trashed →
+        // route-model binding hides it via the SoftDeletes global scope (returns 404
+        // before this code runs); the explicit deleted_at check belt-and-suspenders
+        // against any future binding-strategy change.
+        if (! $listing->is_verified || $listing->deleted_at !== null) {
+            throw ValidationException::withMessages([
+                'listing' => 'This listing cannot be deactivated.',
+            ])->errorBag('deactivate');
+        }
+
+        $validated = $request->validateWithBag('deactivate', [
+            'reason' => ['required', 'string', Rule::in(DeactivationReason::toValues())],
+            'notes'  => ['nullable', 'string', 'max:1000'],
+        ], [
+            'reason.required' => 'Reason is required.',
+            'reason.in'       => 'Invalid reason.',
+            'notes.max'       => 'Notes are too long (max 1000 characters).',
+        ]);
+
+        DB::transaction(function () use ($listing, $validated) {
+            $listing->delete();
+
+            ListingLifecycleEvent::create([
+                'listing_id' => $listing->id,
+                'actor_id'   => Auth::guard('admin')->id(),
+                'event_type' => LifecycleEventType::deactivated()->value,
+                'reason'     => $validated['reason'],
+                'notes'      => $validated['notes'] ?? null,
+                'created_at' => Carbon::now(),
+            ]);
+        });
+
+        return redirect()
+            ->route('admin.verified-listings.index')
+            ->with('success', "Listing '{$listing->title}' deactivated.");
     }
 
     public function store(Request $request): RedirectResponse

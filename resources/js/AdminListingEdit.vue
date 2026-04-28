@@ -2,9 +2,9 @@
 import { ref, reactive, provide, computed, onMounted, nextTick } from 'vue';
 import AdminSidebar from './components/admin/AdminSidebar.vue';
 import AdminTopBar from './components/admin/AdminTopBar.vue';
-import AdminAddListingShortcutPill from './components/admin/AdminAddListingShortcutPill.vue';
 import AdminAddListingFormCard from './components/admin/AdminAddListingFormCard.vue';
 import AdminEditListingPublishBar from './components/admin/AdminEditListingPublishBar.vue';
+import AdminEditListingDangerZone from './components/admin/AdminEditListingDangerZone.vue';
 
 // Read initial state synchronously at setup so children inherit a fully-populated
 // form on first render. oldInput (validation failure path) wins over listing
@@ -170,15 +170,7 @@ onMounted(() => {
                 subtitle="Update listing details, photos, amenities, and verification state"
             />
 
-            <main ref="mainRef" class="flex-1 overflow-y-auto p-6 lg:p-10">
-                <AdminAddListingShortcutPill />
-                <h1 class="mt-3 text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
-                    Edit Listing
-                </h1>
-                <p class="mt-2 text-gray-500 dark:text-gray-400">
-                    Saved changes apply immediately. Toggling verification off removes the listing from public discovery.
-                </p>
-
+            <main ref="mainRef" class="flex-1 overflow-y-auto px-6 pt-2 pb-6 lg:px-10 lg:pt-3 lg:pb-10">
                 <div
                     v-if="errorCount > 0"
                     class="mt-6 rounded-md border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/30 px-4 py-3 flex items-start gap-3"
@@ -204,6 +196,8 @@ onMounted(() => {
                     :barangays="formData.barangays"
                     :amenities="formData.amenities"
                 />
+
+                <AdminEditListingDangerZone />
             </main>
 
             <AdminEditListingPublishBar />

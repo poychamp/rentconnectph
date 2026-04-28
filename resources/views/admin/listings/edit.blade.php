@@ -60,14 +60,16 @@
     };
 
     window.__INITIAL_EDIT_LISTING__ = {
-        listingUuid:  @json($listing->uuid),
-        listing:      @json($listingFormShape),
-        listingTypes: @json($listingTypes),
-        barangays:    @json($barangays),
-        amenities:    @json($amenities),
+        listingUuid:         @json($listing->uuid),
+        listing:             @json($listingFormShape),
+        listingTypes:        @json($listingTypes),
+        barangays:           @json($barangays),
+        amenities:           @json($amenities),
+        deactivationReasons: @json($deactivationReasons),
 
-        oldInput: @json($oldData),
-        errors:   @json($errors->toArray() ?: null),
+        oldInput:         @json($oldData),
+        errors:           @json($errors->getBag('default')->toArray() ?: null),
+        deactivateErrors: @json($errors->getBag('deactivate')->toArray() ?: null),
     };
 </script>
 @endpush

@@ -24,6 +24,8 @@ Route::middleware('auth:admin')->group(function () {
         ->name('listings.edit');
     Route::put('listings/{listing:uuid}', [Admin\ListingController::class, 'update'])
         ->name('listings.update');
+    Route::put('listings/{listing:uuid}/deactivate', [Admin\ListingController::class, 'deactivate'])
+        ->name('listings.deactivate');
 
     Route::get('verified-listings', [Admin\ListingController::class, 'verifiedIndex'])
         ->name('verified-listings.index');
