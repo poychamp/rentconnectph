@@ -23,7 +23,7 @@ const formattedPrice = computed(() =>
         <div class="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-gray-600 dark:text-gray-400">
             <span><span class="font-medium text-gray-900 dark:text-gray-100">{{ listing.beds }}</span> {{ listing.beds === 1 ? 'bed' : 'beds' }}</span>
             <span><span class="font-medium text-gray-900 dark:text-gray-100">{{ listing.baths }}</span> {{ listing.baths === 1 ? 'bath' : 'baths' }}</span>
-            <span><span class="font-medium text-gray-900 dark:text-gray-100">{{ listing.sqft }}</span> sqft</span>
+            <span><span class="font-medium text-gray-900 dark:text-gray-100">{{ listing.sqm }}</span> sqm</span>
         </div>
     </div>
 </template>

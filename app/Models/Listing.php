@@ -26,7 +26,7 @@ class Listing extends Model
             'price_monthly' => $this->price_monthly,
             'beds'          => $this->beds,
             'baths'         => $this->baths,
-            'sqft'          => $this->sqft,
+            'sqm'           => $this->sqm,
             'is_verified'   => $this->is_verified ? '1' : '0',
             'verified_at'   => $this->verified_at?->getTimestamp(),
         ];
@@ -48,7 +48,7 @@ class Listing extends Model
         'price_monthly',
         'beds',
         'baths',
-        'sqft',
+        'sqm',
         'barangay',
         'latitude',
         'longitude',

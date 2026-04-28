@@ -21,7 +21,7 @@ class ListingFactory extends Factory
             'price_monthly' => fake()->numberBetween(5000, 50000),
             'beds' => fake()->numberBetween(1, 4),
             'baths' => fake()->numberBetween(1, 3),
-            'sqft' => fake()->numberBetween(12, 200),
+            'sqm' => fake()->numberBetween(12, 200),
             'barangay' => Arr::random(Barangay::toValues()),
             'is_verified' => true,
             'verified_at' => fake()->dateTimeBetween('-30 days', 'now'),

@@ -21,7 +21,7 @@
         'price_monthly'  => $listing->price_monthly,
         'beds'           => $listing->beds,
         'baths'          => $listing->baths,
-        'sqft'           => $listing->sqft,
+        'sqm'            => $listing->sqm,
         'description'    => $listing->description,
         'latitude'       => $listing->latitude,
         'longitude'      => $listing->longitude,

@@ -57,7 +57,7 @@ class AdminListingUpdateTest extends TestCase
             'barangay'     => 'pueblo_de_oro',
             'beds'         => 2,
             'baths'        => 1,
-            'sqft'         => 65,
+            'sqm'          => 65,
             'latitude'     => 8.4542,
             'longitude'    => 124.6411,
             'amenities'    => [],
@@ -117,7 +117,7 @@ class AdminListingUpdateTest extends TestCase
             'barangay'     => '',
             'beds'         => null,
             'baths'        => null,
-            'sqft'         => null,
+            'sqm'          => null,
             'photos'       => [],
             'is_verified'  => null,
         ]);
@@ -129,7 +129,7 @@ class AdminListingUpdateTest extends TestCase
             'barangay'     => 'Barangay is required.',
             'beds'         => 'Bedrooms is required.',
             'baths'        => 'Bathrooms is required.',
-            'sqft'         => 'Floor area is required.',
+            'sqm'          => 'Floor area is required.',
             'photos'       => 'At least one photo is required.',
             'is_verified'  => 'Verified flag is required.',
         ]);
@@ -152,7 +152,7 @@ class AdminListingUpdateTest extends TestCase
             'barangay'     => 'atlantis',                    // not in enum
             'beds'         => 2,
             'baths'        => 1,
-            'sqft'         => 65,
+            'sqm'          => 65,
             'latitude'     => 200,                            // out of range
             'longitude'    => 500,                            // out of range
             'amenities'    => [999999],                       // doesn't exist
@@ -261,7 +261,7 @@ class AdminListingUpdateTest extends TestCase
             'barangay'     => 'carmen',
             'beds'         => 3,
             'baths'        => 2,
-            'sqft'         => 90,
+            'sqm'          => 90,
             'latitude'     => 8.4635,
             'longitude'    => 124.6573,
             'amenities'    => [$newAmenityA->id, $newAmenityB->id],
@@ -283,7 +283,7 @@ class AdminListingUpdateTest extends TestCase
         $this->assertSame('carmen', $listing->barangay);
         $this->assertSame(3, $listing->beds);
         $this->assertSame(2, $listing->baths);
-        $this->assertSame(90, $listing->sqft);
+        $this->assertSame(90, $listing->sqm);
         $this->assertEqualsWithDelta(8.4635,   $listing->latitude,  0.0000001);
         $this->assertEqualsWithDelta(124.6573, $listing->longitude, 0.0000001);
         $this->assertTrue($listing->is_verified);

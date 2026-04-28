@@ -56,7 +56,7 @@ const verifiedDateLabel = computed(() => {
             </span>
             <span class="inline-flex items-center gap-1">
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="1"/></svg>
-                {{ listing.sqft }} sqm
+                {{ listing.sqm }} sqm
             </span>
         </div>
 

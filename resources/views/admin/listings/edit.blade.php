@@ -19,7 +19,7 @@
         'barangay'      => $listing->barangay,
         'beds'          => $listing->beds,
         'baths'         => $listing->baths,
-        'sqft'          => $listing->sqft,
+        'sqm'           => $listing->sqm,
         'latitude'      => $listing->latitude,
         'longitude'     => $listing->longitude,
         'amenities'     => $listing->amenities->pluck('id')->all(),

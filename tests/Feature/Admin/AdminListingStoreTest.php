@@ -48,7 +48,7 @@ class AdminListingStoreTest extends TestCase
             'barangay'     => 'pueblo_de_oro',
             'beds'         => 2,
             'baths'        => 1,
-            'sqft'         => 65,
+            'sqm'          => 65,
             'latitude'     => 8.4542,
             'longitude'    => 124.6411,
             'amenities'    => [],
@@ -169,17 +169,17 @@ class AdminListingStoreTest extends TestCase
              ]);
     }
 
-    public function test_it_rejects_when_sqft_missing(): void
+    public function test_it_rejects_when_sqm_missing(): void
     {
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
         $payload = $this->validPayload();
-        unset($payload['sqft']);
+        unset($payload['sqm']);
 
         $this->post(route('admin.listings.store'), $payload)
              ->assertSessionHasErrors([
-                 'sqft' => 'Floor area is required.',
+                 'sqm' => 'Floor area is required.',
              ]);
     }
 
@@ -324,7 +324,7 @@ class AdminListingStoreTest extends TestCase
             'barangay'     => 'pueblo_de_oro',
             'beds'         => 2,
             'baths'        => 1,
-            'sqft'         => 65,
+            'sqm'          => 65,
         ]));
 
         $listing = Listing::first();
@@ -336,7 +336,7 @@ class AdminListingStoreTest extends TestCase
         $this->assertSame('pueblo_de_oro', $listing->barangay);
         $this->assertSame(2, $listing->beds);
         $this->assertSame(1, $listing->baths);
-        $this->assertSame(65, $listing->sqft);
+        $this->assertSame(65, $listing->sqm);
     }
 
     public function test_it_marks_listing_as_verified_with_timestamp(): void

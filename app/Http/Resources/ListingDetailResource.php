@@ -21,7 +21,7 @@ class ListingDetailResource extends JsonResource
             'price_monthly' => $this->price_monthly,
             'beds' => $this->beds,
             'baths' => $this->baths,
-            'sqft' => $this->sqft,
+            'sqm' => $this->sqm,
             'barangay' => $this->barangay,
             'barangay_label' => Barangay::from($this->barangay)->label,
             'latitude' => $this->latitude,

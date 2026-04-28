@@ -16,7 +16,7 @@ return new class extends Migration
             $table->unsignedInteger('price_monthly');
             $table->unsignedTinyInteger('beds');
             $table->unsignedTinyInteger('baths');
-            $table->unsignedSmallInteger('sqft');
+            $table->unsignedSmallInteger('sqm');
             $table->string('barangay', 80);
             $table->decimal('latitude', 10, 7)->nullable();
             $table->decimal('longitude', 10, 7)->nullable();

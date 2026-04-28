@@ -46,7 +46,7 @@ const addListingForm = reactive({
     barangay:     source.barangay ?? '',
     beds:         numOr(source.beds, 0),
     baths:        numOr(source.baths, 0),
-    sqft:         numOr(source.sqft, 0),
+    sqm:          numOr(source.sqm, 0),
     latitude:     numOrNull(source.latitude),
     longitude:    numOrNull(source.longitude),
     amenities:    Array.isArray(source.amenities) ? source.amenities.map(Number) : [],
@@ -93,9 +93,9 @@ const VALIDATORS = {
         if (!Number.isFinite(n) || n < 0) return 'The baths field must be at least 0.';
         return null;
     },
-    sqft: (f) => {
-        const n = Number(f.sqft);
-        if (!Number.isFinite(n) || n < 1) return 'Floor area must be at least 1 sqft.';
+    sqm: (f) => {
+        const n = Number(f.sqm);
+        if (!Number.isFinite(n) || n < 1) return 'Floor area must be at least 1 sqm.';
         return null;
     },
     latitude: (f) => {

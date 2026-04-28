@@ -188,13 +188,13 @@ const inputErrorClass = 'border-red-400 dark:border-red-500 focus:border-red-500
                     @blur="validateField('baths')"
                 />
                 <AdminNumberStepper
-                    v-model="form.sqft"
+                    v-model="form.sqm"
                     label="Floor area"
-                    suffix="sqft"
+                    suffix="sqm"
                     required
-                    :error="errorFor('sqft')"
-                    @focus="clearFieldError('sqft')"
-                    @blur="validateField('sqft')"
+                    :error="errorFor('sqm')"
+                    @focus="clearFieldError('sqm')"
+                    @blur="validateField('sqm')"
                 />
             </div>
 

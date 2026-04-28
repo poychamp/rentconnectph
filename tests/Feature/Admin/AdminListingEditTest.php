@@ -40,7 +40,7 @@ class AdminListingEditTest extends TestCase
                 'barangay'      => 'carmen',
                 'beds'          => 2,
                 'baths'         => 1,
-                'sqft'          => 65,
+                'sqm'           => 65,
                 'latitude'      => 8.4542123,    // full decimal(10,7) precision
                 'longitude'     => 124.6411567,  // full decimal(10,7) precision
                 'is_verified'   => true,
@@ -66,7 +66,7 @@ class AdminListingEditTest extends TestCase
         $this->assertSame('carmen', $viewListing->barangay);
         $this->assertSame(2, $viewListing->beds);
         $this->assertSame(1, $viewListing->baths);
-        $this->assertSame(65, $viewListing->sqft);
+        $this->assertSame(65, $viewListing->sqm);
 
         // Lat/lng must be float (not stringified) and survive decimal(10,7) round-trip.
         $this->assertIsFloat($viewListing->latitude);

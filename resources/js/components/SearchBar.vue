@@ -31,7 +31,7 @@ function emitSubmit() {
             v-model="live.q"
             @keydown.enter="emitSubmit"
             type="text"
-            placeholder="Search by keywords, beds, baths, amenities, sqm..."
+            placeholder="keywords, amenities (e.g. wifi), 1 bed, 2 baths, 30sqm"
             class="flex-1 bg-transparent outline-none px-2 py-2 text-sm md:text-base placeholder:text-xs md:placeholder:text-sm"
         />
         <div v-if="live" class="flex gap-2 md:contents">

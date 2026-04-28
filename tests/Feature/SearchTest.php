@@ -58,7 +58,7 @@ class SearchTest extends TestCase
 
         $first = $payload['listings'][0];
         $this->assertEqualsCanonicalizing(
-            ['id', 'uuid', 'title', 'type', 'type_label', 'price_monthly', 'beds', 'baths', 'sqft', 'barangay', 'barangay_label', 'image', 'image_count', 'section'],
+            ['id', 'uuid', 'title', 'type', 'type_label', 'price_monthly', 'beds', 'baths', 'sqm', 'barangay', 'barangay_label', 'image', 'image_count', 'section'],
             array_keys($first)
         );
 
