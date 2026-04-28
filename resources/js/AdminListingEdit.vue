@@ -5,6 +5,7 @@ import AdminTopBar from './components/admin/AdminTopBar.vue';
 import AdminAddListingFormCard from './components/admin/AdminAddListingFormCard.vue';
 import AdminEditListingPublishBar from './components/admin/AdminEditListingPublishBar.vue';
 import AdminEditListingDangerZone from './components/admin/AdminEditListingDangerZone.vue';
+import AdminEditListingRejectZone from './components/admin/AdminEditListingRejectZone.vue';
 
 // Read initial state synchronously at setup so children inherit a fully-populated
 // form on first render. oldInput (validation failure path) wins over listing
@@ -198,6 +199,7 @@ onMounted(() => {
                 />
 
                 <AdminEditListingDangerZone />
+                <AdminEditListingRejectZone />
             </main>
 
             <AdminEditListingPublishBar />

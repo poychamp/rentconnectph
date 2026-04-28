@@ -14,12 +14,12 @@ const dateTimeFormatter = new Intl.DateTimeFormat('en-US', {
     hour: '2-digit', minute: '2-digit',
 });
 
-const formattedDate = computed(() =>
+const formattedCreatedAt = computed(() =>
     dateTimeFormatter.format(new Date(props.row.created_at))
 );
 
-const formattedUpdatedAt = computed(() =>
-    dateTimeFormatter.format(new Date(props.row.updated_at))
+const formattedRejectedAt = computed(() =>
+    dateTimeFormatter.format(new Date(props.row.rejected_at))
 );
 </script>
 
@@ -33,20 +33,20 @@ const formattedUpdatedAt = computed(() =>
 
         <td class="px-4 py-3 font-medium">{{ formattedPrice }}</td>
 
-        <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ formattedDate }}</td>
+        <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ formattedCreatedAt }}</td>
 
-        <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ formattedUpdatedAt }}</td>
+        <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ formattedRejectedAt }}</td>
 
         <td class="px-4 py-3">
             <div class="flex items-center gap-1 justify-center">
-                <a :href="`/admin/listings/${row.uuid}/edit?from=unverified`"
-                    class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
-                    title="Edit">
+                <a :href="`/admin/listings/${row.uuid}/reopen`"
+                    class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 cursor-pointer"
+                    title="Reopen">
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 20h9" />
-                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" />
+                        <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+                        <path d="M3 3v5h5" />
                     </svg>
-                    Edit
+                    Reopen
                 </a>
             </div>
         </td>

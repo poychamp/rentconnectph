@@ -7,6 +7,8 @@ use Spatie\Enum\Enum;
 /**
  * @method static self deactivated()
  * @method static self reactivated()
+ * @method static self rejected()
+ * @method static self reopened()
  */
 class LifecycleEventType extends Enum
 {
@@ -15,6 +17,8 @@ class LifecycleEventType extends Enum
         return [
             'deactivated' => 'Deactivated',
             'reactivated' => 'Reactivated',
+            'rejected'    => 'Rejected',
+            'reopened'    => 'Reopened',
         ];
     }
 }

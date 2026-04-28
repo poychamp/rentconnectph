@@ -88,6 +88,11 @@ class Listing extends Model
         return $query->onlyTrashed()->where('is_verified', true);
     }
 
+    public function scopeRejected($query)
+    {
+        return $query->onlyTrashed()->where('is_verified', false);
+    }
+
     public function scopeFeatured($query)
     {
         return $query->where('is_featured', true);

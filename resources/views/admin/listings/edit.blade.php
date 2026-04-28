@@ -70,6 +70,7 @@
         oldInput:         @json($oldData),
         errors:           @json($errors->getBag('default')->toArray() ?: null),
         deactivateErrors: @json($errors->getBag('deactivate')->toArray() ?: null),
+        rejectErrors:     @json($errors->getBag('reject')->toArray() ?: null),
     };
 </script>
 @endpush

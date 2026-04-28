@@ -8,6 +8,7 @@ use App\Enums\LifecycleEventType;
 use App\Enums\ListingType;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\AdminDeactivatedListingResource;
+use App\Http\Resources\AdminRejectedListingResource;
 use App\Http\Resources\AdminUnverifiedListingResource;
 use App\Http\Resources\AdminVerifiedListingResource;
 use App\Models\Amenity;
@@ -304,6 +305,32 @@ class ListingController extends Controller
             ->with('success', "Listing '{$listing->title}' restored.");
     }
 
+    public function reject(Request $request, Listing $listing): RedirectResponse
+    {
+        if ($listing->is_verified || $listing->deleted_at !== null) {
+            throw ValidationException::withMessages([
+                'listing' => 'This listing cannot be rejected.',
+            ])->errorBag('reject');
+        }
+
+        DB::transaction(function () use ($listing) {
+            $listing->delete();
+
+            ListingLifecycleEvent::create([
+                'listing_id' => $listing->id,
+                'actor_id'   => Auth::guard('admin')->id(),
+                'event_type' => LifecycleEventType::rejected()->value,
+                'reason'     => null,
+                'notes'      => null,
+                'created_at' => Carbon::now(),
+            ]);
+        });
+
+        return redirect()
+            ->route('admin.unverified-listings.index')
+            ->with('success', "Listing '{$listing->title}' rejected.");
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -496,6 +523,75 @@ class ListingController extends Controller
 
         return view('admin.listings.deactivated-index', [
             'deactivated' => $deactivated,
+        ]);
+    }
+
+    public function showReopen(Listing $listing): View
+    {
+        if ($listing->is_verified || $listing->deleted_at === null) {
+            abort(404);
+        }
+
+        $listing->load([
+            'images' => fn ($q) => $q->orderBy('sort_order'),
+            'amenities',
+            'latestLifecycleEvent.actor',
+        ]);
+
+        return view('admin.listings.reopen', [
+            'listing' => $listing,
+        ]);
+    }
+
+    public function reopen(Request $request, Listing $listing): RedirectResponse
+    {
+        if ($listing->is_verified || $listing->deleted_at === null) {
+            throw ValidationException::withMessages([
+                'listing' => 'This listing cannot be reopened.',
+            ])->errorBag('reopen');
+        }
+
+        DB::transaction(function () use ($listing) {
+            $listing->restore();
+
+            ListingLifecycleEvent::create([
+                'listing_id' => $listing->id,
+                'actor_id'   => Auth::guard('admin')->id(),
+                'event_type' => LifecycleEventType::reopened()->value,
+                'reason'     => null,
+                'notes'      => null,
+                'created_at' => Carbon::now(),
+            ]);
+        });
+
+        return redirect()
+            ->route('admin.rejected-listings.index')
+            ->with('success', "Listing '{$listing->title}' reopened.");
+    }
+
+    public function rejectedIndex(Request $request): View
+    {
+        $q = trim((string) $request->input('q', ''));
+
+        $with = ['latestLifecycleEvent.actor'];
+
+        $paginator = $q === ''
+            ? Listing::rejected()
+                ->with($with)
+                ->orderBy('deleted_at', 'desc')
+                ->paginate(10)
+            : Listing::search($q)
+                ->onlyTrashed()
+                ->where('is_verified', 0)
+                ->query(fn ($builder) => $builder->with($with))
+                ->paginate(10);
+
+        $rejected = AdminRejectedListingResource::collection($paginator)
+            ->response()
+            ->getData(true);
+
+        return view('admin.listings.rejected-index', [
+            'rejected' => $rejected,
         ]);
     }
 

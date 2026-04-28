@@ -32,6 +32,8 @@ Route::middleware('auth:admin')->group(function () {
     Route::put('listings/{listing:uuid}/restore', [Admin\ListingController::class, 'restore'])
         ->withTrashed()
         ->name('listings.restore');
+    Route::put('listings/{listing:uuid}/reject', [Admin\ListingController::class, 'reject'])
+        ->name('listings.reject');
 
     Route::get('verified-listings', [Admin\ListingController::class, 'verifiedIndex'])
         ->name('verified-listings.index');
@@ -41,6 +43,16 @@ Route::middleware('auth:admin')->group(function () {
 
     Route::get('deactivated-listings', [Admin\ListingController::class, 'deactivatedIndex'])
         ->name('deactivated-listings.index');
+
+    Route::get('rejected-listings', [Admin\ListingController::class, 'rejectedIndex'])
+        ->name('rejected-listings.index');
+
+    Route::get('listings/{listing:uuid}/reopen', [Admin\ListingController::class, 'showReopen'])
+        ->withTrashed()
+        ->name('listings.reopen.show');
+    Route::put('listings/{listing:uuid}/reopen', [Admin\ListingController::class, 'reopen'])
+        ->withTrashed()
+        ->name('listings.reopen');
 
     // Vapor's signed S3 URL endpoint — browser calls this to get a pre-signed URL,
     // then PUTs the file directly to S3. Gated to admins so non-admins can't generate URLs.
