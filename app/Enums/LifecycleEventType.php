@@ -6,6 +6,7 @@ use Spatie\Enum\Enum;
 
 /**
  * @method static self deactivated()
+ * @method static self reactivated()
  */
 class LifecycleEventType extends Enum
 {
@@ -13,6 +14,7 @@ class LifecycleEventType extends Enum
     {
         return [
             'deactivated' => 'Deactivated',
+            'reactivated' => 'Reactivated',
         ];
     }
 }

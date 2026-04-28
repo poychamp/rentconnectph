@@ -261,6 +261,49 @@ class ListingController extends Controller
             ->with('success', "Listing '{$listing->title}' deactivated.");
     }
 
+    public function showRestore(Listing $listing): View
+    {
+        if (! $listing->is_verified || $listing->deleted_at === null) {
+            abort(404);
+        }
+
+        $listing->load([
+            'images' => fn ($q) => $q->orderBy('sort_order'),
+            'amenities',
+            'latestLifecycleEvent.actor',
+        ]);
+
+        return view('admin.listings.restore', [
+            'listing' => $listing,
+        ]);
+    }
+
+    public function restore(Request $request, Listing $listing): RedirectResponse
+    {
+        if (! $listing->is_verified || $listing->deleted_at === null) {
+            throw ValidationException::withMessages([
+                'listing' => 'This listing cannot be restored.',
+            ])->errorBag('restore');
+        }
+
+        DB::transaction(function () use ($listing) {
+            $listing->restore();
+
+            ListingLifecycleEvent::create([
+                'listing_id' => $listing->id,
+                'actor_id'   => Auth::guard('admin')->id(),
+                'event_type' => LifecycleEventType::reactivated()->value,
+                'reason'     => null,
+                'notes'      => null,
+                'created_at' => Carbon::now(),
+            ]);
+        });
+
+        return redirect()
+            ->route('admin.deactivated-listings.index')
+            ->with('success', "Listing '{$listing->title}' restored.");
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([

@@ -17,7 +17,14 @@ defineProps({
                         <th class="px-4 py-3">Barangay</th>
                         <th class="px-4 py-3">Price</th>
                         <th class="px-4 py-3">Verified</th>
-                        <th class="px-4 py-3">Updated</th>
+                        <th class="px-4 py-3">
+                            <span class="inline-flex items-center gap-1 uppercase tracking-wider">
+                                Updated
+                                <svg class="w-3 h-3 text-orange-500" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 20L4 8h16z" />
+                                </svg>
+                            </span>
+                        </th>
                         <th class="px-4 py-3 text-center">Actions</th>
                     </tr>
                 </thead>
