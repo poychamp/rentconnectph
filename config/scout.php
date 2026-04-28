@@ -117,7 +117,10 @@ return [
         'secret' => env('ALGOLIA_SECRET', ''),
         'index-settings' => [
             env('SCOUT_PREFIX', '') . 'listings' => [
-                'attributesForFaceting' => ['filterOnly(is_verified)'],
+                'attributesForFaceting' => [
+                    'filterOnly(is_verified)',
+                    'filterOnly(__soft_deleted)',
+                ],
             ],
         ],
     ],
