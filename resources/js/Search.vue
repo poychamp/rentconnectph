@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, provide, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, provide, reactive, ref } from 'vue';
 import Navbar from './components/Navbar.vue';
 import Footer from './components/Footer.vue';
 import BottomNav from './components/BottomNav.vue';
@@ -15,14 +15,25 @@ const initial = window.__INITIAL_SEARCH__ ?? {
     filters: { q: '', budget: '', area: '', type: [] },
 };
 
-const filters = initial.filters ?? { q: '', budget: '', area: '', type: [] };
+const seeded = initial.filters ?? { q: '', budget: '', area: '', type: [] };
+
+// Live reactive state — bound to SearchBar inputs (v-model) so submitFilters
+// always reads what the user currently has on screen, not the server-snapshot.
+const live = reactive({
+    q:      seeded.q ?? '',
+    budget: seeded.budget ?? '',
+    area:   seeded.area ?? '',
+    type:   Array.isArray(seeded.type) ? [...seeded.type] : [],
+});
+
+provide('search-live', live);
 
 const hasActiveFilters = computed(() => {
     return !!(
-        (filters.q && filters.q.trim()) ||
-        filters.budget ||
-        filters.area ||
-        (Array.isArray(filters.type) && filters.type.length > 0)
+        (seeded.q && seeded.q.trim()) ||
+        seeded.budget ||
+        seeded.area ||
+        (Array.isArray(seeded.type) && seeded.type.length > 0)
     );
 });
 
@@ -38,14 +49,19 @@ const headerSubtitle = computed(() => {
     return `Browse ${total.value.toLocaleString()} verified listings across Cagayan de Oro.`;
 });
 
-function submitFilters(patch) {
-    const next = { ...filters, ...patch };
+function submitFilters(patch = {}) {
+    if (patch.q !== undefined)      live.q = patch.q;
+    if (patch.budget !== undefined) live.budget = patch.budget;
+    if (patch.area !== undefined)   live.area = patch.area;
+    if (patch.type !== undefined)   live.type = patch.type;
+
     const params = new URLSearchParams();
-    if (next.q && String(next.q).trim()) params.set('q', String(next.q).trim());
-    if (next.budget)                      params.set('budget', next.budget);
-    if (next.area)                        params.set('area', next.area);
-    if (Array.isArray(next.type) && next.type.length > 0) {
-        params.set('type', next.type.join(','));
+    const q = String(live.q || '').trim();
+    if (q)           params.set('q', q);
+    if (live.budget) params.set('budget', live.budget);
+    if (live.area)   params.set('area', live.area);
+    if (Array.isArray(live.type) && live.type.length > 0) {
+        params.set('type', live.type.join(','));
     }
     const qs = params.toString();
     window.location.assign(qs ? `/search?${qs}` : '/search');
@@ -99,7 +115,6 @@ onBeforeUnmount(() => {
 
                 <div class="mt-6 md:mt-8">
                     <SearchBar
-                        :initial="filters"
                         :barangays="initial.barangays"
                         :listing-types="initial.listingTypes"
                     />
@@ -109,7 +124,7 @@ onBeforeUnmount(() => {
 
         <main class="flex-1 max-w-7xl mx-auto w-full px-4 md:px-6 lg:px-8 py-6 md:py-8">
             <SearchTypeFilter
-                :initial="filters.type"
+                :initial="seeded.type"
                 :listing-types="initial.listingTypes"
             />
             <SearchResults
