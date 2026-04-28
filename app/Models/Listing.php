@@ -24,19 +24,18 @@ class Listing extends Model
             'type'          => $this->type,
             'barangay'      => $this->barangay,
             'price_monthly' => $this->price_monthly,
-            'beds'          => $this->beds,
-            'baths'         => $this->baths,
-            'sqm'           => $this->sqm,
             'is_verified'   => $this->is_verified ? '1' : '0',
             'verified_at'   => $this->verified_at?->getTimestamp(),
         ];
 
-        // Algolia-only: include relation-derived fields. Scout's database
-        // driver builds WHERE-LIKE on these keys as real columns; computed
-        // fields without a column would SQL-error. Algolia stores the JSON
-        // as-is and tokenizes naturally.
+        // Algolia-only: include relation-derived + computed labeled fields.
+        // Scout's database driver builds WHERE-LIKE on these keys as real
+        // columns; computed fields without a column would SQL-error. Algolia
+        // stores the JSON as-is and tokenizes naturally — `specs` enables
+        // natural-language queries like "1 bed", "2 baths", "30 sqm".
         if (config('scout.driver') === 'algolia') {
             $array['amenities'] = $this->amenities->pluck('name')->implode(' ');
+            $array['specs']     = "{$this->beds} bed {$this->beds} beds {$this->baths} bath {$this->baths} baths {$this->sqm} sqm";
         }
 
         return $array;
