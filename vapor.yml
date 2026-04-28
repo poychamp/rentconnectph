@@ -21,6 +21,7 @@ environments:
   dev:
     memory: 1024
     cli-memory: 512
+    timeout: 30
     runtime: 'php-8.4:al2023'
     database: rentconnectph-dev-db
     storage: rentconnectph-dev-uploads
