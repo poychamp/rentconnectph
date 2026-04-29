@@ -22,6 +22,34 @@ function next() {
     activeIndex.value = (activeIndex.value + 1) % n;
 }
 
+const imgTouch = { x: 0, y: 0, time: 0, valid: false };
+
+function onImageTouchStart(e) {
+    if (e.touches.length !== 1) {
+        imgTouch.valid = false;
+        return;
+    }
+    const t = e.touches[0];
+    imgTouch.x = t.clientX;
+    imgTouch.y = t.clientY;
+    imgTouch.time = Date.now();
+    imgTouch.valid = true;
+}
+
+function onImageTouchEnd(e) {
+    if (!imgTouch.valid) return;
+    imgTouch.valid = false;
+    if (images.value.length < 2) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - imgTouch.x;
+    const dy = t.clientY - imgTouch.y;
+    const dt = Date.now() - imgTouch.time;
+    if (Math.abs(dx) > 50 && Math.abs(dy) < 60 && dt < 600) {
+        if (dx < 0) next();
+        else prev();
+    }
+}
+
 watch(activeIndex, async () => {
     await nextTick();
     const strip = thumbStrip.value;
@@ -35,7 +63,11 @@ watch(activeIndex, async () => {
 
 <template>
     <div>
-        <div class="relative aspect-video bg-gray-100 dark:bg-gray-800 rounded-2xl overflow-hidden">
+        <div
+            class="relative aspect-video bg-gray-100 dark:bg-gray-800 rounded-2xl overflow-hidden"
+            @touchstart.passive.stop="onImageTouchStart"
+            @touchend.passive.stop="onImageTouchEnd"
+        >
             <img
                 v-if="activeImage"
                 :src="activeImage.url"
@@ -75,7 +107,13 @@ watch(activeIndex, async () => {
             </div>
         </div>
 
-        <div ref="thumbStrip" v-if="images.length > 1" class="mt-3 flex gap-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div
+            ref="thumbStrip"
+            v-if="images.length > 1"
+            class="mt-3 flex gap-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            @touchstart.passive="onImageTouchStart"
+            @touchend.passive="onImageTouchEnd"
+        >
             <button
                 v-for="(img, i) in images"
                 :key="img.id"
