@@ -28,6 +28,7 @@ const user = ref(window.__INITIAL_DASHBOARD__?.user ?? {
 const formData = ref({
     listingTypes: initial?.listingTypes ?? [],
     barangays:    initial?.barangays    ?? [],
+    sourceSites:  initial?.sourceSites  ?? [],
     amenities:    initial?.amenities    ?? [],
 });
 
@@ -42,7 +43,7 @@ const addListingForm = reactive({
     title:        source.title        ?? '',
     description:  source.description  ?? '',
     listing_type: source.listing_type ?? '',
-    monthly_rent: numOrNull(source.monthly_rent),
+    price_monthly: numOrNull(source.price_monthly),
     barangay:     source.barangay ?? '',
     beds:         numOr(source.beds, 0),
     baths:        numOr(source.baths, 0),
@@ -51,6 +52,9 @@ const addListingForm = reactive({
     longitude:    numOrNull(source.longitude),
     amenities:    Array.isArray(source.amenities) ? source.amenities.map(Number) : [],
     photos:       Array.isArray(source.photos)    ? source.photos                : [],
+    source_site:   source.source_site   ?? '',
+    source_url:    source.source_url    ?? '',
+    contact_phone: source.contact_phone ?? '',
     is_verified:  toBool(source.is_verified),
     is_featured:  toBool(source.is_featured),
     from:         initialFrom,
@@ -59,11 +63,15 @@ const addListingForm = reactive({
 const addListingFormErrors = ref(initial?.errors ?? {});
 const errorCount = computed(() => Object.keys(addListingFormErrors.value).length);
 
-// Client-side validators mirror the confirmed server-side messages exactly so
-// the UX stays consistent whether the failure was caught locally or after the
-// round-trip. Server is still the source of truth — anything not listed here
-// (listing_type required, monthly_rent min:1, beds/baths max:20, amenities
-// rules, etc.) falls through to the server.
+// Client-side validators mirror the server rules in `Admin\ListingController::update()`,
+// minus data-spoofing-shaped checks (enum allowlists `*.in`, photo key path
+// `starts_with:tmp/`, amenity FK `exists`) — those failures can only happen via
+// crafted requests, not via the UI. Server still re-runs everything and is the
+// source of truth.
+//
+// Note on contact_phone / source_site / source_url: update() does NOT validate
+// these yet (only store() does). When the update() endpoint adopts those rules,
+// mirror their validators here too.
 const VALIDATORS = {
     title: (f) => {
         const v = (f.title ?? '').trim();
@@ -72,42 +80,51 @@ const VALIDATORS = {
         return null;
     },
     listing_type: (f) => f.listing_type ? null : 'Listing type is required.',
-    monthly_rent: (f) => {
-        if (f.monthly_rent === null || f.monthly_rent === '' || f.monthly_rent === undefined) {
+    price_monthly: (f) => {
+        if (f.price_monthly === null || f.price_monthly === '' || f.price_monthly === undefined) {
             return 'Monthly rent is required.';
         }
+        const n = Number(f.price_monthly);
+        if (!Number.isFinite(n)) return null;
+        if (n < 1) return 'Monthly rent must be at least ₱1.';
         return null;
     },
-    barangay: (f) => {
-        const allowed = (window.__INITIAL_EDIT_LISTING__?.barangays ?? []).map(b => b.value);
-        if (!f.barangay || !allowed.includes(f.barangay)) return 'Invalid barangay.';
-        return null;
-    },
+    barangay: (f) => f.barangay ? null : 'Barangay is required.',
     beds: (f) => {
+        if (f.beds === null || f.beds === '' || f.beds === undefined) return 'Bedrooms is required.';
         const n = Number(f.beds);
-        if (!Number.isFinite(n) || n < 0) return 'The beds field must be at least 0.';
+        if (!Number.isFinite(n)) return null;
+        if (n < 0)  return 'The beds field must be at least 0.';
+        if (n > 20) return 'The beds field must not be greater than 20.';
         return null;
     },
     baths: (f) => {
+        if (f.baths === null || f.baths === '' || f.baths === undefined) return 'Bathrooms is required.';
         const n = Number(f.baths);
-        if (!Number.isFinite(n) || n < 0) return 'The baths field must be at least 0.';
+        if (!Number.isFinite(n)) return null;
+        if (n < 0)  return 'The baths field must be at least 0.';
+        if (n > 20) return 'The baths field must not be greater than 20.';
         return null;
     },
     sqm: (f) => {
+        if (f.sqm === null || f.sqm === '' || f.sqm === undefined) return 'Floor area is required.';
         const n = Number(f.sqm);
-        if (!Number.isFinite(n) || n < 1) return 'Floor area must be at least 1 sqm.';
+        if (!Number.isFinite(n)) return null;
+        if (n < 1) return 'Floor area must be at least 1 sqm.';
         return null;
     },
     latitude: (f) => {
         if (f.latitude === null || f.latitude === '' || f.latitude === undefined) return null;
         const n = Number(f.latitude);
-        if (!Number.isFinite(n) || n < -90 || n > 90) return 'Latitude must be between -90 and 90.';
+        if (!Number.isFinite(n)) return null;
+        if (n < -90 || n > 90) return 'Latitude must be between -90 and 90.';
         return null;
     },
     longitude: (f) => {
         if (f.longitude === null || f.longitude === '' || f.longitude === undefined) return null;
         const n = Number(f.longitude);
-        if (!Number.isFinite(n) || n < -180 || n > 180) return 'Longitude must be between -180 and 180.';
+        if (!Number.isFinite(n)) return null;
+        if (n < -180 || n > 180) return 'Longitude must be between -180 and 180.';
         return null;
     },
     photos: (f) => {
@@ -195,6 +212,7 @@ onMounted(() => {
                     class="mt-6"
                     :listing-types="formData.listingTypes"
                     :barangays="formData.barangays"
+                    :source-sites="formData.sourceSites"
                     :amenities="formData.amenities"
                 />
 

@@ -23,6 +23,7 @@ class ListingFactory extends Factory
             'baths' => fake()->numberBetween(1, 3),
             'sqm' => fake()->numberBetween(12, 200),
             'barangay' => Arr::random(Barangay::toValues()),
+            'contact_phone' => fake()->numerify('+639#########'),
             'is_verified' => true,
             'verified_at' => fake()->dateTimeBetween('-30 days', 'now'),
             'is_featured' => false,

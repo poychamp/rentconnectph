@@ -53,7 +53,7 @@ class AdminListingUpdateTest extends TestCase
             'title'        => 'Updated Title',
             'description'  => 'Updated description.',
             'listing_type' => 'apartment',
-            'monthly_rent' => 18500,
+            'price_monthly' => 18500,
             'barangay'     => 'pueblo_de_oro',
             'beds'         => 2,
             'baths'        => 1,
@@ -113,7 +113,7 @@ class AdminListingUpdateTest extends TestCase
             // every required field omitted / empty
             'title'        => '',
             'listing_type' => '',
-            'monthly_rent' => null,
+            'price_monthly' => null,
             'barangay'     => '',
             'beds'         => null,
             'baths'        => null,
@@ -125,7 +125,7 @@ class AdminListingUpdateTest extends TestCase
         $response->assertSessionHasErrors([
             'title'        => 'Title is required.',
             'listing_type' => 'Listing type is required.',
-            'monthly_rent' => 'Monthly rent is required.',
+            'price_monthly' => 'Monthly rent is required.',
             'barangay'     => 'Barangay is required.',
             'beds'         => 'Bedrooms is required.',
             'baths'        => 'Bathrooms is required.',
@@ -148,7 +148,7 @@ class AdminListingUpdateTest extends TestCase
         $response = $this->put(route('admin.listings.update', $listingA->uuid), [
             'title'        => 'ok',
             'listing_type' => 'spaceship',                   // not in enum
-            'monthly_rent' => 18500,
+            'price_monthly' => 18500,
             'barangay'     => 'atlantis',                    // not in enum
             'beds'         => 2,
             'baths'        => 1,
@@ -257,7 +257,7 @@ class AdminListingUpdateTest extends TestCase
             'title'        => 'Brand New Title',
             'description'  => 'Brand new desc.',
             'listing_type' => 'condo',
-            'monthly_rent' => 22500,
+            'price_monthly' => 22500,
             'barangay'     => 'carmen',
             'beds'         => 3,
             'baths'        => 2,

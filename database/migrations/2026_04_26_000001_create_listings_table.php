@@ -12,15 +12,20 @@ return new class extends Migration
             $table->id();
             $table->uuid('uuid');
             $table->string('title', 200);
-            $table->string('type', 32);
-            $table->unsignedInteger('price_monthly');
-            $table->unsignedTinyInteger('beds');
-            $table->unsignedTinyInteger('baths');
-            $table->unsignedSmallInteger('sqm');
-            $table->string('barangay', 80);
+            $table->string('type', 32)->nullable();
+            $table->unsignedInteger('price_monthly')->nullable();
+            $table->unsignedTinyInteger('beds')->nullable();
+            $table->unsignedTinyInteger('baths')->nullable();
+            $table->unsignedSmallInteger('sqm')->nullable();
+            $table->string('barangay', 80)->nullable();
             $table->decimal('latitude', 10, 7)->nullable();
             $table->decimal('longitude', 10, 7)->nullable();
             $table->text('description')->nullable();
+            $table->string('source_site', 32)->nullable();
+            $table->string('source_url', 2000)->nullable();
+            $table->string('contact_phone', 16);
+            $table->string('prequal_status', 32)->nullable();
+            $table->string('queue_status', 32)->nullable();
             $table->boolean('is_verified')->default(false);
             $table->timestamp('verified_at')->nullable();
             $table->boolean('is_featured')->default(false);
@@ -35,6 +40,9 @@ return new class extends Migration
             $table->index(['is_featured', 'is_verified']);
             $table->index(['is_verified', 'verified_at']);
             $table->index('featured_order');
+            $table->index('contact_phone');
+            $table->index('prequal_status');
+            $table->index('queue_status');
         });
     }
 

@@ -38,6 +38,7 @@
     window.__INITIAL_ADD_LISTING__ = {
         listingTypes: @json($listingTypes),
         barangays:    @json($barangays),
+        sourceSites:  @json($sourceSites),
         amenities:    @json($amenities),
 
         // Populated by Laravel's redirect()->back()->withErrors()->withInput()
