@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch, nextTick } from 'vue';
 
 const props = defineProps({
     listing: { type: Object, required: true },
@@ -8,6 +8,29 @@ const props = defineProps({
 const activeIndex = ref(0);
 const images = computed(() => props.listing?.images || []);
 const activeImage = computed(() => images.value[activeIndex.value]);
+
+const thumbStrip = ref(null);
+
+function prev() {
+    const n = images.value.length;
+    if (n < 2) return;
+    activeIndex.value = (activeIndex.value - 1 + n) % n;
+}
+function next() {
+    const n = images.value.length;
+    if (n < 2) return;
+    activeIndex.value = (activeIndex.value + 1) % n;
+}
+
+watch(activeIndex, async () => {
+    await nextTick();
+    const strip = thumbStrip.value;
+    if (!strip) return;
+    const active = strip.children[activeIndex.value];
+    if (!active) return;
+    const target = active.offsetLeft - (strip.clientWidth - active.clientWidth) / 2;
+    strip.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
+});
 </script>
 
 <template>
@@ -19,6 +42,22 @@ const activeImage = computed(() => images.value[activeIndex.value]);
                 :alt="listing.title"
                 class="w-full h-full object-cover"
             />
+            <button
+                v-if="images.length > 1"
+                @click="prev"
+                aria-label="Previous image"
+                class="absolute top-1/2 -translate-y-1/2 left-2 md:left-3 w-7 h-7 md:w-10 md:h-10 rounded-full bg-black/40 hover:bg-black/60 text-white inline-flex items-center justify-center transition"
+            >
+                <svg class="w-4 h-4 md:w-5 md:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+            </button>
+            <button
+                v-if="images.length > 1"
+                @click="next"
+                aria-label="Next image"
+                class="absolute top-1/2 -translate-y-1/2 right-2 md:right-3 w-7 h-7 md:w-10 md:h-10 rounded-full bg-black/40 hover:bg-black/60 text-white inline-flex items-center justify-center transition"
+            >
+                <svg class="w-4 h-4 md:w-5 md:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+            </button>
             <div
                 v-if="images.length > 1"
                 class="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5"
@@ -36,13 +75,13 @@ const activeImage = computed(() => images.value[activeIndex.value]);
             </div>
         </div>
 
-        <div v-if="images.length > 1" class="mt-3 flex gap-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div ref="thumbStrip" v-if="images.length > 1" class="mt-3 flex gap-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <button
                 v-for="(img, i) in images"
                 :key="img.id"
                 @click="activeIndex = i"
                 :class="[
-                    'shrink-0 w-24 h-16 rounded-lg overflow-hidden border-2 transition',
+                    'shrink-0 w-16 h-11 md:w-24 md:h-16 rounded-lg overflow-hidden border-2 transition',
                     i === activeIndex
                         ? 'border-orange-500'
                         : 'border-transparent opacity-70 hover:opacity-100',
