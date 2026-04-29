@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'guest.admin' => \App\Http\Middleware\Admin\RedirectIfAuthenticatedAdmin::class,
+            'bfcache' => \App\Http\Middleware\AllowsBfcache::class,
         ]);
 
         // Override the default Authenticate middleware redirect: send all unauthed
