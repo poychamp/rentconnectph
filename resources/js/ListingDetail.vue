@@ -59,7 +59,7 @@ function onTouchEnd(e) {
     const dx = t.clientX - touchStart.x;
     const dy = t.clientY - touchStart.y;
     const dt = Date.now() - touchStart.time;
-    if (dx < -80 && Math.abs(dy) < 60 && dt < 600) {
+    if (dx > 80 && Math.abs(dy) < 60 && dt < 600) {
         goBack();
     }
 }
