@@ -57,6 +57,10 @@ class Listing extends Model
         'contact_phone',
         'prequal_status',
         'queue_status',
+        'assigned_to',
+        'directions',
+        'contact_type',
+        'verification_notes',
         'display_image_id',
         'is_verified',
         'verified_at',
@@ -81,6 +85,11 @@ class Listing extends Model
     public function displayImage(): BelongsTo
     {
         return $this->belongsTo(ListingImage::class, 'display_image_id');
+    }
+
+    public function assignedTo(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_to');
     }
 
     public function amenities(): BelongsToMany

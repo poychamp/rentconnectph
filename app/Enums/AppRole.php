@@ -6,16 +6,23 @@ use Spatie\Enum\Enum;
 
 /**
  * @method static self superAdmin()
+ * @method static self field()
  */
 class AppRole extends Enum
 {
     protected static function values(): array
     {
-        return ['superAdmin' => 'super-admin'];
+        return [
+            'superAdmin' => 'super-admin',
+            'field'      => 'field',
+        ];
     }
 
     protected static function labels(): array
     {
-        return ['superAdmin' => 'Super Admin'];
+        return [
+            'superAdmin' => 'Super Admin',
+            'field'      => 'Field Officer',
+        ];
     }
 }

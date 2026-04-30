@@ -2,7 +2,6 @@
 import { ref, computed, inject } from 'vue';
 
 const form = inject('addListingForm');
-
 const { validateAll } = inject('addListingFormValidate', { validateAll: () => true });
 const scrollFormToTop = inject('scrollFormToTop', () => {});
 
@@ -10,12 +9,20 @@ const submitting = ref(false);
 
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
 
+const listingUuid = window.__INITIAL_EDIT_LISTING__?.listingUuid ?? '';
+const formAction = computed(() => `/admin/listings/${listingUuid}/unverified-update`);
+
+// Cancel always returns to unverified-listings — the only origin page that
+// links into this slice.
+const cancelHref = '/admin/unverified-listings';
+
 const isMac = computed(() => /Mac|iPod|iPhone|iPad/.test(navigator.platform));
 const modKey = computed(() => isMac.value ? '⌘' : 'Ctrl');
 
 /**
  * Append a hidden input to the form. Recursively unpacks objects and arrays
- * into Laravel-style bracket notation: photos[0][key], amenities[], etc.
+ * into Laravel-style bracket notation: photos[0][key], photos[0][existing_id],
+ * amenities[], etc.
  */
 function appendHidden(formEl, name, value) {
     if (value === null || value === undefined) return;
@@ -37,11 +44,9 @@ function appendHidden(formEl, name, value) {
     formEl.appendChild(input);
 }
 
-function publish(intent = 'publish') {
+function save() {
     if (submitting.value) return;
 
-    // Run client-side validation first — same rules as the server, but without
-    // the round-trip. Server still re-validates as the source of truth.
     if (!validateAll()) {
         scrollFormToTop();
         return;
@@ -49,17 +54,13 @@ function publish(intent = 'publish') {
 
     submitting.value = true;
 
-    // Build a hidden native form, submit it. Browser handles everything:
-    // redirect on success → next page loads with `success` flash + AdminToast.
-    // Validation failure → Laravel redirects back, Blade re-renders with $errors
-    // + old() (picked up by AdminListingCreate.vue mount logic).
     const formEl = document.createElement('form');
     formEl.method = 'POST';
-    formEl.action = '/admin/listings';
+    formEl.action = formAction.value;
     formEl.style.display = 'none';
 
     appendHidden(formEl, '_token', csrfToken);
-    appendHidden(formEl, 'intent', intent);
+    appendHidden(formEl, '_method', 'PUT');
 
     Object.entries(form).forEach(([key, value]) => {
         appendHidden(formEl, key, value);
@@ -73,7 +74,7 @@ function publish(intent = 'publish') {
 <template>
     <div class="shrink-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 px-6 py-3 flex items-center gap-4">
         <a
-            href="/admin"
+            :href="cancelHref"
             class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition cursor-pointer"
         >
             Cancel
@@ -83,7 +84,7 @@ function publish(intent = 'publish') {
             <kbd class="rounded border border-gray-200 dark:border-gray-700 px-1.5 py-0.5 text-[10px] font-medium text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800">{{ modKey }}</kbd>
             +
             <kbd class="rounded border border-gray-200 dark:border-gray-700 px-1.5 py-0.5 text-[10px] font-medium text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800">Enter</kbd>
-            to publish
+            to save
         </p>
 
         <div class="flex-1"></div>
@@ -91,16 +92,7 @@ function publish(intent = 'publish') {
         <button
             type="button"
             :disabled="submitting"
-            @click="publish('publish-and-add-another')"
-            class="px-4 py-2 rounded-md border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-            Publish &amp; add another
-        </button>
-
-        <button
-            type="button"
-            :disabled="submitting"
-            @click="publish('publish')"
+            @click="save"
             class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition cursor-pointer disabled:opacity-90 disabled:cursor-not-allowed"
         >
             <svg v-if="submitting" class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
@@ -108,9 +100,11 @@ function publish(intent = 'publish') {
                 <path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
             </svg>
             <svg v-else class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M9 10h11M9 10l-4 4 4 4M20 6V4"/>
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                <polyline points="17 21 17 13 7 13 7 21"/>
+                <polyline points="7 3 7 8 15 8"/>
             </svg>
-            {{ submitting ? 'Publishing...' : 'Publish listing' }}
+            {{ submitting ? 'Saving...' : 'Save changes' }}
         </button>
     </div>
 </template>

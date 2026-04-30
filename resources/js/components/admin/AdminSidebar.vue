@@ -15,16 +15,22 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? 
 // is fixed for the lifetime of this component.
 const currentPath = window.location.pathname;
 
-function isActive(href) {
-    if (!href || href === '#') return false;
-    return currentPath === href;
+function isActive(item) {
+    if (typeof item.matches === 'function') return item.matches(currentPath);
+    if (!item.href || item.href === '#') return false;
+    return currentPath === item.href;
 }
 
 const sections = [
     {
         label: 'Operations',
         items: [
-            { name: 'Dashboard', href: '/admin', icon: 'home' },
+            {
+                name: 'Dashboard',
+                href: '/admin',
+                icon: 'home',
+                matches: (path) => path === '/admin' || path === '/admin/',
+            },
         ],
     },
     {
@@ -33,9 +39,21 @@ const sections = [
             { name: 'Add Listing',          href: '/admin/listings/create',         icon: 'plus' },
             { name: 'Verified Listings',    href: '/admin/verified-listings',       icon: 'shield-check' },
             { name: 'Featured Listings',    href: '/admin/featured-listings',       icon: 'star' },
-            { name: 'Unverified Listings',  href: '/admin/unverified-listings',     icon: 'shield-question' },
+            {
+                name: 'Unverified Listings',
+                href: '/admin/unverified-listings',
+                icon: 'shield-question',
+                matches: (path) => path === '/admin/unverified-listings'
+                    || /^\/admin\/listings\/[^\/]+\/unverified-edit$/.test(path),
+            },
             { name: 'Deactivated Listings', href: '/admin/deactivated-listings',    icon: 'archive' },
-            { name: 'Rejected Listings',    href: '/admin/rejected-listings',       icon: 'circle-x' },
+            {
+                name: 'Rejected Listings',
+                href: '/admin/rejected-listings',
+                icon: 'circle-x',
+                matches: (path) => path === '/admin/rejected-listings'
+                    || /^\/admin\/listings\/[^\/]+\/reopen$/.test(path),
+            },
         ],
     },
     {
@@ -93,7 +111,7 @@ const iconPaths = {
                             :href="item.href"
                             :class="[
                                 'group flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition',
-                                isActive(item.href)
+                                isActive(item)
                                     ? 'bg-slate-900 text-white dark:bg-orange-500'
                                     : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800',
                             ]"

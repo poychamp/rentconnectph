@@ -26,6 +26,10 @@ return new class extends Migration
             $table->string('contact_phone', 16);
             $table->string('prequal_status', 32)->nullable();
             $table->string('queue_status', 32)->nullable();
+            $table->foreignId('assigned_to')->nullable()->constrained('users')->cascadeOnDelete();
+            $table->string('directions', 500)->nullable();
+            $table->string('contact_type', 32)->nullable();
+            $table->text('verification_notes')->nullable();
             $table->boolean('is_verified')->default(false);
             $table->timestamp('verified_at')->nullable();
             $table->boolean('is_featured')->default(false);
@@ -43,6 +47,8 @@ return new class extends Migration
             $table->index('contact_phone');
             $table->index('prequal_status');
             $table->index('queue_status');
+            $table->index('assigned_to');
+            $table->index('contact_type');
         });
     }
 

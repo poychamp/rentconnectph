@@ -47,14 +47,6 @@ const addListingForm = reactive({
     source_site:   old?.source_site   ?? '',
     source_url:    old?.source_url    ?? '',
     contact_phone: old?.contact_phone ?? '',
-    is_featured:  old?.is_featured === '1' || old?.is_featured === true,
-    // Default to UNverified — verifying is a real moderation action, shouldn't
-    // be the silent default. Admin must consciously check the toggle to publish
-    // a listing as verified. After validation failure, Laravel's withInput
-    // populates old.is_verified as a string ('1' or '0') from the form's
-    // appendHidden boolean coercion — preserve the toggle state so the user
-    // doesn't lose it.
-    is_verified:  old?.is_verified === undefined ? false : (old.is_verified === '1' || old.is_verified === true),
 });
 
 // Per-field validation errors, keyed by Laravel field name (e.g. 'title', 'photos.0.key').

@@ -12,6 +12,7 @@ use Spatie\Enum\Enum;
  * @method static self facebookMarketplace()
  * @method static self fieldDiscovery()
  * @method static self referral()
+ * @method static self other()
  */
 class SourceSite extends Enum
 {
@@ -25,6 +26,7 @@ class SourceSite extends Enum
             'facebookMarketplace' => 'facebook_marketplace',
             'fieldDiscovery'      => 'field_discovery',
             'referral'            => 'referral',
+            'other'               => 'other',
         ];
     }
 
@@ -38,6 +40,7 @@ class SourceSite extends Enum
             'facebookMarketplace' => 'Facebook Marketplace',
             'fieldDiscovery'      => 'Field Discovery',
             'referral'            => 'Referral',
+            'other'               => 'Other',
         ];
     }
 }

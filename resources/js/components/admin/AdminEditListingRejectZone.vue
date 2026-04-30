@@ -1,7 +1,5 @@
 <script setup>
-import { ref, inject, computed } from 'vue';
-
-const form = inject('addListingForm');
+import { ref } from 'vue';
 
 const initial            = window.__INITIAL_EDIT_LISTING__ ?? {};
 const initialRejectErrs  = initial.rejectErrors ?? null;
@@ -9,7 +7,8 @@ const initialRejectErrs  = initial.rejectErrors ?? null;
 const errors     = ref(initialRejectErrs ?? {});
 const submitting = ref(false);
 
-const visible     = computed(() => form?.from === 'unverified');
+const visible = typeof window !== 'undefined'
+    && window.location.pathname.endsWith('/unverified-edit');
 const listingUuid = initial.listingUuid ?? '';
 const csrfToken   = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
 

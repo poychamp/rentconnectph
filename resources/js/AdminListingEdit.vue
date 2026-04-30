@@ -4,8 +4,11 @@ import AdminSidebar from './components/admin/AdminSidebar.vue';
 import AdminTopBar from './components/admin/AdminTopBar.vue';
 import AdminAddListingFormCard from './components/admin/AdminAddListingFormCard.vue';
 import AdminEditListingPublishBar from './components/admin/AdminEditListingPublishBar.vue';
+import AdminEditListingUnverifiedPublishBar from './components/admin/AdminEditListingUnverifiedPublishBar.vue';
 import AdminEditListingDangerZone from './components/admin/AdminEditListingDangerZone.vue';
 import AdminEditListingRejectZone from './components/admin/AdminEditListingRejectZone.vue';
+import AdminEditListingPrequalCard from './components/admin/AdminEditListingPrequalCard.vue';
+import AdminEditListingCallContextCard from './components/admin/AdminEditListingCallContextCard.vue';
 
 // Read initial state synchronously at setup so children inherit a fully-populated
 // form on first render. oldInput (validation failure path) wins over listing
@@ -30,7 +33,18 @@ const formData = ref({
     barangays:    initial?.barangays    ?? [],
     sourceSites:  initial?.sourceSites  ?? [],
     amenities:    initial?.amenities    ?? [],
+    fieldUsers:   initial?.fieldUsers   ?? [],
+    contactTypes: initial?.contactTypes ?? [],
 });
+
+// Slice detection — the unverified-edit page renders extra cards
+// (Pre-qualification, Call context). Driven by URL pathname so it works
+// regardless of how the user landed on the page.
+const isUnverifiedSlice = typeof window !== 'undefined'
+    && window.location.pathname.endsWith('/unverified-edit');
+
+// Persisted prequal state for the read-only badge — comes off the listing payload.
+const prequalStatus = persisted?.prequal_status ?? null;
 
 // Origin tracking — picked up from ?from= on the edit URL (e.g.
 // /admin/listings/{uuid}/edit?from=unverified). Round-tripped through the form
@@ -55,6 +69,15 @@ const addListingForm = reactive({
     source_site:   source.source_site   ?? '',
     source_url:    source.source_url    ?? '',
     contact_phone: source.contact_phone ?? '',
+    // Pre-qualification + call-context fields. Editable on the unverified
+    // slice via the Pre-qual card (status select) + Call-context card
+    // (directions, contact type, notes, field-officer assignment). Server
+    // doesn't validate or persist these yet — that's the next backend slice.
+    prequal_status:     source.prequal_status     ?? '',
+    directions:         source.directions         ?? '',
+    contact_type:       source.contact_type       ?? '',
+    verification_notes: source.verification_notes ?? '',
+    assigned_to:        source.assigned_to ?? null,
     is_verified:  toBool(source.is_verified),
     is_featured:  toBool(source.is_featured),
     from:         initialFrom,
@@ -63,35 +86,74 @@ const addListingForm = reactive({
 const addListingFormErrors = ref(initial?.errors ?? {});
 const errorCount = computed(() => Object.keys(addListingFormErrors.value).length);
 
-// Client-side validators mirror the server rules in `Admin\ListingController::update()`,
-// minus data-spoofing-shaped checks (enum allowlists `*.in`, photo key path
-// `starts_with:tmp/`, amenity FK `exists`) — those failures can only happen via
-// crafted requests, not via the UI. Server still re-runs everything and is the
-// source of truth.
-//
-// Note on contact_phone / source_site / source_url: update() does NOT validate
-// these yet (only store() does). When the update() endpoint adopts those rules,
-// mirror their validators here too.
+// Client-side validators mirror the server rules per slice. The required set
+// on the unverified slice varies by prequal_status — not_called/no_answer
+// require only title+contact_phone+prequal_status; called_yes (future) will
+// extend with listing details + call-context fields. Format checks always run
+// when a value is provided, regardless of slice. Server is the source of truth.
+function isFieldRequired(field, prequalStatus) {
+    if (!isUnverifiedSlice) {
+        return ['title', 'listing_type', 'price_monthly', 'barangay', 'beds', 'baths', 'sqm', 'photos'].includes(field);
+    }
+    if (['title', 'contact_phone', 'prequal_status'].includes(field)) return true;
+    if (prequalStatus === 'called_yes' && ['directions', 'contact_type'].includes(field)) return true;
+    return false;
+}
+
 const VALIDATORS = {
     title: (f) => {
         const v = (f.title ?? '').trim();
-        if (!v) return 'Title is required.';
+        if (!v && isFieldRequired('title', f.prequal_status)) return 'Title is required.';
         if (v.length > 200) return 'Title is too long (max 200 characters).';
         return null;
     },
-    listing_type: (f) => f.listing_type ? null : 'Listing type is required.',
-    price_monthly: (f) => {
-        if (f.price_monthly === null || f.price_monthly === '' || f.price_monthly === undefined) {
-            return 'Monthly rent is required.';
+    contact_phone: (f) => {
+        const raw = (f.contact_phone ?? '').trim();
+        if (!raw && isFieldRequired('contact_phone', f.prequal_status)) return 'Contact phone is required.';
+        if (!raw) return null;
+
+        // Mirror App\Support\PhMobile::normalize(). Accepts:
+        //   09XXXXXXXXX (11 digits)
+        //   9XXXXXXXXX  (10 digits)
+        //   639XXXXXXXXX (12 digits)
+        //   +639XXXXXXXXX (with +)
+        const hasPlus = raw.startsWith('+');
+        const digits = raw.replace(/\D/g, '');
+        const isPh12 = digits.length === 12 && digits.startsWith('63') && digits[2] === '9';
+
+        if (hasPlus) return isPh12 ? null : 'Invalid PH mobile number.';
+        if (digits.length === 11 && digits.startsWith('09')) return null;
+        if (isPh12) return null;
+        if (digits.length === 10 && digits.startsWith('9')) return null;
+        return 'Invalid PH mobile number.';
+    },
+    prequal_status: (f) => {
+        if (!f.prequal_status && isFieldRequired('prequal_status', f.prequal_status)) {
+            return 'Pre-qualification status is required.';
         }
+        return null;
+    },
+    listing_type: (f) => {
+        if (!f.listing_type && isFieldRequired('listing_type', f.prequal_status)) return 'Listing type is required.';
+        return null;
+    },
+    price_monthly: (f) => {
+        const empty = f.price_monthly === null || f.price_monthly === '' || f.price_monthly === undefined;
+        if (empty && isFieldRequired('price_monthly', f.prequal_status)) return 'Monthly rent is required.';
+        if (empty) return null;
         const n = Number(f.price_monthly);
         if (!Number.isFinite(n)) return null;
         if (n < 1) return 'Monthly rent must be at least ₱1.';
         return null;
     },
-    barangay: (f) => f.barangay ? null : 'Barangay is required.',
+    barangay: (f) => {
+        if (!f.barangay && isFieldRequired('barangay', f.prequal_status)) return 'Barangay is required.';
+        return null;
+    },
     beds: (f) => {
-        if (f.beds === null || f.beds === '' || f.beds === undefined) return 'Bedrooms is required.';
+        const empty = f.beds === null || f.beds === '' || f.beds === undefined;
+        if (empty && isFieldRequired('beds', f.prequal_status)) return 'Bedrooms is required.';
+        if (empty) return null;
         const n = Number(f.beds);
         if (!Number.isFinite(n)) return null;
         if (n < 0)  return 'The beds field must be at least 0.';
@@ -99,7 +161,9 @@ const VALIDATORS = {
         return null;
     },
     baths: (f) => {
-        if (f.baths === null || f.baths === '' || f.baths === undefined) return 'Bathrooms is required.';
+        const empty = f.baths === null || f.baths === '' || f.baths === undefined;
+        if (empty && isFieldRequired('baths', f.prequal_status)) return 'Bathrooms is required.';
+        if (empty) return null;
         const n = Number(f.baths);
         if (!Number.isFinite(n)) return null;
         if (n < 0)  return 'The baths field must be at least 0.';
@@ -107,7 +171,9 @@ const VALIDATORS = {
         return null;
     },
     sqm: (f) => {
-        if (f.sqm === null || f.sqm === '' || f.sqm === undefined) return 'Floor area is required.';
+        const empty = f.sqm === null || f.sqm === '' || f.sqm === undefined;
+        if (empty && isFieldRequired('sqm', f.prequal_status)) return 'Floor area is required.';
+        if (empty) return null;
         const n = Number(f.sqm);
         if (!Number.isFinite(n)) return null;
         if (n < 1) return 'Floor area must be at least 1 sqm.';
@@ -128,8 +194,24 @@ const VALIDATORS = {
         return null;
     },
     photos: (f) => {
-        if (!Array.isArray(f.photos) || f.photos.length === 0) return 'At least one photo is required.';
-        if (f.photos.length > 20) return 'Maximum 20 photos allowed.';
+        const empty = !Array.isArray(f.photos) || f.photos.length === 0;
+        if (empty && isFieldRequired('photos', f.prequal_status)) return 'At least one photo is required.';
+        if (Array.isArray(f.photos) && f.photos.length > 20) return 'Maximum 20 photos allowed.';
+        return null;
+    },
+    directions: (f) => {
+        const v = (f.directions ?? '').trim();
+        if (!v && isFieldRequired('directions', f.prequal_status)) return 'Directions are required.';
+        if (v.length > 500) return 'Directions are too long (max 500 characters).';
+        return null;
+    },
+    contact_type: (f) => {
+        if (!f.contact_type && isFieldRequired('contact_type', f.prequal_status)) return 'Contact type is required.';
+        return null;
+    },
+    verification_notes: (f) => {
+        const v = (f.verification_notes ?? '').trim();
+        if (v.length > 2000) return 'Verification notes are too long (max 2000 characters).';
         return null;
     },
 };
@@ -208,6 +290,20 @@ onMounted(() => {
                     </div>
                 </div>
 
+                <template v-if="isUnverifiedSlice">
+                    <AdminEditListingPrequalCard
+                        class="mt-6"
+                        :contact-phone="addListingForm.contact_phone"
+                        :persisted-prequal-status="prequalStatus"
+                    />
+
+                    <AdminEditListingCallContextCard
+                        class="mt-5"
+                        :contact-types="formData.contactTypes"
+                        :field-users="formData.fieldUsers"
+                    />
+                </template>
+
                 <AdminAddListingFormCard
                     class="mt-6"
                     :listing-types="formData.listingTypes"
@@ -220,7 +316,8 @@ onMounted(() => {
                 <AdminEditListingRejectZone />
             </main>
 
-            <AdminEditListingPublishBar />
+            <AdminEditListingUnverifiedPublishBar v-if="isUnverifiedSlice" />
+            <AdminEditListingPublishBar v-else />
         </div>
     </div>
 </template>

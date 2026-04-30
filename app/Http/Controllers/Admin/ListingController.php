@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\Barangay;
+use App\Enums\ContactType;
 use App\Enums\DeactivationReason;
 use App\Enums\LifecycleEventType;
 use App\Enums\ListingType;
 use App\Enums\PrequalStatus;
 use App\Enums\QueueStatus;
 use App\Enums\SourceSite;
+use App\Models\User;
 use App\Rules\PhMobileNumber;
 use App\Support\PhMobile;
 use App\Http\Controllers\Controller;
@@ -57,18 +59,308 @@ class ListingController extends Controller
             'listing'             => $listing,
             'listingTypes'        => collect(ListingType::toValues())
                 ->map(fn ($v) => ['value' => $v, 'label' => ListingType::from($v)->label])
-                ->values(),
+                ->all(),
             'barangays'           => collect(Barangay::toValues())
                 ->map(fn ($v) => ['value' => $v, 'label' => Barangay::from($v)->label])
-                ->values(),
+                ->all(),
             'sourceSites'         => collect(SourceSite::toValues())
                 ->map(fn ($v) => ['value' => $v, 'label' => SourceSite::from($v)->label])
-                ->values(),
+                ->all(),
             'amenities'           => Amenity::orderBy('sort_order')->get(['id', 'name', 'slug', 'icon']),
             'deactivationReasons' => collect(DeactivationReason::toValues())
                 ->map(fn ($v) => ['value' => $v, 'label' => DeactivationReason::from($v)->label])
-                ->values(),
+                ->all(),
         ]);
+    }
+
+    public function unverifiedEdit(Listing $listing): View
+    {
+        // Slice guard — this URL is for unverified listings only. Verified
+        // (or any in-between state) → 404 rather than render the wrong UX.
+        abort_if($listing->is_verified, 404);
+
+        $listing->load(['images' => fn ($q) => $q->orderBy('sort_order'), 'amenities']);
+
+        // Listing payload as ARRAY (not Model) so the Blade serializes cleanly
+        // into __INITIAL_EDIT_LISTING__.listing without dragging Model
+        // accessors / hidden attributes through.
+        $listingPayload = [
+            'id'             => $listing->id,
+            'uuid'           => $listing->uuid,
+            'title'          => $listing->title,
+            'description'    => $listing->description,
+            'type'           => $listing->type,
+            'price_monthly'  => $listing->price_monthly,
+            'barangay'       => $listing->barangay,
+            'beds'           => $listing->beds,
+            'baths'          => $listing->baths,
+            'sqm'            => $listing->sqm,
+            'latitude'       => $listing->latitude,
+            'longitude'      => $listing->longitude,
+            'source_site'        => $listing->source_site,
+            'source_url'         => $listing->source_url,
+            'contact_phone'      => $listing->contact_phone,
+            'prequal_status'     => $listing->prequal_status,
+            'queue_status'       => $listing->queue_status,
+            'directions'         => $listing->directions,
+            'contact_type'       => $listing->contact_type,
+            'verification_notes' => $listing->verification_notes,
+            'assigned_to'        => $listing->assigned_to,
+            'amenities'          => $listing->amenities->map(fn ($a) => [
+                'id' => $a->id, 'name' => $a->name, 'slug' => $a->slug, 'icon' => $a->icon,
+            ])->all(),
+            'images'         => $listing->images->map(fn ($img) => [
+                'id'         => $img->id,
+                'url'        => $img->url,
+                'sort_order' => $img->sort_order,
+            ])->all(),
+        ];
+
+        return view('admin.listings.unverified-edit', [
+            'listing'             => $listingPayload,
+            'listingTypes'        => collect(ListingType::toValues())
+                ->map(fn ($v) => ['value' => $v, 'label' => ListingType::from($v)->label])
+                ->all(),
+            'barangays'           => collect(Barangay::toValues())
+                ->map(fn ($v) => ['value' => $v, 'label' => Barangay::from($v)->label])
+                ->all(),
+            'sourceSites'         => collect(SourceSite::toValues())
+                ->map(fn ($v) => ['value' => $v, 'label' => SourceSite::from($v)->label])
+                ->all(),
+            'amenities'           => Amenity::orderBy('sort_order')->get(['id', 'name', 'slug', 'icon']),
+            'deactivationReasons' => collect(DeactivationReason::toValues())
+                ->map(fn ($v) => ['value' => $v, 'label' => DeactivationReason::from($v)->label])
+                ->all(),
+            'fieldUsers'          => User::role('field')
+                ->orderBy('name')
+                ->get(['id', 'name'])
+                ->toArray(),
+            'contactTypes'        => collect(ContactType::toValues())
+                ->map(fn ($v) => ['value' => $v, 'label' => ContactType::from($v)->label])
+                ->all(),
+        ]);
+    }
+
+    public function unverifiedUpdate(Request $request, Listing $listing): RedirectResponse
+    {
+        // Slice guard — same as unverifiedEdit. Verified listings update via
+        // update(), not this slice.
+        abort_if($listing->is_verified, 404);
+
+        $existingIds = $listing->images()->pluck('id')->all();
+        $isCalledYes = $request->input('prequal_status') === PrequalStatus::calledYes()->value;
+
+        $rules = [
+            'title'                => ['required', 'string', 'max:200'],
+            'description'          => ['nullable', 'string'],
+            'listing_type'         => ['nullable', 'string', Rule::in(ListingType::toValues())],
+            'price_monthly'        => ['nullable', 'integer', 'min:1'],
+            'barangay'             => ['nullable', 'string', Rule::in(Barangay::toValues())],
+            'beds'                 => ['nullable', 'integer', 'min:0', 'max:20'],
+            'baths'                => ['nullable', 'integer', 'min:0', 'max:20'],
+            'sqm'                  => ['nullable', 'integer', 'min:1'],
+            'latitude'             => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude'            => ['nullable', 'numeric', 'between:-180,180'],
+            'amenities'            => ['nullable', 'array', 'max:50'],
+            'amenities.*'          => ['integer', 'exists:amenities,id'],
+            'photos'               => ['nullable', 'array', 'max:20'],
+            'photos.*'             => ['array'],
+            'photos.*.existing_id' => ['nullable', 'integer', Rule::in($existingIds)],
+            'photos.*.key'         => ['nullable', 'string', 'starts_with:tmp/'],
+            'photos.*.name'        => ['nullable', 'string'],
+            'photos.*.size'        => ['nullable', 'integer'],
+            'contact_phone'        => ['required', 'string', new PhMobileNumber],
+            'source_site'          => ['nullable', 'string', Rule::in(SourceSite::toValues())],
+            'source_url'           => ['nullable', 'string', 'url', 'max:2000'],
+            'prequal_status'       => ['required', 'string', Rule::in(PrequalStatus::toValues())],
+        ];
+
+        // called_yes adds call-context validation. Other prequal states leave
+        // these fields un-validated AND un-persisted (silent-ignore).
+        if ($isCalledYes) {
+            $rules['directions']         = ['required', 'string', 'max:500'];
+            $rules['contact_type']       = ['required', 'string', Rule::in(ContactType::toValues())];
+            $rules['verification_notes'] = ['nullable', 'string', 'max:2000'];
+            $rules['assigned_to']        = [
+                'nullable',
+                'integer',
+                'exists:users,id',
+                function ($attribute, $value, $fail) {
+                    if ($value === null) return;
+                    $user = User::find($value);
+                    if (! $user || ! $user->hasRole('field')) {
+                        $fail('Assigned user must be a field officer.');
+                    }
+                },
+            ];
+        }
+
+        $validated = $request->validate($rules, [
+            'title.required'             => 'Title is required.',
+            'title.max'                  => 'Title is too long (max 200 characters).',
+            'listing_type.in'            => 'Invalid listing type.',
+            'price_monthly.min'          => 'Monthly rent must be at least ₱1.',
+            'barangay.in'                => 'Invalid barangay.',
+            'sqm.min'                    => 'Floor area must be at least 1 sqm.',
+            'photos.max'                 => 'Maximum 20 photos allowed.',
+            'photos.*.key.starts_with'   => 'Invalid photo key.',
+            'amenities.*.exists'         => "One or more selected amenities don't exist.",
+            'latitude.between'           => 'Latitude must be between -90 and 90.',
+            'longitude.between'          => 'Longitude must be between -180 and 180.',
+            'source_site.in'             => 'Invalid source site.',
+            'source_url.url'             => 'Source URL must be a valid URL.',
+            'contact_phone.required'     => 'Contact phone is required.',
+            'directions.required'        => 'Directions are required.',
+            'directions.max'             => 'Directions are too long (max 500 characters).',
+            'contact_type.required'      => 'Contact type is required.',
+            'contact_type.in'            => 'Invalid contact type.',
+            'verification_notes.max'     => 'Verification notes are too long (max 2000 characters).',
+        ]);
+
+        // Prequal lock-in:
+        //   called_yes → only called_yes (lateral to no_answer also blocked —
+        //                a successful call can't be rewritten as "no answer")
+        //   no_answer  → no rollback to not_called (forward to called_yes ok)
+        //   not_called → any transition allowed
+        $persistedPrequal = $listing->prequal_status;
+        $submittedPrequal = $validated['prequal_status'];
+
+        if ($persistedPrequal === PrequalStatus::calledYes()->value
+            && $submittedPrequal !== PrequalStatus::calledYes()->value) {
+            throw ValidationException::withMessages([
+                'prequal_status' => "Can't change a 'Called: Yes' listing — once successfully called, this is locked.",
+            ]);
+        }
+        if ($persistedPrequal === PrequalStatus::noAnswer()->value
+            && $submittedPrequal === PrequalStatus::notCalled()->value) {
+            throw ValidationException::withMessages([
+                'prequal_status' => "Can't roll back to 'Not called' — this listing has already been contacted.",
+            ]);
+        }
+
+        $photos = $request->input('photos', []);
+
+        // Each photo entry must have exactly one of {existing_id, key}.
+        foreach ($photos as $i => $photo) {
+            $hasExisting = isset($photo['existing_id']);
+            $hasKey      = isset($photo['key']) && $photo['key'] !== '';
+            if ($hasExisting === $hasKey) {
+                throw ValidationException::withMessages([
+                    "photos.{$i}" => 'Each photo must reference an existing photo or a new upload, not both or neither.',
+                ]);
+            }
+        }
+
+        $submittedExistingIds = collect($photos)->pluck('existing_id')->filter()->all();
+        $removedImageIds = array_values(array_diff($existingIds, $submittedExistingIds));
+        $removedImageUrls = ListingImage::whereIn('id', $removedImageIds)->pluck('url')->all();
+
+        DB::transaction(function () use ($request, $listing, $validated, $photos, $removedImageIds, $isCalledYes) {
+            // Slice persistence: lead/listing details + prequal_status always.
+            // is_verified, is_featured, verified_at — never touched (security
+            // boundary; verification happens later in the lifecycle).
+            // Call-context fields (directions, contact_type, verification_notes,
+            // assigned_to) — only persisted when prequal_status='called_yes';
+            // silently dropped for not_called/no_answer.
+            $updateData = [
+                'title'          => $validated['title'],
+                'description'    => $validated['description'] ?? null,
+                'type'           => $validated['listing_type'] ?? null,
+                'price_monthly'  => $validated['price_monthly'] ?? null,
+                'barangay'       => $validated['barangay'] ?? null,
+                'beds'           => $validated['beds'] ?? null,
+                'baths'          => $validated['baths'] ?? null,
+                'sqm'            => $validated['sqm'] ?? null,
+                'latitude'       => $validated['latitude'] ?? null,
+                'longitude'      => $validated['longitude'] ?? null,
+                'contact_phone'  => PhMobile::normalize($validated['contact_phone']),
+                'source_site'    => $validated['source_site'] ?? null,
+                'source_url'     => $validated['source_url'] ?? null,
+                'prequal_status' => $validated['prequal_status'],
+            ];
+
+            if ($isCalledYes) {
+                $assignedTo = $validated['assigned_to'] ?? null;
+                $updateData['directions']         = $validated['directions'];
+                $updateData['contact_type']       = $validated['contact_type'];
+                $updateData['verification_notes'] = $validated['verification_notes'] ?? null;
+                $updateData['assigned_to']        = $assignedTo;
+                // Auto-transition queue_status based on assignment.
+                $updateData['queue_status']       = $assignedTo !== null
+                    ? QueueStatus::assigned()->value
+                    : QueueStatus::unassigned()->value;
+            }
+
+            $listing->update($updateData);
+
+            if (! empty($removedImageIds)) {
+                ListingImage::whereIn('id', $removedImageIds)->delete();
+            }
+
+            $orderedImageIds = [];
+            foreach ($photos as $i => $photo) {
+                if (isset($photo['existing_id'])) {
+                    ListingImage::where('id', $photo['existing_id'])->update(['sort_order' => $i]);
+                    $orderedImageIds[] = (int) $photo['existing_id'];
+                    continue;
+                }
+
+                $tmpKey       = $photo['key'];
+                $filename     = basename($tmpKey);
+                $permanentKey = "listings/{$listing->uuid}/{$filename}";
+
+                $copied = Storage::disk('s3')->copy($tmpKey, $permanentKey);
+                if (! $copied) {
+                    throw new \RuntimeException("Failed to copy {$tmpKey} to {$permanentKey}");
+                }
+
+                $img = ListingImage::create([
+                    'listing_id' => $listing->id,
+                    'url'        => Storage::disk('s3')->url($permanentKey),
+                    'sort_order' => $i,
+                ]);
+                $orderedImageIds[] = $img->id;
+            }
+
+            if (! empty($orderedImageIds)) {
+                $listing->update(['display_image_id' => $orderedImageIds[0]]);
+            }
+            $listing->amenities()->sync($validated['amenities'] ?? []);
+
+            ListingLifecycleEvent::create([
+                'listing_id' => $listing->id,
+                'event_type' => 'updated',
+                'actor_id'   => auth('admin')->id(),
+                'notes'      => json_encode(
+                    $request->except(['_token', '_method']),
+                    JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+                ),
+            ]);
+        });
+
+        // Best-effort tmp cleanup.
+        foreach ($photos as $photo) {
+            if (! isset($photo['key'])) continue;
+            try {
+                Storage::disk('s3')->delete($photo['key']);
+            } catch (\Throwable $e) {
+                // Swallow — lifecycle handles it.
+            }
+        }
+
+        // Best-effort S3 cleanup for removed images.
+        foreach ($removedImageUrls as $url) {
+            try {
+                $key = ltrim(parse_url($url, PHP_URL_PATH) ?? '', '/');
+                if ($key) Storage::disk('s3')->delete($key);
+            } catch (\Throwable $e) {
+                // Swallow — orphan acceptable.
+            }
+        }
+
+        return redirect()
+            ->route('admin.unverified-listings.index')
+            ->with('success', "Listing '{$listing->title}' updated.");
     }
 
     public function update(Request $request, Listing $listing): RedirectResponse
@@ -513,15 +805,18 @@ class ListingController extends Controller
 
         if ($hasSort) {
             $paginator = Listing::where('is_verified', false)
+                ->with('assignedTo')
                 ->orderBy($sort, $dir)
                 ->paginate(10);
         } else {
             $paginator = $q === ''
                 ? Listing::where('is_verified', false)
-                    ->orderBy('created_at', 'asc')
+                    ->with('assignedTo')
+                    ->orderBy('created_at', 'desc')
                     ->paginate(10)
                 : Listing::search($q)
                     ->where('is_verified', 0)
+                    ->query(fn ($builder) => $builder->with('assignedTo'))
                     ->paginate(10);
         }
 

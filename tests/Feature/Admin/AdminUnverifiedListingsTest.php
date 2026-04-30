@@ -72,7 +72,12 @@ class AdminUnverifiedListingsTest extends TestCase
         // Resource shape — keys + human-readable labels. Note `created_at` not `verified_at`.
         $first = $payload['data'][0];
         $this->assertEqualsCanonicalizing(
-            ['id', 'uuid', 'name', 'type_label', 'barangay_label', 'price', 'created_at', 'updated_at'],
+            ['id', 'uuid', 'name', 'type_label', 'barangay_label',
+             'contact_phone',
+             'prequal_status', 'prequal_status_label',
+             'queue_status',   'queue_status_label',
+             'assigned_to_name',
+             'created_at', 'updated_at'],
             array_keys($first)
         );
         $this->assertSame('Apartment',     $first['type_label']);
@@ -91,12 +96,13 @@ class AdminUnverifiedListingsTest extends TestCase
             'updated_at must be an ISO 8601 datetime with time component, not a date-only string'
         );
 
-        // Sort order — oldest created_at first (ASC). Unverified is a FIFO triage
-        // queue — listings waiting longest get reviewed first.
+        // Sort order — newest created_at first (DESC). Per FRD-023, the unverified
+        // queue surfaces newly-spotted leads first while they're still warm — calls
+        // team works the most recent intake before stale leads.
         $createdAts = array_map(fn ($r) => $r['created_at'], $payload['data']);
         $expected = $createdAts;
-        sort($expected);
-        $this->assertSame($expected, $createdAts, 'Rows must be ordered by created_at ASC');
+        rsort($expected);
+        $this->assertSame($expected, $createdAts, 'Rows must be ordered by created_at DESC');
 
         // Page 2 — remaining 5 rows
         $response2 = $this->get(route('admin.unverified-listings.index', ['page' => 2]));
@@ -171,6 +177,90 @@ class AdminUnverifiedListingsTest extends TestCase
             $ids,
             'Sort must beat q — all 4 unverified rows returned in created_at DESC order, not just the q=cozy match'
         );
+    }
+
+    public function test_it_includes_queue_state_fields_in_resource(): void
+    {
+        // Two rows: one with explicit prequal/queue state, one with null state
+        // (pre-FRD-023 records or fresh factory rows). Both label fields must
+        // null-guard the enum-from-value lookup.
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        $statusFul = Listing::factory()->create([
+            'is_verified'    => false,
+            'verified_at'    => null,
+            'prequal_status' => 'called_yes',
+            'queue_status'   => 'unassigned',
+        ]);
+
+        $stateless = Listing::factory()->create([
+            'is_verified'    => false,
+            'verified_at'    => null,
+            'prequal_status' => null,
+            'queue_status'   => null,
+        ]);
+
+        $response = $this->get(route('admin.unverified-listings.index'));
+        $rows = $response->viewData('unverified')['data'];
+
+        $row1 = collect($rows)->firstWhere('id', $statusFul->id);
+        $this->assertSame('called_yes', $row1['prequal_status']);
+        $this->assertSame('Called',     $row1['prequal_status_label']);
+        $this->assertSame('unassigned', $row1['queue_status']);
+        $this->assertSame('Unassigned', $row1['queue_status_label']);
+        $this->assertNull($row1['assigned_to_name']);
+
+        $row2 = collect($rows)->firstWhere('id', $stateless->id);
+        $this->assertNull($row2['prequal_status']);
+        $this->assertNull($row2['prequal_status_label']);
+        $this->assertNull($row2['queue_status']);
+        $this->assertNull($row2['queue_status_label']);
+        $this->assertNull($row2['assigned_to_name']);
+    }
+
+    public function test_it_returns_contact_phone_in_resource(): void
+    {
+        // FRD-023 § 3.7 — calls team needs the phone number visible in the queue
+        // table so they can dial without opening the row. Resource ships the
+        // E.164 form as stored; presentation-layer formatting is the frontend's
+        // job (e.g. 0917 123 4567).
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        $listing = Listing::factory()->create([
+            'is_verified'   => false,
+            'verified_at'   => null,
+            'contact_phone' => '+639171234567',
+        ]);
+
+        $response = $this->get(route('admin.unverified-listings.index'));
+        $row = collect($response->viewData('unverified')['data'])
+            ->firstWhere('id', $listing->id);
+
+        $this->assertSame('+639171234567', $row['contact_phone']);
+    }
+
+    public function test_it_returns_assigned_user_name_when_listing_is_assigned(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        $field = User::factory()->create(['name' => 'Maria Cruz']);
+
+        $assigned = Listing::factory()->create([
+            'is_verified'    => false,
+            'verified_at'    => null,
+            'prequal_status' => 'called_yes',
+            'queue_status'   => 'assigned',
+            'assigned_to'    => $field->id,
+        ]);
+
+        $response = $this->get(route('admin.unverified-listings.index'));
+        $rows = $response->viewData('unverified')['data'];
+
+        $row = collect($rows)->firstWhere('id', $assigned->id);
+        $this->assertSame('Maria Cruz', $row['assigned_to_name']);
     }
 
     public function test_it_filters_by_search_query(): void

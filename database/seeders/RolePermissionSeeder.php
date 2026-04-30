@@ -22,6 +22,7 @@ class RolePermissionSeeder extends Seeder
         return [
             AppGuard::admin()->value => [
                 AppRole::superAdmin()->value,
+                AppRole::field()->value,
             ],
         ];
     }

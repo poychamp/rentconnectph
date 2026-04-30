@@ -25,7 +25,8 @@ function onSort(field) {
                         <th class="px-4 py-3">Name</th>
                         <th class="px-4 py-3">Type</th>
                         <th class="px-4 py-3">Barangay</th>
-                        <th class="px-4 py-3">Price</th>
+                        <th class="px-4 py-3">Phone</th>
+                        <th class="px-4 py-3">Status</th>
                         <th class="px-4 py-3">
                             <button type="button" @click="onSort('created_at')"
                                 class="inline-flex items-center gap-1 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200 cursor-pointer transition">

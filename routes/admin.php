@@ -22,8 +22,12 @@ Route::middleware('auth:admin')->group(function () {
 
     Route::get('listings/{listing:uuid}/edit', [Admin\ListingController::class, 'edit'])
         ->name('listings.edit');
+    Route::get('listings/{listing:uuid}/unverified-edit', [Admin\ListingController::class, 'unverifiedEdit'])
+        ->name('listings.unverified-edit');
     Route::put('listings/{listing:uuid}', [Admin\ListingController::class, 'update'])
         ->name('listings.update');
+    Route::put('listings/{listing:uuid}/unverified-update', [Admin\ListingController::class, 'unverifiedUpdate'])
+        ->name('listings.unverified-update');
     Route::put('listings/{listing:uuid}/deactivate', [Admin\ListingController::class, 'deactivate'])
         ->name('listings.deactivate');
     Route::get('listings/{listing:uuid}/restore', [Admin\ListingController::class, 'showRestore'])
