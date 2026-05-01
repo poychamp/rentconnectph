@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
-import axios from 'axios';
+import axios from '../../axios';
 
 const props = defineProps({
     row: { type: Object, required: true },
@@ -59,7 +59,7 @@ async function togglePriority() {
         <td class="px-4 py-3">
             <div class="flex items-center gap-1 justify-center">
                 <a
-                    :href="`/field/listings/${row.uuid}/request-verification`"
+                    :href="`/field/listings/${row.uuid}/request-verification?from=listings`"
                     class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 cursor-pointer"
                     title="Request Verification"
                 >
@@ -70,7 +70,7 @@ async function togglePriority() {
                     Verify
                 </a>
                 <a
-                    :href="`/field/listings/${row.uuid}/edit`"
+                    :href="`/field/listings/${row.uuid}/edit?from=listings`"
                     class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
                     title="Edit"
                 >

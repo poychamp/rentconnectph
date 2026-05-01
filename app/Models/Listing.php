@@ -144,6 +144,14 @@ class Listing extends Model
         return $query->where('is_featured', true);
     }
 
+    public function scopePriorityForOfficer($query, int $userId)
+    {
+        return $query
+            ->where('is_field_priority', true)
+            ->where('assigned_to', $userId)
+            ->where('queue_status', \App\Enums\QueueStatus::assigned()->value);
+    }
+
     public function scopeRecentlyVerified($query)
     {
         return $query->verified()->orderByDesc('verified_at');

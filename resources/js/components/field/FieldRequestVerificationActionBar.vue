@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, inject } from 'vue';
-import axios from 'axios';
+import axios from '../../axios';
 
 const props = defineProps({
     ready:       { type: Boolean, required: true },
@@ -14,7 +14,12 @@ const scrollFormToTop = inject('scrollFormToTop', () => {});
 const submitting = ref(false);
 const togglingPriority = ref(false);
 const csrfToken  = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
-const formAction = computed(() => `/field/listings/${props.listing.uuid}/request-verification`);
+const fromQuery = new URLSearchParams(window.location.search).get('from');
+const formAction = computed(() => {
+    const base = `/field/listings/${props.listing.uuid}/request-verification`;
+    return fromQuery ? `${base}?from=${encodeURIComponent(fromQuery)}` : base;
+});
+const cancelHref = fromQuery === 'priority' ? '/field/priority' : '/field/listings';
 
 async function togglePriority() {
     if (togglingPriority.value) return;
@@ -89,7 +94,7 @@ function submit() {
 <template>
     <div class="shrink-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 px-6 py-3 flex items-center gap-3">
         <a
-            href="/field/listings"
+            :href="cancelHref"
             class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition cursor-pointer"
         >
             Cancel

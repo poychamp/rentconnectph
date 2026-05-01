@@ -479,4 +479,15 @@ class FieldListingUpdateTest extends TestCase
         $this->put(route('field.listings.update', $listing->uuid), $this->validPayload($listing))
             ->assertRedirect(route('field.listings.index'));
     }
+
+    public function test_it_redirects_to_field_priority_index_when_from_is_priority(): void
+    {
+        $marco = $this->asMarco();
+        $listing = $this->assignedListingFor($marco);
+
+        $this->put(
+            route('field.listings.update', $listing->uuid) . '?from=priority',
+            $this->validPayload($listing),
+        )->assertRedirect(route('field.priority.index'));
+    }
 }

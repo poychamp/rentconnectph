@@ -30,6 +30,10 @@ const formData = ref({
 // entries; fall back to the persisted listing on a fresh page load.
 const oldInput = initial.oldInput ?? null;
 
+const fromQuery = new URLSearchParams(window.location.search).get('from');
+const backHref = fromQuery === 'priority' ? '/field/priority' : '/field/listings';
+const backLabel = fromQuery === 'priority' ? '← Back to Priority' : '← Back to Listings';
+
 const addListingForm = reactive({
     title:         oldInput?.title         ?? listing.value?.title         ?? '',
     description:   oldInput?.description   ?? listing.value?.description   ?? '',
@@ -235,10 +239,10 @@ const allPrereqsPass = computed(() => Object.values(livePrereqs.value).every(Boo
 
             <main ref="mainRef" class="flex-1 overflow-y-auto px-6 pt-2 pb-6 lg:px-10 lg:pt-3 lg:pb-10">
                 <a
-                    href="/field/listings"
+                    :href="backHref"
                     class="inline-flex items-center gap-1 text-sm text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 mt-4 mb-2"
                 >
-                    ← Back to Listings
+                    {{ backLabel }}
                 </a>
 
                 <div

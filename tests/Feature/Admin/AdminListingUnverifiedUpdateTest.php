@@ -303,6 +303,138 @@ class AdminListingUnverifiedUpdateTest extends TestCase
     }
 
     // =========================================================================
+    // Photos persistence — sort order + deletion.
+    // =========================================================================
+
+    public function test_it_persists_photo_sort_order_matching_the_submitted_array_order(): void
+    {
+        $this->asAdmin();
+        $listing = $this->makeUnverifiedListing(3);
+
+        $existing = $listing->images->sortBy('id')->values();
+        $img1 = $existing[0];
+        $img2 = $existing[1];
+        $img3 = $existing[2];
+
+        $newTmp = $this->seedTmpPhoto('new-' . bin2hex(random_bytes(4)) . '.jpg');
+
+        $this->put(
+            route('admin.listings.unverified-update', $listing->uuid),
+            $this->notCalledPayload($listing, [
+                'photos' => [
+                    $newTmp,
+                    ['existing_id' => $img3->id],
+                    ['existing_id' => $img2->id],
+                    ['existing_id' => $img1->id],
+                ],
+            ]),
+        );
+
+        $listing->refresh()->load('images');
+        $sorted = $listing->images->sortBy('sort_order')->values();
+
+        $this->assertCount(4, $sorted);
+        $this->assertNotContains($sorted[0]->id, [$img1->id, $img2->id, $img3->id]);
+
+        $this->assertSame($img3->id, $sorted[1]->id);
+        $this->assertSame(1, $sorted[1]->sort_order);
+
+        $this->assertSame($img2->id, $sorted[2]->id);
+        $this->assertSame(2, $sorted[2]->sort_order);
+
+        $this->assertSame($img1->id, $sorted[3]->id);
+        $this->assertSame(3, $sorted[3]->sort_order);
+
+        $this->assertSame($sorted[0]->id, $listing->display_image_id);
+    }
+
+    public function test_it_keeps_existing_photos_and_persists_new_tmp_uploads(): void
+    {
+        $this->asAdmin();
+        $listing = $this->makeUnverifiedListing(1);
+        $existing = $listing->images->first();
+
+        $newTmp = $this->seedTmpPhoto('new-' . bin2hex(random_bytes(4)) . '.jpg');
+
+        $this->put(
+            route('admin.listings.unverified-update', $listing->uuid),
+            $this->notCalledPayload($listing, [
+                'photos' => [
+                    ['existing_id' => $existing->id],
+                    $newTmp,
+                ],
+            ]),
+        );
+
+        $listing->refresh()->load('images');
+
+        $this->assertCount(2, $listing->images);
+        $this->assertContains($existing->id, $listing->images->pluck('id')->all());
+
+        // Existing kept its original S3 url; the new image landed at the
+        // permanent listings/{uuid}/{filename} path.
+        $newImage = $listing->images->firstWhere('id', '!=', $existing->id);
+        $this->assertNotNull($newImage);
+        $this->assertStringContainsString("listings/{$listing->uuid}/", $newImage->url);
+    }
+
+    public function test_it_preserves_existing_photo_urls_when_called_yes_has_no_new_uploads(): void
+    {
+        $this->asAdmin();
+        $listing = $this->makeUnverifiedListing(2);
+
+        $existing = $listing->images->sortBy('id')->values();
+        $img1 = $existing[0];
+        $img2 = $existing[1];
+
+        $originalUrl1 = $img1->url;
+        $originalUrl2 = $img2->url;
+
+        $this->put(
+            route('admin.listings.unverified-update', $listing->uuid),
+            $this->calledYesPayload($listing, [
+                'photos' => [
+                    ['existing_id' => $img1->id],
+                    ['existing_id' => $img2->id],
+                ],
+            ]),
+        );
+
+        $img1->refresh();
+        $img2->refresh();
+
+        $this->assertSame($originalUrl1, $img1->url);
+        $this->assertSame($originalUrl2, $img2->url);
+    }
+
+    public function test_it_deletes_photos_that_are_not_in_the_submitted_array(): void
+    {
+        $this->asAdmin();
+        $listing = $this->makeUnverifiedListing(3);
+
+        $existing = $listing->images->sortBy('id')->values();
+        $kept     = $existing[0];
+        $removedA = $existing[1];
+        $removedB = $existing[2];
+
+        $this->put(
+            route('admin.listings.unverified-update', $listing->uuid),
+            $this->notCalledPayload($listing, [
+                'photos' => [
+                    ['existing_id' => $kept->id],
+                ],
+            ]),
+        );
+
+        $listing->refresh()->load('images');
+
+        $this->assertCount(1, $listing->images);
+        $this->assertSame($kept->id, $listing->images->first()->id);
+        $this->assertNull(\App\Models\ListingImage::find($removedA->id));
+        $this->assertNull(\App\Models\ListingImage::find($removedB->id));
+    }
+
+    // =========================================================================
     // contact_phone normalized to E.164 — accepts 09171234567, stores
     // +639171234567. Mirrors store()'s rule via PhMobile::normalize().
     // =========================================================================

@@ -29,9 +29,16 @@ Route::middleware('auth:admin')->group(function () {
         Route::put('listings/{listing:uuid}/request-verification', [Field\ListingController::class, 'requestVerification'])
             ->name('listings.request-verification');
 
+        Route::get('priority', [Field\ListingController::class, 'priorityIndex'])
+            ->name('priority.index');
+
         Route::put('api/listings/{listing:uuid}/priority-toggle', [Field\Api\ListingController::class, 'priorityToggle'])
             ->middleware('throttle:60,1')
             ->name('api.listings.priority-toggle');
+
+        Route::put('api/listings/priority-sort', [Field\Api\ListingController::class, 'sortPriority'])
+            ->middleware('throttle:30,1')
+            ->name('api.listings.priority-sort');
     });
 
     // Vapor signed S3 URL — browser calls this to get a pre-signed PUT URL,

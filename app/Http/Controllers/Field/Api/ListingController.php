@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Listing;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class ListingController extends Controller
@@ -40,5 +41,36 @@ class ListingController extends Controller
                 ? 'Added to priority queue.'
                 : 'Removed from priority queue.',
         ]);
+    }
+
+    public function sortPriority(Request $request): JsonResponse
+    {
+        $userId = auth('admin')->id();
+
+        $request->validate([
+            'order'   => ['required', 'array', 'min:1'],
+            'order.*' => ['required', 'string', 'uuid'],
+        ]);
+
+        $order = $request->input('order');
+
+        $listings = Listing::priorityForOfficer($userId)
+            ->whereIn('uuid', $order)
+            ->get()
+            ->keyBy('uuid');
+
+        if ($listings->count() !== count($order)) {
+            throw ValidationException::withMessages([
+                'order' => 'One or more listings are not in your priority pool.',
+            ]);
+        }
+
+        DB::transaction(function () use ($listings, $order) {
+            foreach ($order as $i => $uuid) {
+                $listings[$uuid]->update(['field_priority_order' => $i + 1]);
+            }
+        });
+
+        return response()->json(['ok' => true]);
     }
 }

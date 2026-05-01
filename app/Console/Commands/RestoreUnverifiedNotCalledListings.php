@@ -47,8 +47,8 @@ class RestoreUnverifiedNotCalledListings extends Command
         $listing->save();
 
         $imageUrls = [
-            'https://rentconnectph-dev-uploads.s3.ap-southeast-1.amazonaws.com/listings/019dda21-efbf-7204-a6e7-763d648802b5/bc163323-113e-40a5-bd8c-78b72903f264',
             'https://rentconnectph-dev-uploads.s3.ap-southeast-1.amazonaws.com/listings/019dda21-efbf-7204-a6e7-763d648802b5/a594f111-981b-4ce9-82b7-0d6939c0b897',
+            'https://rentconnectph-dev-uploads.s3.ap-southeast-1.amazonaws.com/listings/019dda21-efbf-7204-a6e7-763d648802b5/83e83c28-1d67-43e3-9116-391e3c1e77e7',
         ];
 
         $firstImageId = null;

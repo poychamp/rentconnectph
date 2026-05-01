@@ -52,6 +52,13 @@ const sections = [
                 matches: (path) => path === '/field/listings'
                     || /^\/field\/listings\/[^\/]+$/.test(path),
             },
+            {
+                name: 'Priority',
+                href: '/field/priority',
+                icon: 'star',
+                requires: 'listings.field-work',
+                matches: (path) => path === '/field/priority',
+            },
         ],
     },
 ];
@@ -68,6 +75,7 @@ const visibleSections = computed(() =>
 const iconPaths = {
     home: 'M3 12 12 4l9 8M5 10v10h4v-6h6v6h4V10',
     list: 'M3 6h18M3 12h18M3 18h18',
+    star: 'M12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26Z',
 };
 </script>
 
