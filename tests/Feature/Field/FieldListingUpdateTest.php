@@ -264,6 +264,92 @@ class FieldListingUpdateTest extends TestCase
         );
     }
 
+    public function test_it_persists_photo_sort_order_matching_the_submitted_array_order(): void
+    {
+        $marco = $this->asMarco();
+        $listing = Listing::factory()
+            ->withImages(3)
+            ->create([
+                'is_verified'  => false,
+                'verified_at'  => null,
+                'queue_status' => QueueStatus::assigned()->value,
+                'assigned_to'  => $marco->id,
+            ])
+            ->fresh(['images']);
+
+        $existing = $listing->images->sortBy('id')->values();
+        $img1 = $existing[0];
+        $img2 = $existing[1];
+        $img3 = $existing[2];
+
+        Storage::disk('s3')->put('tmp/new-photo.jpg', 'fake-bytes');
+        $newPhoto = ['key' => 'tmp/new-photo.jpg', 'name' => 'new.jpg', 'size' => 9];
+
+        $this->put(
+            route('field.listings.update', $listing->uuid),
+            $this->validPayload($listing, [
+                'photos' => [
+                    $newPhoto,
+                    ['existing_id' => $img3->id],
+                    ['existing_id' => $img2->id],
+                    ['existing_id' => $img1->id],
+                ],
+            ]),
+        );
+
+        $listing->refresh()->load('images');
+        $sorted = $listing->images->sortBy('sort_order')->values();
+
+        $this->assertCount(4, $sorted);
+        $this->assertNotContains($sorted[0]->id, [$img1->id, $img2->id, $img3->id]);
+
+        $this->assertSame($img3->id, $sorted[1]->id);
+        $this->assertSame(1, $sorted[1]->sort_order);
+
+        $this->assertSame($img2->id, $sorted[2]->id);
+        $this->assertSame(2, $sorted[2]->sort_order);
+
+        $this->assertSame($img1->id, $sorted[3]->id);
+        $this->assertSame(3, $sorted[3]->sort_order);
+
+        $this->assertSame($sorted[0]->id, $listing->display_image_id);
+    }
+
+    public function test_it_deletes_photos_that_are_not_in_the_submitted_array(): void
+    {
+        $marco = $this->asMarco();
+        $listing = Listing::factory()
+            ->withImages(3)
+            ->create([
+                'is_verified'  => false,
+                'verified_at'  => null,
+                'queue_status' => QueueStatus::assigned()->value,
+                'assigned_to'  => $marco->id,
+            ])
+            ->fresh(['images']);
+
+        $existing = $listing->images->sortBy('id')->values();
+        $kept     = $existing[0];
+        $removedA = $existing[1];
+        $removedB = $existing[2];
+
+        $this->put(
+            route('field.listings.update', $listing->uuid),
+            $this->validPayload($listing, [
+                'photos' => [
+                    ['existing_id' => $kept->id],
+                ],
+            ]),
+        );
+
+        $listing->refresh()->load('images');
+
+        $this->assertCount(1, $listing->images);
+        $this->assertSame($kept->id, $listing->images->first()->id);
+        $this->assertNull(\App\Models\ListingImage::find($removedA->id));
+        $this->assertNull(\App\Models\ListingImage::find($removedB->id));
+    }
+
     public function test_it_keeps_existing_photos_and_persists_new_tmp_uploads(): void
     {
         $marco = $this->asMarco();

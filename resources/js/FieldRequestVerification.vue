@@ -3,9 +3,10 @@ import { ref, reactive, computed, provide, onMounted, nextTick } from 'vue';
 import FieldSidebar from './components/field/FieldSidebar.vue';
 import FieldTopBar from './components/field/FieldTopBar.vue';
 import FieldEditListingFormCard from './components/field/FieldEditListingFormCard.vue';
-import FieldEditListingPublishBar from './components/field/FieldEditListingPublishBar.vue';
+import FieldRequestVerificationChecklist from './components/field/FieldRequestVerificationChecklist.vue';
+import FieldRequestVerificationActionBar from './components/field/FieldRequestVerificationActionBar.vue';
 
-const initial = window.__INITIAL_FIELD_LISTING_EDIT__ ?? {};
+const initial = window.__INITIAL_FIELD_REQUEST_VERIFICATION__ ?? {};
 
 const user = ref(initial.user ?? {
     name:        'Field Officer',
@@ -78,17 +79,23 @@ const addListingForm = reactive({
 const addListingFormErrors = ref(initial.errors ?? {});
 const errorCount = computed(() => Object.keys(addListingFormErrors.value).length);
 
-// Client-side validators mirror the server rules. Only `title` is required
-// in this slice — everything else is nullable. Format/range checks fire when
-// a value is provided. Server is the source of truth; this just saves the
-// round-trip when failure is predictable. Enum allowlists, photo `tmp/`
-// prefix, and amenity exists checks are server-only — those failures only
-// happen via crafted requests, not via UI.
+// Client-side validators mirror the server's request-verification rules.
+// Stricter than the soft save: lat/lng required, ≥1 new photo (tmp/ key)
+// required. Format/range checks fire when a value is provided. Server is the
+// source of truth; this just saves the round-trip when failure is predictable.
 const VALIDATORS = {
     title: (f) => {
         const v = (f.title ?? '').trim();
         if (!v) return 'Title is required.';
         if (v.length > 200) return 'Title is too long (max 200 characters).';
+        return null;
+    },
+    listing_type: (f) => {
+        if (!f.listing_type) return 'Listing type is required.';
+        return null;
+    },
+    barangay: (f) => {
+        if (!f.barangay) return 'Barangay is required.';
         return null;
     },
     price_monthly: (f) => {
@@ -126,29 +133,36 @@ const VALIDATORS = {
         return null;
     },
     latitude: (f) => {
-        if (f.latitude === null || f.latitude === '' || f.latitude === undefined) return null;
+        if (f.latitude === null || f.latitude === '' || f.latitude === undefined) {
+            return 'Drop a map pin before requesting verification.';
+        }
         const n = Number(f.latitude);
-        if (!Number.isFinite(n)) return null;
+        if (!Number.isFinite(n)) return 'Drop a map pin before requesting verification.';
         if (n < -90 || n > 90) return 'Latitude must be between -90 and 90.';
         return null;
     },
     longitude: (f) => {
-        if (f.longitude === null || f.longitude === '' || f.longitude === undefined) return null;
-        const n = Number(f.longitude);
-        if (!Number.isFinite(n)) return null;
-        if (n < -180 || n > 180) return 'Longitude must be between -180 and 180.';
-        return null;
-    },
-    photos: (f) => {
-        if (Array.isArray(f.photos) && f.photos.length > 20) {
-            return 'Maximum 20 photos allowed.';
+        if (f.longitude === null || f.longitude === '' || f.longitude === undefined) {
+            return 'Drop a map pin before requesting verification.';
         }
+        const n = Number(f.longitude);
+        if (!Number.isFinite(n)) return 'Drop a map pin before requesting verification.';
+        if (n < -180 || n > 180) return 'Longitude must be between -180 and 180.';
         return null;
     },
     directions: (f) => {
         const v = (f.directions ?? '').trim();
         if (!v) return 'Directions are required.';
         if (v.length > 500) return 'Directions are too long (max 500 characters).';
+        return null;
+    },
+    photos: (f) => {
+        if (!Array.isArray(f.photos) || f.photos.length === 0) {
+            return 'Upload at least one new photo from your visit.';
+        }
+        if (f.photos.length > 20) return 'Maximum 20 photos allowed.';
+        const hasNew = f.photos.some(p => p?.key && typeof p.key === 'string' && p.key.startsWith('tmp/'));
+        if (!hasNew) return 'Upload at least one new photo from your visit.';
         return null;
     },
 };
@@ -195,6 +209,21 @@ onMounted(() => {
         nextTick(() => scrollFormToTop());
     }
 });
+
+// Live prereqs computed from form state — checklist reflects in-page edits
+// before submission, not the snapshot the resource captured server-side.
+const livePrereqs = computed(() => ({
+    has_title:              !!String(addListingForm.title ?? '').trim(),
+    has_directions:         !!String(addListingForm.directions ?? '').trim(),
+    has_lat_lng:            addListingForm.latitude !== null
+                            && addListingForm.latitude !== ''
+                            && addListingForm.longitude !== null
+                            && addListingForm.longitude !== '',
+    has_at_least_one_new_photo: Array.isArray(addListingForm.photos)
+                                && addListingForm.photos.some(p => p?.key),
+}));
+
+const allPrereqsPass = computed(() => Object.values(livePrereqs.value).every(Boolean));
 </script>
 
 <template>
@@ -202,7 +231,7 @@ onMounted(() => {
         <FieldSidebar :user="user" />
 
         <div class="flex-1 flex flex-col min-w-0">
-            <FieldTopBar title="Listing Details" :subtitle="listing.title" />
+            <FieldTopBar title="Request Verification" :subtitle="listing.title" />
 
             <main ref="mainRef" class="flex-1 overflow-y-auto px-6 pt-2 pb-6 lg:px-10 lg:pt-3 lg:pb-10">
                 <a
@@ -218,7 +247,7 @@ onMounted(() => {
                     role="alert"
                 >
                     <p class="text-sm font-medium text-red-800 dark:text-red-300">
-                        Please fix the {{ errorCount }} {{ errorCount === 1 ? 'issue' : 'issues' }} below before saving.
+                        Please fix the {{ errorCount }} {{ errorCount === 1 ? 'issue' : 'issues' }} below before submitting.
                     </p>
                     <ul class="mt-1 text-sm text-red-700 dark:text-red-400 list-disc list-inside space-y-0.5">
                         <li v-for="(msgs, field) in addListingFormErrors" :key="field">
@@ -227,8 +256,13 @@ onMounted(() => {
                     </ul>
                 </div>
 
-                <FieldEditListingFormCard
+                <FieldRequestVerificationChecklist
                     class="mt-4"
+                    :prereqs="livePrereqs"
+                />
+
+                <FieldEditListingFormCard
+                    class="mt-5"
                     :listing="listing"
                     :listing-types="formData.listingTypes"
                     :barangays="formData.barangays"
@@ -238,7 +272,10 @@ onMounted(() => {
                 />
             </main>
 
-            <FieldEditListingPublishBar />
+            <FieldRequestVerificationActionBar
+                :ready="allPrereqsPass"
+                :listing-uuid="listing.uuid"
+            />
         </div>
     </div>
 </template>

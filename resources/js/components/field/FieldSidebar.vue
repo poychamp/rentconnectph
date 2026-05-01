@@ -45,7 +45,7 @@ const sections = [
                 matches: (path) => path === '/field' || path === '/field/',
             },
             {
-                name: 'Listings',
+                name: 'Pending Listings',
                 href: '/field/listings',
                 icon: 'list',
                 requires: 'listings.field-work',

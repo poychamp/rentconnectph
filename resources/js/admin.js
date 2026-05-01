@@ -26,6 +26,7 @@ if (el) {
         'field-dashboard':          () => import('./FieldDashboard.vue'),
         'field-listings':           () => import('./FieldListings.vue'),
         'field-listing-edit':       () => import('./FieldListingEdit.vue'),
+        'field-request-verification': () => import('./FieldRequestVerification.vue'),
     };
 
     const loadRoot = roots[page] || roots['admin-login'];

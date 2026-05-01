@@ -72,7 +72,7 @@ async function uploadToS3(photo) {
 
     try {
         const response = await Vapor.store(photo.file, {
-            signedStorageUrl: '/admin/vapor/signed-storage-url',
+            signedStorageUrl: '/field/vapor/signed-storage-url',
             visibility: 'public-read',
             progress: (p) => { photo.progress = Math.round(p * 100); },
         });

@@ -21,5 +21,13 @@ class AppServiceProvider extends ServiceProvider
                 ? true
                 : null;
         });
+
+        // Vapor's SignedStorageUrlController calls Gate::authorize('uploadFiles', ...).
+        // Without an explicit definition, the gate denies (403) for everyone the
+        // Gate::before bypass doesn't cover (i.e. non-super-admins). Authorize any
+        // admin-guard authenticated user — the routes that mount Vapor's controller
+        // already gate by `auth:admin` + per-permission middleware, so reaching the
+        // gate check means the user has already cleared route-level authorization.
+        Gate::define('uploadFiles', fn ($user) => $user !== null);
     }
 }

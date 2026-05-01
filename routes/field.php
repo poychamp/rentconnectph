@@ -22,5 +22,18 @@ Route::middleware('auth:admin')->group(function () {
 
         Route::put('listings/{listing:uuid}', [Field\ListingController::class, 'update'])
             ->name('listings.update');
+
+        Route::get('listings/{listing:uuid}/request-verification', [Field\ListingController::class, 'showRequestVerification'])
+            ->name('listings.show-request-verification');
+
+        Route::put('listings/{listing:uuid}/request-verification', [Field\ListingController::class, 'requestVerification'])
+            ->name('listings.request-verification');
     });
+
+    // Vapor signed S3 URL — browser calls this to get a pre-signed PUT URL,
+    // then PUTs the file directly to S3. Mirrors the admin-side route per the
+    // /admin /field namespace isolation rule. Auth-only (no per-permission
+    // gate) so any admin-guard user assigned to ANY field listing can upload.
+    Route::post('vapor/signed-storage-url', [\Laravel\Vapor\Http\Controllers\SignedStorageUrlController::class, 'store'])
+        ->name('vapor.signed-storage-url');
 });
