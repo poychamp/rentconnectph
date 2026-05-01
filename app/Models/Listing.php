@@ -75,6 +75,7 @@ class Listing extends Model
         'field_priority_order',
         'is_field_priority',
         'assigned_at',
+        'visited_at',
     ];
 
     protected $casts = [
@@ -84,6 +85,7 @@ class Listing extends Model
         'featured_order' => 'integer',
         'verified_at' => 'datetime',
         'assigned_at' => 'datetime',
+        'visited_at' => 'datetime',
         'latitude' => 'float',
         'longitude' => 'float',
     ];
@@ -150,6 +152,14 @@ class Listing extends Model
             ->where('is_field_priority', true)
             ->where('assigned_to', $userId)
             ->where('queue_status', \App\Enums\QueueStatus::assigned()->value);
+    }
+
+    public function scopeSubmittedByOfficer(Builder $query, int $userId): Builder
+    {
+        return $query
+            ->where('assigned_to', $userId)
+            ->where('queue_status', QueueStatus::visited()->value)
+            ->where('is_verified', false);
     }
 
     public function scopeRecentlyVerified($query)

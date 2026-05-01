@@ -371,6 +371,41 @@ class FieldListingRequestVerificationTest extends TestCase
         );
     }
 
+    public function test_it_sets_visited_at_to_now_when_flipping_queue_status_to_visited(): void
+    {
+        $marco = $this->asMarco();
+        $listing = $this->readyListingFor($marco, ['visited_at' => null]);
+
+        Carbon::setTestNow(Carbon::parse('2026-05-15 09:30:00'));
+
+        $this->put(
+            route('field.listings.request-verification', $listing->uuid),
+            $this->validPayload($listing),
+        );
+
+        $listing->refresh();
+        $this->assertSame(QueueStatus::visited()->value, $listing->queue_status);
+        $this->assertNotNull($listing->visited_at);
+        $this->assertTrue($listing->visited_at->equalTo(Carbon::parse('2026-05-15 09:30:00')));
+
+        Carbon::setTestNow();
+    }
+
+    public function test_it_does_not_set_visited_at_when_validation_fails_before_persistence(): void
+    {
+        $marco = $this->asMarco();
+        $listing = $this->readyListingFor($marco, ['visited_at' => null]);
+
+        $this->put(
+            route('field.listings.request-verification', $listing->uuid),
+            $this->validPayload($listing, ['photos' => []]),
+        )->assertSessionHasErrors(['photos'], null, 'requestVerification');
+
+        $listing->refresh();
+        $this->assertSame(QueueStatus::assigned()->value, $listing->queue_status);
+        $this->assertNull($listing->visited_at);
+    }
+
     public function test_it_preserves_assigned_to_and_assigned_at_after_submission(): void
     {
         $marco = $this->asMarco();

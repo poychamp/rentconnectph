@@ -28,6 +28,8 @@ if (el) {
         'field-listing-edit':       () => import('./FieldListingEdit.vue'),
         'field-request-verification': () => import('./FieldRequestVerification.vue'),
         'field-priority':           () => import('./FieldPriority.vue'),
+        'field-submitted-listings': () => import('./FieldSubmittedListings.vue'),
+        'field-listing-preview':    () => import('./FieldListingPreview.vue'),
     };
 
     const loadRoot = roots[page] || roots['admin-login'];

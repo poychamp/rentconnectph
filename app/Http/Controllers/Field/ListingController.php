@@ -12,10 +12,12 @@ use App\Http\Resources\FieldListingDetailResource;
 use App\Http\Resources\FieldListingRequestVerificationResource;
 use App\Http\Resources\FieldListingResource;
 use App\Http\Resources\FieldPriorityListingResource;
+use App\Http\Resources\FieldSubmittedListingResource;
 use App\Models\Amenity;
 use App\Models\Listing;
 use App\Models\ListingImage;
 use App\Models\ListingLifecycleEvent;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -385,6 +387,7 @@ class ListingController extends Controller
                 'longitude'     => $validated['longitude'],
                 'directions'    => $validated['directions'],
                 'queue_status'  => QueueStatus::visited()->value,
+                'visited_at'    => Carbon::now(),
             ]);
 
             if (! empty($removedImageIds)) {
@@ -498,6 +501,60 @@ class ListingController extends Controller
             'priority' => FieldPriorityListingResource::collection($rows)
                 ->response()
                 ->getData(true),
+        ]);
+    }
+
+    public function preview(Listing $listing): View
+    {
+        $userId = auth('admin')->id();
+
+        abort_unless(
+            $listing->assigned_to === $userId
+                && $listing->queue_status === QueueStatus::visited()->value
+                && ! $listing->is_verified,
+            404,
+        );
+
+        $listing->load([
+            'images' => fn ($q) => $q->orderBy('sort_order'),
+            'amenities',
+        ]);
+
+        return view('field.listings.preview', [
+            'listing' => $listing,
+        ]);
+    }
+
+    public function submittedIndex(Request $request): View
+    {
+        $userId = auth('admin')->id();
+        $q = trim((string) $request->query('q', ''));
+
+        if ($q !== '') {
+            $rows = Listing::search($q)
+                ->where('assigned_to', $userId)
+                ->where('queue_status', QueueStatus::visited()->value)
+                ->where('is_verified', 0)
+                ->query(fn ($eloquent) => $eloquent->with('displayImage'))
+                ->paginate(10);
+
+            $isSearching = true;
+        } else {
+            $rows = Listing::with('displayImage')
+                ->submittedByOfficer($userId)
+                ->orderByDesc('visited_at')
+                ->orderByDesc('id')
+                ->paginate(10);
+
+            $isSearching = false;
+        }
+
+        return view('field.submitted-listings', [
+            'submitted'   => FieldSubmittedListingResource::collection($rows)
+                ->response()
+                ->getData(true),
+            'q'           => $q,
+            'isSearching' => $isSearching,
         ]);
     }
 }

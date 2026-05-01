@@ -28,6 +28,7 @@ return new class extends Migration
             $table->string('queue_status', 32)->nullable();
             $table->foreignId('assigned_to')->nullable()->constrained('users')->cascadeOnDelete();
             $table->timestamp('assigned_at')->nullable();
+            $table->timestamp('visited_at')->nullable();
             $table->unsignedInteger('field_priority_order')->nullable();
             $table->boolean('is_field_priority')->default(false);
             $table->string('directions', 500)->nullable();

@@ -20,6 +20,9 @@ Route::middleware('auth:admin')->group(function () {
         Route::get('listings/{listing:uuid}/edit', [Field\ListingController::class, 'edit'])
             ->name('listings.edit');
 
+        Route::get('listings/{listing:uuid}/preview', [Field\ListingController::class, 'preview'])
+            ->name('listings.preview');
+
         Route::put('listings/{listing:uuid}', [Field\ListingController::class, 'update'])
             ->name('listings.update');
 
@@ -31,6 +34,9 @@ Route::middleware('auth:admin')->group(function () {
 
         Route::get('priority', [Field\ListingController::class, 'priorityIndex'])
             ->name('priority.index');
+
+        Route::get('submitted-listings', [Field\ListingController::class, 'submittedIndex'])
+            ->name('submitted-listings.index');
 
         Route::put('api/listings/{listing:uuid}/priority-toggle', [Field\Api\ListingController::class, 'priorityToggle'])
             ->middleware('throttle:60,1')
