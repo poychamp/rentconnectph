@@ -36,6 +36,7 @@ class FieldListingResource extends JsonResource
             'display_image_url'    => $this->displayImage?->url,
             'assigned_at'          => $this->assigned_at?->toIso8601String(),
             'field_priority_order' => $this->field_priority_order,
+            'is_field_priority'    => (bool) $this->is_field_priority,
         ];
     }
 }

@@ -50,6 +50,7 @@ class FieldListingDetailResource extends JsonResource
                 'id'   => $a->id,
                 'name' => $a->name,
             ])->all(),
+            'is_field_priority'   => (bool) $this->is_field_priority,
             'assigned_at'         => $this->assigned_at?->toIso8601String(),
             'created_at'          => $this->created_at?->toIso8601String(),
         ];

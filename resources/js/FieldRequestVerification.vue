@@ -274,7 +274,7 @@ const allPrereqsPass = computed(() => Object.values(livePrereqs.value).every(Boo
 
             <FieldRequestVerificationActionBar
                 :ready="allPrereqsPass"
-                :listing-uuid="listing.uuid"
+                :listing="listing"
             />
         </div>
     </div>

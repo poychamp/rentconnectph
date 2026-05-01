@@ -1,9 +1,10 @@
 <script setup>
 import { ref, computed, inject } from 'vue';
+import axios from 'axios';
 
 const props = defineProps({
     ready:       { type: Boolean, required: true },
-    listingUuid: { type: String,  required: true },
+    listing:     { type: Object,  required: true },
 });
 
 const form = inject('addListingForm');
@@ -11,8 +12,32 @@ const { validateAll } = inject('addListingFormValidate', { validateAll: () => tr
 const scrollFormToTop = inject('scrollFormToTop', () => {});
 
 const submitting = ref(false);
+const togglingPriority = ref(false);
 const csrfToken  = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
-const formAction = computed(() => `/field/listings/${props.listingUuid}/request-verification`);
+const formAction = computed(() => `/field/listings/${props.listing.uuid}/request-verification`);
+
+async function togglePriority() {
+    if (togglingPriority.value) return;
+    togglingPriority.value = true;
+
+    try {
+        const { data } = await axios.put(
+            `/field/api/listings/${props.listing.uuid}/priority-toggle`,
+        );
+        props.listing.is_field_priority = data.is_field_priority;
+
+        window.dispatchEvent(new CustomEvent('admin-toast', {
+            detail: { type: 'success', message: data.message },
+        }));
+    } catch (err) {
+        const message = err.response?.data?.message ?? 'Could not update priority.';
+        window.dispatchEvent(new CustomEvent('admin-toast', {
+            detail: { type: 'error', message },
+        }));
+    } finally {
+        togglingPriority.value = false;
+    }
+}
 
 function appendHidden(formEl, name, value) {
     if (value === null || value === undefined) return;
@@ -71,6 +96,40 @@ function submit() {
         </a>
 
         <div class="flex-1"></div>
+
+        <button
+            type="button"
+            :disabled="togglingPriority"
+            @click="togglePriority"
+            :class="listing.is_field_priority
+                ? 'inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-950/50 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed'
+                : 'inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed'"
+            :title="listing.is_field_priority ? 'In priority queue — click to remove' : 'Add to priority queue'"
+        >
+            <svg
+                v-if="togglingPriority"
+                class="animate-spin h-4 w-4"
+                viewBox="0 0 24 24" fill="none"
+            >
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-opacity="0.25"/>
+                <path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+            <svg
+                v-else-if="listing.is_field_priority"
+                class="w-4 h-4"
+                viewBox="0 0 24 24" fill="currentColor"
+            >
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg>
+            <svg
+                v-else
+                class="w-4 h-4"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            >
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg>
+            {{ listing.is_field_priority ? 'In Priority' : 'Add to Priority' }}
+        </button>
 
         <button
             type="button"

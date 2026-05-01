@@ -48,6 +48,7 @@ class FieldListingRequestVerificationResource extends JsonResource
                 'name' => $a->name,
             ])->all(),
             'mapbox_static_url'   => MapboxStaticUrl::forCoords($this->latitude, $this->longitude),
+            'is_field_priority'   => (bool) $this->is_field_priority,
             'assigned_at'         => $this->assigned_at?->toIso8601String(),
             'created_at'          => $this->created_at?->toIso8601String(),
             'prereqs' => [

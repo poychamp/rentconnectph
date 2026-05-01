@@ -73,12 +73,14 @@ class Listing extends Model
         'is_featured',
         'featured_order',
         'field_priority_order',
+        'is_field_priority',
         'assigned_at',
     ];
 
     protected $casts = [
         'is_verified' => 'boolean',
         'is_featured' => 'boolean',
+        'is_field_priority' => 'boolean',
         'featured_order' => 'integer',
         'verified_at' => 'datetime',
         'assigned_at' => 'datetime',

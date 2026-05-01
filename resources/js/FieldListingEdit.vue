@@ -238,7 +238,7 @@ onMounted(() => {
                 />
             </main>
 
-            <FieldEditListingPublishBar />
+            <FieldEditListingPublishBar :listing="listing" />
         </div>
     </div>
 </template>

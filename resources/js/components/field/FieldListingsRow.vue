@@ -1,5 +1,6 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import axios from 'axios';
 
 const props = defineProps({
     row: { type: Object, required: true },
@@ -15,6 +16,32 @@ const formattedAssignedAt = computed(() => {
     if (!props.row.assigned_at) return '';
     return dateTimeFormatter.format(new Date(props.row.assigned_at));
 });
+
+const togglingPriority = ref(false);
+
+async function togglePriority() {
+    if (togglingPriority.value) return;
+    togglingPriority.value = true;
+
+    try {
+        const { data } = await axios.put(
+            `/field/api/listings/${props.row.uuid}/priority-toggle`,
+        );
+        // Mutate the row's local state so the icon flips without a refetch.
+        props.row.is_field_priority = data.is_field_priority;
+
+        window.dispatchEvent(new CustomEvent('admin-toast', {
+            detail: { type: 'success', message: data.message },
+        }));
+    } catch (err) {
+        const message = err.response?.data?.message ?? 'Could not update priority.';
+        window.dispatchEvent(new CustomEvent('admin-toast', {
+            detail: { type: 'error', message },
+        }));
+    } finally {
+        togglingPriority.value = false;
+    }
+}
 </script>
 
 <template>
@@ -53,6 +80,37 @@ const formattedAssignedAt = computed(() => {
                     </svg>
                     Edit
                 </a>
+                <button
+                    type="button"
+                    :disabled="togglingPriority"
+                    @click="togglePriority"
+                    :class="row.is_field_priority
+                        ? 'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-950/50 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed'
+                        : 'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-amber-50 dark:hover:bg-amber-950/30 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed'"
+                    :title="row.is_field_priority ? 'In priority queue — click to remove' : 'Add to priority queue'"
+                >
+                    <svg
+                        v-if="row.is_field_priority"
+                        class="w-4 h-4"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                    >
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
+                    <svg
+                        v-else
+                        class="w-4 h-4"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
+                    Priority
+                </button>
             </div>
         </td>
     </tr>
