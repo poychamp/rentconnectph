@@ -9,7 +9,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\SeedDatabaseAfterRefresh;
 use Tests\TestCase;
 
-class AdminUnverifiedListingsTest extends TestCase
+class AdminListingUnverifiedViewTest extends TestCase
 {
     use RefreshDatabase, SeedDatabaseAfterRefresh;
 
@@ -28,27 +28,30 @@ class AdminUnverifiedListingsTest extends TestCase
         // 15 unverified listings, spaced 1 day apart so created_at sort is unambiguous
         for ($i = 0; $i < 15; $i++) {
             Listing::factory()->create([
-                'is_verified' => false,
-                'verified_at' => null,
-                'created_at'  => Carbon::now()->subDays($i),
-                'type'        => 'apartment',
-                'barangay'    => 'pueblo_de_oro',
+                'is_verified'  => false,
+                'verified_at'  => null,
+                'queue_status' => 'unassigned',
+                'created_at'   => Carbon::now()->subDays($i),
+                'type'         => 'apartment',
+                'barangay'     => 'pueblo_de_oro',
             ]);
         }
 
         // Noise that must NOT appear in the result
         Listing::factory()->create([
-            'is_verified' => true,
-            'verified_at' => Carbon::now(),
-            'type'        => 'apartment',
-            'barangay'    => 'pueblo_de_oro',
+            'is_verified'  => true,
+            'verified_at'  => Carbon::now(),
+            'queue_status' => 'unassigned',
+            'type'         => 'apartment',
+            'barangay'     => 'pueblo_de_oro',
         ]);
         Listing::factory()
             ->create([
-                'is_verified' => false,
-                'verified_at' => null,
-                'type'        => 'apartment',
-                'barangay'    => 'pueblo_de_oro',
+                'is_verified'  => false,
+                'verified_at'  => null,
+                'queue_status' => 'unassigned',
+                'type'         => 'apartment',
+                'barangay'     => 'pueblo_de_oro',
             ])
             ->delete();
 
@@ -126,28 +129,32 @@ class AdminUnverifiedListingsTest extends TestCase
         // updated_at ASC  → D, C, B, A    (D is least-recently updated)
         // updated_at DESC → A, B, C, D    (A is most-recently updated)
         $a = Listing::factory()->create([
-            'is_verified' => false, 'verified_at' => null,
-            'title'       => 'Alpha Cozy',
-            'created_at'  => Carbon::now()->subDays(4),
-            'updated_at'  => Carbon::now()->subDays(1),
+            'is_verified'  => false, 'verified_at' => null,
+            'queue_status' => 'unassigned',
+            'title'        => 'Alpha Cozy',
+            'created_at'   => Carbon::now()->subDays(4),
+            'updated_at'   => Carbon::now()->subDays(1),
         ]);
         $b = Listing::factory()->create([
-            'is_verified' => false, 'verified_at' => null,
-            'title'       => 'Beta',
-            'created_at'  => Carbon::now()->subDays(3),
-            'updated_at'  => Carbon::now()->subDays(2),
+            'is_verified'  => false, 'verified_at' => null,
+            'queue_status' => 'unassigned',
+            'title'        => 'Beta',
+            'created_at'   => Carbon::now()->subDays(3),
+            'updated_at'   => Carbon::now()->subDays(2),
         ]);
         $c = Listing::factory()->create([
-            'is_verified' => false, 'verified_at' => null,
-            'title'       => 'Gamma',
-            'created_at'  => Carbon::now()->subDays(2),
-            'updated_at'  => Carbon::now()->subDays(3),
+            'is_verified'  => false, 'verified_at' => null,
+            'queue_status' => 'unassigned',
+            'title'        => 'Gamma',
+            'created_at'   => Carbon::now()->subDays(2),
+            'updated_at'   => Carbon::now()->subDays(3),
         ]);
         $d = Listing::factory()->create([
-            'is_verified' => false, 'verified_at' => null,
-            'title'       => 'Delta',
-            'created_at'  => Carbon::now()->subDays(1),
-            'updated_at'  => Carbon::now()->subDays(4),
+            'is_verified'  => false, 'verified_at' => null,
+            'queue_status' => 'unassigned',
+            'title'        => 'Delta',
+            'created_at'   => Carbon::now()->subDays(1),
+            'updated_at'   => Carbon::now()->subDays(4),
         ]);
 
         $idsInOrder = function (string $sort, string $dir) {
@@ -179,6 +186,116 @@ class AdminUnverifiedListingsTest extends TestCase
         );
     }
 
+    public function test_it_excludes_listings_with_queue_status_other_than_unassigned_or_assigned(): void
+    {
+        // Once a listing has been visited (field officer hit Request Verification),
+        // it moves to the field officer's "submitted" surface and the admin queue
+        // shouldn't surface it anymore — calls team has nothing to do until admin
+        // verifies. Same for dead — already triaged out. Only `unassigned` (fresh
+        // intake) and `assigned` (called + handed to a field officer) belong here.
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        $unassigned = Listing::factory()->create([
+            'is_verified'  => false, 'verified_at' => null,
+            'queue_status' => 'unassigned',
+        ]);
+        $assigned = Listing::factory()->create([
+            'is_verified'  => false, 'verified_at' => null,
+            'queue_status' => 'assigned',
+        ]);
+        $visited = Listing::factory()->create([
+            'is_verified'  => false, 'verified_at' => null,
+            'queue_status' => 'visited',
+        ]);
+        $dead = Listing::factory()->create([
+            'is_verified'  => false, 'verified_at' => null,
+            'queue_status' => 'dead',
+        ]);
+
+        $response = $this->get(route('admin.unverified-listings.index'));
+        $ids = collect($response->viewData('unverified')['data'])->pluck('id')->all();
+
+        $this->assertContains($unassigned->id, $ids);
+        $this->assertContains($assigned->id,   $ids);
+        $this->assertNotContains($visited->id, $ids);
+        $this->assertNotContains($dead->id,    $ids);
+    }
+
+    public function test_it_excludes_listings_with_null_queue_status(): void
+    {
+        // Per FRD-023, every queue listing gets `queue_status='unassigned'` on create.
+        // NULL queue_status is either legacy/pre-FRD-023 data or direct-DB tampering —
+        // not a state the calls team should action. Strict slice excludes it too.
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        $unassigned = Listing::factory()->create([
+            'is_verified'  => false, 'verified_at' => null,
+            'queue_status' => 'unassigned',
+        ]);
+        $nullStatus = Listing::factory()->create([
+            'is_verified'  => false, 'verified_at' => null,
+            'queue_status' => null,
+        ]);
+
+        $response = $this->get(route('admin.unverified-listings.index'));
+        $ids = collect($response->viewData('unverified')['data'])->pluck('id')->all();
+
+        $this->assertContains($unassigned->id, $ids);
+        $this->assertNotContains($nullStatus->id, $ids);
+    }
+
+    public function test_it_excludes_visited_dead_and_null_queue_status_on_scout_search_path(): void
+    {
+        // The Scout path (q != '') has its own where-chain, separate from the
+        // Eloquent path. Both must enforce the queue_status slice. Title-pinned
+        // 'Pueblo plaza' across all 5 fixtures so the LIKE %pueblo% matches each;
+        // queue_status filter is the only thing that should determine visibility.
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        $unassigned = Listing::factory()->create([
+            'is_verified'  => false, 'verified_at' => null,
+            'queue_status' => 'unassigned',
+            'title'        => 'Pueblo plaza unassigned',
+            'barangay'     => 'lapasan',
+        ]);
+        $assigned = Listing::factory()->create([
+            'is_verified'  => false, 'verified_at' => null,
+            'queue_status' => 'assigned',
+            'title'        => 'Pueblo plaza assigned',
+            'barangay'     => 'lapasan',
+        ]);
+        $visited = Listing::factory()->create([
+            'is_verified'  => false, 'verified_at' => null,
+            'queue_status' => 'visited',
+            'title'        => 'Pueblo plaza visited',
+            'barangay'     => 'lapasan',
+        ]);
+        $dead = Listing::factory()->create([
+            'is_verified'  => false, 'verified_at' => null,
+            'queue_status' => 'dead',
+            'title'        => 'Pueblo plaza dead',
+            'barangay'     => 'lapasan',
+        ]);
+        $nullStatus = Listing::factory()->create([
+            'is_verified'  => false, 'verified_at' => null,
+            'queue_status' => null,
+            'title'        => 'Pueblo plaza null',
+            'barangay'     => 'lapasan',
+        ]);
+
+        $response = $this->get(route('admin.unverified-listings.index', ['q' => 'pueblo']));
+        $ids = collect($response->viewData('unverified')['data'])->pluck('id')->all();
+
+        $this->assertContains($unassigned->id,    $ids);
+        $this->assertContains($assigned->id,      $ids);
+        $this->assertNotContains($visited->id,    $ids);
+        $this->assertNotContains($dead->id,       $ids);
+        $this->assertNotContains($nullStatus->id, $ids);
+    }
+
     public function test_it_includes_queue_state_fields_in_resource(): void
     {
         // Two rows: one with explicit prequal/queue state, one with null state
@@ -194,11 +311,15 @@ class AdminUnverifiedListingsTest extends TestCase
             'queue_status'   => 'unassigned',
         ]);
 
-        $stateless = Listing::factory()->create([
+        // queue_status is now slice-constrained to {'unassigned','assigned'} —
+        // null queue_status no longer surfaces here. prequal_status nullability
+        // is still load-bearing (prequal happens after the row enters the queue
+        // with status='unassigned' but before the calls team has dialed).
+        $prequalNull = Listing::factory()->create([
             'is_verified'    => false,
             'verified_at'    => null,
             'prequal_status' => null,
-            'queue_status'   => null,
+            'queue_status'   => 'unassigned',
         ]);
 
         $response = $this->get(route('admin.unverified-listings.index'));
@@ -211,11 +332,11 @@ class AdminUnverifiedListingsTest extends TestCase
         $this->assertSame('Unassigned', $row1['queue_status_label']);
         $this->assertNull($row1['assigned_to_name']);
 
-        $row2 = collect($rows)->firstWhere('id', $stateless->id);
+        $row2 = collect($rows)->firstWhere('id', $prequalNull->id);
         $this->assertNull($row2['prequal_status']);
         $this->assertNull($row2['prequal_status_label']);
-        $this->assertNull($row2['queue_status']);
-        $this->assertNull($row2['queue_status_label']);
+        $this->assertSame('unassigned', $row2['queue_status']);
+        $this->assertSame('Unassigned', $row2['queue_status_label']);
         $this->assertNull($row2['assigned_to_name']);
     }
 
@@ -231,6 +352,7 @@ class AdminUnverifiedListingsTest extends TestCase
         $listing = Listing::factory()->create([
             'is_verified'   => false,
             'verified_at'   => null,
+            'queue_status'  => 'unassigned',
             'contact_phone' => '+639171234567',
         ]);
 
@@ -269,27 +391,30 @@ class AdminUnverifiedListingsTest extends TestCase
         $this->actingAs($admin, 'admin');
 
         $cozyUnverified = Listing::factory()->create([
-            'is_verified' => false,
-            'verified_at' => null,
-            'title'       => 'Cozy 2-BR Apartment',
-            'type'        => 'apartment',
-            'barangay'    => 'carmen',
+            'is_verified'  => false,
+            'verified_at'  => null,
+            'queue_status' => 'unassigned',
+            'title'        => 'Cozy 2-BR Apartment',
+            'type'         => 'apartment',
+            'barangay'     => 'carmen',
         ]);
 
         $pueblo = Listing::factory()->create([
-            'is_verified' => false,
-            'verified_at' => null,
-            'title'       => 'Modern Condo',
-            'type'        => 'condo',
-            'barangay'    => 'pueblo_de_oro',
+            'is_verified'  => false,
+            'verified_at'  => null,
+            'queue_status' => 'unassigned',
+            'title'        => 'Modern Condo',
+            'type'         => 'condo',
+            'barangay'     => 'pueblo_de_oro',
         ]);
 
         Listing::factory()->create([
-            'is_verified' => false,
-            'verified_at' => null,
-            'title'       => 'Spacious House',
-            'type'        => 'house',
-            'barangay'    => 'kauswagan',
+            'is_verified'  => false,
+            'verified_at'  => null,
+            'queue_status' => 'unassigned',
+            'title'        => 'Spacious House',
+            'type'         => 'house',
+            'barangay'     => 'kauswagan',
         ]);
 
         // Critical noise: a verified listing matching the same search keyword.
@@ -298,11 +423,12 @@ class AdminUnverifiedListingsTest extends TestCase
         // instead of `'0'` to Scout's where() — Scout quotes `false` as `''`,
         // which silently misses the indexed `'0'`.
         Listing::factory()->create([
-            'is_verified' => true,
-            'verified_at' => Carbon::now(),
-            'title'       => 'Cozy Verified Studio',
-            'type'        => 'studio',
-            'barangay'    => 'lapasan',
+            'is_verified'  => true,
+            'verified_at'  => Carbon::now(),
+            'queue_status' => 'unassigned',
+            'title'        => 'Cozy Verified Studio',
+            'type'         => 'studio',
+            'barangay'     => 'lapasan',
         ]);
 
         // Title fragment — must match the unverified Cozy, NOT the verified Cozy

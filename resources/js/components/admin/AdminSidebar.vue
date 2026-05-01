@@ -51,8 +51,6 @@ const sections = [
         label: 'Listings',
         items: [
             { name: 'Add Listing',          href: '/admin/listings/create',         icon: 'plus',            requires: 'listings.manage' },
-            { name: 'Verified Listings',    href: '/admin/verified-listings',       icon: 'shield-check',    requires: 'listings.manage' },
-            { name: 'Featured Listings',    href: '/admin/featured-listings',       icon: 'star',            requires: 'listings.manage' },
             {
                 name: 'Unverified Listings',
                 href: '/admin/unverified-listings',
@@ -61,6 +59,8 @@ const sections = [
                 matches: (path) => path === '/admin/unverified-listings'
                     || /^\/admin\/listings\/[^\/]+\/unverified-edit$/.test(path),
             },
+            { name: 'Verified Listings',    href: '/admin/verified-listings',       icon: 'shield-check',    requires: 'listings.manage' },
+            { name: 'Featured Listings',    href: '/admin/featured-listings',       icon: 'star',            requires: 'listings.manage' },
             { name: 'Deactivated Listings', href: '/admin/deactivated-listings',    icon: 'archive',         requires: 'listings.manage' },
             {
                 name: 'Rejected Listings',

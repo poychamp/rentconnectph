@@ -808,17 +808,20 @@ class ListingController extends Controller
 
         if ($hasSort) {
             $paginator = Listing::where('is_verified', false)
+                ->whereIn('queue_status', ['unassigned', 'assigned'])
                 ->with('assignedTo')
                 ->orderBy($sort, $dir)
                 ->paginate(10);
         } else {
             $paginator = $q === ''
                 ? Listing::where('is_verified', false)
+                    ->whereIn('queue_status', ['unassigned', 'assigned'])
                     ->with('assignedTo')
                     ->orderBy('created_at', 'desc')
                     ->paginate(10)
                 : Listing::search($q)
                     ->where('is_verified', 0)
+                    ->whereIn('queue_status', ['unassigned', 'assigned'])
                     ->query(fn ($builder) => $builder->with('assignedTo'))
                     ->paginate(10);
         }
