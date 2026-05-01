@@ -162,6 +162,13 @@ class Listing extends Model
             ->where('is_verified', false);
     }
 
+    public function scopeAwaitingVerification(Builder $query): Builder
+    {
+        return $query
+            ->where('queue_status', QueueStatus::visited()->value)
+            ->where('is_verified', false);
+    }
+
     public function scopeRecentlyVerified($query)
     {
         return $query->verified()->orderByDesc('verified_at');

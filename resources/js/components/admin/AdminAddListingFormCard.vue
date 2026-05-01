@@ -5,11 +5,12 @@ import AdminAddListingAmenityPills from './AdminAddListingAmenityPills.vue';
 import AdminAddListingPhotoUpload from './AdminAddListingPhotoUpload.vue';
 import AdminAddListingMapPicker from './AdminAddListingMapPicker.vue';
 
-defineProps({
+const props = defineProps({
     listingTypes: { type: Array, required: true },
     barangays:    { type: Array, required: true },
     sourceSites:  { type: Array, required: true },
     amenities:    { type: Array, required: true },
+    readOnlyLead: { type: Boolean, default: false },
 });
 
 const form = inject('addListingForm');
@@ -34,23 +35,26 @@ const inputErrorClass = 'border-red-400 dark:border-red-500 focus:border-red-500
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                     <label for="contact-phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Contact phone <span class="text-red-500">*</span>
+                        Contact phone <span v-if="!readOnlyLead" class="text-red-500">*</span>
                     </label>
                     <input
                         id="contact-phone"
                         v-model="form.contact_phone"
                         type="tel"
                         placeholder="09171234567"
+                        :readonly="readOnlyLead"
                         @focus="clearFieldError('contact_phone')"
                         @blur="validateField('contact_phone')"
                         :class="[
-                            'mt-1 w-full rounded-md border bg-white dark:bg-gray-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-1 outline-none transition',
-                            errorFor('contact_phone')
-                                ? inputErrorClass
-                                : 'border-gray-200 dark:border-gray-700 focus:border-orange-500 focus:ring-orange-500',
+                            'mt-1 w-full rounded-md border px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none transition',
+                            readOnlyLead
+                                ? 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 cursor-not-allowed'
+                                : (errorFor('contact_phone')
+                                    ? `bg-white dark:bg-gray-800 ${inputErrorClass} focus:ring-1`
+                                    : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-orange-500 focus:ring-1 focus:ring-orange-500'),
                         ]"
                     >
-                    <p v-if="errorFor('contact_phone')" class="mt-1 text-xs text-red-600 dark:text-red-400">
+                    <p v-if="!readOnlyLead && errorFor('contact_phone')" class="mt-1 text-xs text-red-600 dark:text-red-400">
                         {{ errorFor('contact_phone') }}
                     </p>
                 </div>
@@ -62,20 +66,23 @@ const inputErrorClass = 'border-red-400 dark:border-red-500 focus:border-red-500
                     <select
                         id="source-site"
                         v-model="form.source_site"
+                        :disabled="readOnlyLead"
                         @focus="clearFieldError('source_site')"
                         @change="validateField('source_site')"
                         @blur="validateField('source_site')"
                         :class="[
-                            'mt-1 w-full rounded-md border bg-white dark:bg-gray-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white focus:ring-1 outline-none transition',
-                            errorFor('source_site')
-                                ? inputErrorClass
-                                : 'border-gray-200 dark:border-gray-700 focus:border-orange-500 focus:ring-orange-500',
+                            'mt-1 w-full rounded-md border px-3.5 py-2.5 text-sm text-gray-900 dark:text-white outline-none transition',
+                            readOnlyLead
+                                ? 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 cursor-not-allowed'
+                                : (errorFor('source_site')
+                                    ? `bg-white dark:bg-gray-800 ${inputErrorClass} focus:ring-1`
+                                    : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-orange-500 focus:ring-1 focus:ring-orange-500'),
                         ]"
                     >
                         <option value="">— None —</option>
                         <option v-for="s in sourceSites" :key="s.value" :value="s.value">{{ s.label }}</option>
                     </select>
-                    <p v-if="errorFor('source_site')" class="mt-1 text-xs text-red-600 dark:text-red-400">
+                    <p v-if="!readOnlyLead && errorFor('source_site')" class="mt-1 text-xs text-red-600 dark:text-red-400">
                         {{ errorFor('source_site') }}
                     </p>
                 </div>
@@ -89,16 +96,19 @@ const inputErrorClass = 'border-red-400 dark:border-red-500 focus:border-red-500
                         v-model="form.source_url"
                         type="url"
                         placeholder="https://www.olx.ph/..."
+                        :readonly="readOnlyLead"
                         @focus="clearFieldError('source_url')"
                         @blur="validateField('source_url')"
                         :class="[
-                            'mt-1 w-full rounded-md border bg-white dark:bg-gray-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-1 outline-none transition',
-                            errorFor('source_url')
-                                ? inputErrorClass
-                                : 'border-gray-200 dark:border-gray-700 focus:border-orange-500 focus:ring-orange-500',
+                            'mt-1 w-full rounded-md border px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 outline-none transition',
+                            readOnlyLead
+                                ? 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 cursor-not-allowed'
+                                : (errorFor('source_url')
+                                    ? `bg-white dark:bg-gray-800 ${inputErrorClass} focus:ring-1`
+                                    : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-orange-500 focus:ring-1 focus:ring-orange-500'),
                         ]"
                     >
-                    <p v-if="errorFor('source_url')" class="mt-1 text-xs text-red-600 dark:text-red-400">
+                    <p v-if="!readOnlyLead && errorFor('source_url')" class="mt-1 text-xs text-red-600 dark:text-red-400">
                         {{ errorFor('source_url') }}
                     </p>
                 </div>

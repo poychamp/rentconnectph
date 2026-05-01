@@ -59,6 +59,14 @@ const sections = [
                 matches: (path) => path === '/admin/unverified-listings'
                     || /^\/admin\/listings\/[^\/]+\/unverified-edit$/.test(path),
             },
+            {
+                name: 'Visited Listings',
+                href: '/admin/visited-listings',
+                icon: 'eye',
+                requires: 'listings.manage',
+                matches: (path) => path === '/admin/visited-listings'
+                    || /^\/admin\/listings\/[^\/]+\/verify-edit$/.test(path),
+            },
             { name: 'Verified Listings',    href: '/admin/verified-listings',       icon: 'shield-check',    requires: 'listings.manage' },
             { name: 'Featured Listings',    href: '/admin/featured-listings',       icon: 'star',            requires: 'listings.manage' },
             { name: 'Deactivated Listings', href: '/admin/deactivated-listings',    icon: 'archive',         requires: 'listings.manage' },
@@ -107,6 +115,7 @@ const iconPaths = {
     'shield-check': 'M20 13c0 5-3.5 7.5-8 9-4.5-1.5-8-4-8-9V5l8-3 8 3v8z M9 12l2 2 4-4',
     'star': 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z',
     'shield-question': 'M20 13c0 5-3.5 7.5-8 9-4.5-1.5-8-4-8-9V5l8-3 8 3v8z M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3 M12 17h.01',
+    'eye': 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z',
     'archive': 'M21 8v13H3V8 M1 3h22v5H1z M10 12h4',
     'circle-x': 'M2 12a10 10 0 1 0 20 0 10 10 0 0 0-20 0 M15 9l-6 6 M9 9l6 6',
     'user-cog': 'M12 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4 21v-2a4 4 0 0 1 4-4h4M19 14a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM19 8v2M19 18v2M22.4 9.6l-1.4 1.4M17 15l-1.4 1.4M22.4 18.4 21 17M17 13l-1.4-1.4',

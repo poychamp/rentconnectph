@@ -19,6 +19,7 @@ use App\Http\Resources\AdminFeaturedListingResource;
 use App\Http\Resources\AdminRejectedListingResource;
 use App\Http\Resources\AdminUnverifiedListingResource;
 use App\Http\Resources\AdminVerifiedListingResource;
+use App\Http\Resources\AdminVisitedListingResource;
 use App\Models\Amenity;
 use App\Models\Listing;
 use App\Models\ListingImage;
@@ -29,6 +30,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -139,6 +141,246 @@ class ListingController extends Controller
                 ->map(fn ($v) => ['value' => $v, 'label' => ContactType::from($v)->label])
                 ->all(),
         ]);
+    }
+
+    public function verifyEdit(Listing $listing): View
+    {
+        // Slice guard — visited + not yet verified only. Anything else 404s.
+        abort_unless(
+            $listing->queue_status === QueueStatus::visited()->value
+                && ! $listing->is_verified,
+            404,
+        );
+
+        $listing->load([
+            'images' => fn ($q) => $q->orderBy('sort_order'),
+            'amenities',
+            'assignedTo',
+        ]);
+
+        $listingPayload = [
+            'id'                 => $listing->id,
+            'uuid'               => $listing->uuid,
+            'title'              => $listing->title,
+            'description'        => $listing->description,
+            'type'               => $listing->type,
+            'price_monthly'      => $listing->price_monthly,
+            'barangay'           => $listing->barangay,
+            'beds'               => $listing->beds,
+            'baths'              => $listing->baths,
+            'sqm'                => $listing->sqm,
+            'latitude'           => $listing->latitude,
+            'longitude'          => $listing->longitude,
+            'directions'         => $listing->directions,
+            // Calls-team-context — editable on this surface but visually de-emphasized in UI
+            'contact_phone'      => $listing->contact_phone,
+            'contact_type'       => $listing->contact_type,
+            'source_site'        => $listing->source_site,
+            'source_url'         => $listing->source_url,
+            'verification_notes' => $listing->verification_notes,
+            // Field-officer-context — read-only display
+            'assigned_to_name'   => $listing->assignedTo?->name,
+            'visited_at'         => $listing->visited_at?->toIso8601String(),
+            // Moderation toggle — admin can verify-and-feature in one shot
+            'is_featured'        => (bool) $listing->is_featured,
+            // Children
+            'amenities' => $listing->amenities->map(fn ($a) => [
+                'id' => $a->id, 'name' => $a->name, 'slug' => $a->slug, 'icon' => $a->icon,
+            ])->all(),
+            'images' => $listing->images->map(fn ($img) => [
+                'id'         => $img->id,
+                'url'        => $img->url,
+                'sort_order' => $img->sort_order,
+            ])->all(),
+        ];
+
+        return view('admin.listings.verify-edit', [
+            'listing'      => $listingPayload,
+            'listingTypes' => collect(ListingType::toValues())
+                ->map(fn ($v) => ['value' => $v, 'label' => ListingType::from($v)->label])
+                ->all(),
+            'barangays'    => collect(Barangay::toValues())
+                ->map(fn ($v) => ['value' => $v, 'label' => Barangay::from($v)->label])
+                ->all(),
+            'sourceSites'  => collect(SourceSite::toValues())
+                ->map(fn ($v) => ['value' => $v, 'label' => SourceSite::from($v)->label])
+                ->all(),
+            'contactTypes' => collect(ContactType::toValues())
+                ->map(fn ($v) => ['value' => $v, 'label' => ContactType::from($v)->label])
+                ->all(),
+            'amenities'    => Amenity::orderBy('sort_order')->get(['id', 'name', 'slug', 'icon']),
+        ]);
+    }
+
+    public function verify(Request $request, Listing $listing): RedirectResponse
+    {
+        // Slice guard — visited + not yet verified. Concurrent-verify race ends here:
+        // first commits, second hits is_verified=true and gets a meaningful 422
+        // via the 'verify' named bag (admin can re-enter the verify-edit which now
+        // 404s, signaling someone else handled it).
+        if ($listing->is_verified
+            || $listing->queue_status !== QueueStatus::visited()->value) {
+            throw ValidationException::withMessages([
+                'listing' => 'This listing cannot be verified.',
+            ])->errorBag('verify');
+        }
+
+        $existingIds = $listing->images()->pluck('id')->all();
+
+        // Strict validation — every renter-essential field required. nullable for
+        // admin-discretion fields (description, beds, baths, sqm, amenities).
+        // Calls-team-locked fields (contact_phone, contact_type, source_site,
+        // source_url, verification_notes) are NOT validated here AND NOT persisted
+        // below — silent-ignore, defense-in-depth on top of the read-only UI.
+        $validator = Validator::make($request->all(), [
+            'title'                => ['required', 'string', 'max:200'],
+            'description'          => ['nullable', 'string', 'max:5000'],
+            'listing_type'         => ['required', 'string', Rule::in(ListingType::toValues())],
+            'price_monthly'        => ['required', 'integer', 'min:1'],
+            'barangay'             => ['required', 'string', Rule::in(Barangay::toValues())],
+            'beds'                 => ['nullable', 'integer', 'min:0', 'max:20'],
+            'baths'                => ['nullable', 'integer', 'min:0', 'max:20'],
+            'sqm'                  => ['nullable', 'integer', 'min:1'],
+            'latitude'             => ['required', 'numeric', 'between:-90,90'],
+            'longitude'            => ['required', 'numeric', 'between:-180,180'],
+            'directions'           => ['required', 'string', 'max:500'],
+            'amenities'            => ['nullable', 'array', 'max:50'],
+            'amenities.*'          => ['integer', 'exists:amenities,id'],
+            'photos'               => ['required', 'array', 'min:1', 'max:20'],
+            'photos.*'             => ['array'],
+            'photos.*.existing_id' => ['nullable', 'integer', Rule::in($existingIds)],
+            'photos.*.key'         => ['nullable', 'string', 'starts_with:tmp/'],
+            'photos.*.name'        => ['nullable', 'string'],
+            'photos.*.size'        => ['nullable', 'integer'],
+            'is_featured'          => ['nullable', 'boolean'],
+        ], [
+            'title.required'         => 'Title is required.',
+            'title.max'              => 'Title is too long (max 200 characters).',
+            'description.max'        => 'Description is too long (max 5000 characters).',
+            'listing_type.required'  => 'Listing type is required.',
+            'listing_type.in'        => 'Invalid listing type.',
+            'price_monthly.required' => 'Monthly rent is required.',
+            'price_monthly.min'      => 'Monthly rent must be at least ₱1.',
+            'barangay.required'     => 'Barangay is required.',
+            'barangay.in'            => 'Invalid barangay.',
+            'sqm.min'                => 'Floor area must be at least 1 sqm.',
+            'latitude.required'      => 'Drop a map pin before verifying.',
+            'latitude.between'       => 'Latitude must be between -90 and 90.',
+            'longitude.required'     => 'Drop a map pin before verifying.',
+            'longitude.between'      => 'Longitude must be between -180 and 180.',
+            'directions.required'    => 'Directions are required.',
+            'directions.max'         => 'Directions are too long (max 500 characters).',
+            'photos.required'        => 'At least one photo is required.',
+            'photos.min'             => 'At least one photo is required.',
+            'amenities.*.exists'     => "One or more selected amenities don't exist.",
+        ]);
+
+        if ($validator->fails()) {
+            throw (new ValidationException($validator))->errorBag('verify');
+        }
+        $validated = $validator->validated();
+
+        $photos = $request->input('photos', []);
+        foreach ($photos as $i => $photo) {
+            $hasExisting = isset($photo['existing_id']);
+            $hasKey      = isset($photo['key']) && $photo['key'] !== '';
+            if ($hasExisting === $hasKey) {
+                throw ValidationException::withMessages([
+                    "photos.{$i}" => 'Each photo must reference an existing photo or a new upload, not both or neither.',
+                ])->errorBag('verify');
+            }
+        }
+
+        $submittedExistingIds = collect($photos)->pluck('existing_id')->filter()->all();
+        $removedImageIds      = array_values(array_diff($existingIds, $submittedExistingIds));
+        $removedImageUrls     = ListingImage::whereIn('id', $removedImageIds)->pluck('url')->all();
+
+        DB::transaction(function () use ($request, $listing, $validated, $photos, $removedImageIds) {
+            // Editable fields only. queue_status, visited_at, assigned_to, assigned_at —
+            // immutable. Calls-team-locked fields silent-ignored (NOT in this array).
+            $listing->update([
+                'title'         => $validated['title'],
+                'description'   => $validated['description'] ?? null,
+                'type'          => $validated['listing_type'],
+                'price_monthly' => $validated['price_monthly'],
+                'barangay'      => $validated['barangay'],
+                'beds'          => $validated['beds']  ?? null,
+                'baths'         => $validated['baths'] ?? null,
+                'sqm'           => $validated['sqm']   ?? null,
+                'latitude'      => $validated['latitude'],
+                'longitude'     => $validated['longitude'],
+                'directions'    => $validated['directions'],
+                'is_featured'   => (bool) ($validated['is_featured'] ?? false),
+                'is_verified'   => true,
+                'verified_at'   => Carbon::now(),
+            ]);
+
+            if (! empty($removedImageIds)) {
+                ListingImage::whereIn('id', $removedImageIds)->delete();
+            }
+
+            $orderedImageIds = [];
+            foreach ($photos as $i => $photo) {
+                if (isset($photo['existing_id'])) {
+                    ListingImage::where('id', $photo['existing_id'])->update(['sort_order' => $i]);
+                    $orderedImageIds[] = (int) $photo['existing_id'];
+                    continue;
+                }
+
+                $tmpKey       = $photo['key'];
+                $filename     = basename($tmpKey);
+                $permanentKey = "listings/{$listing->uuid}/{$filename}";
+
+                $copied = Storage::disk('s3')->copy($tmpKey, $permanentKey);
+                if (! $copied) {
+                    throw new \RuntimeException("Failed to copy {$tmpKey} to {$permanentKey}");
+                }
+
+                $img = ListingImage::create([
+                    'listing_id' => $listing->id,
+                    'url'        => Storage::disk('s3')->url($permanentKey),
+                    'sort_order' => $i,
+                ]);
+                $orderedImageIds[] = $img->id;
+            }
+
+            if (! empty($orderedImageIds)) {
+                $listing->update(['display_image_id' => $orderedImageIds[0]]);
+            }
+            $listing->amenities()->sync($validated['amenities'] ?? []);
+
+            ListingLifecycleEvent::create([
+                'listing_id' => $listing->id,
+                'event_type' => 'updated',
+                'actor_id'   => Auth::guard('admin')->id(),
+                'notes'      => json_encode(
+                    $request->except(['_token', '_method']),
+                    JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+                ),
+            ]);
+        });
+
+        foreach ($photos as $photo) {
+            if (! isset($photo['key'])) continue;
+            try {
+                Storage::disk('s3')->delete($photo['key']);
+            } catch (\Throwable $e) {
+                // Swallow.
+            }
+        }
+
+        foreach ($removedImageUrls as $url) {
+            try {
+                $key = ltrim(parse_url($url, PHP_URL_PATH) ?? '', '/');
+                if ($key) Storage::disk('s3')->delete($key);
+            } catch (\Throwable $e) {
+                // Swallow.
+            }
+        }
+
+        return redirect()
+            ->route('admin.visited-listings.index')
+            ->with('success', "Listing '{$listing->title}' verified.");
     }
 
     public function unverifiedUpdate(Request $request, Listing $listing): RedirectResponse
@@ -645,8 +887,12 @@ class ListingController extends Controller
             ]);
         });
 
+        $redirectRoute = $request->query('from') === 'visited'
+            ? 'admin.visited-listings.index'
+            : 'admin.unverified-listings.index';
+
         return redirect()
-            ->route('admin.unverified-listings.index')
+            ->route($redirectRoute)
             ->with('success', "Listing '{$listing->title}' rejected.");
     }
 
@@ -832,6 +1078,31 @@ class ListingController extends Controller
 
         return view('admin.listings.unverified-index', [
             'unverified' => $unverified,
+        ]);
+    }
+
+    public function visitedIndex(Request $request): View
+    {
+        $q = trim((string) $request->input('q', ''));
+
+        $paginator = $q === ''
+            ? Listing::awaitingVerification()
+                ->with('assignedTo')
+                ->orderByDesc('visited_at')
+                ->orderByDesc('id')
+                ->paginate(10)
+            : Listing::search($q)
+                ->where('queue_status', QueueStatus::visited()->value)
+                ->where('is_verified', 0)
+                ->query(fn ($builder) => $builder->with('assignedTo'))
+                ->paginate(10);
+
+        $visited = AdminVisitedListingResource::collection($paginator)
+            ->response()
+            ->getData(true);
+
+        return view('admin.listings.visited-index', [
+            'visited' => $visited,
         ]);
     }
 

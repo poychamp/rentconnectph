@@ -31,6 +31,10 @@ Route::middleware('auth:admin')->group(function () {
             ->name('listings.edit');
         Route::get('listings/{listing:uuid}/unverified-edit', [Admin\ListingController::class, 'unverifiedEdit'])
             ->name('listings.unverified-edit');
+        Route::get('listings/{listing:uuid}/verify-edit', [Admin\ListingController::class, 'verifyEdit'])
+            ->name('listings.verify-edit');
+        Route::put('listings/{listing:uuid}/verify', [Admin\ListingController::class, 'verify'])
+            ->name('listings.verify');
         Route::put('listings/{listing:uuid}', [Admin\ListingController::class, 'update'])
             ->name('listings.update');
         Route::put('listings/{listing:uuid}/unverified-update', [Admin\ListingController::class, 'unverifiedUpdate'])
@@ -51,6 +55,9 @@ Route::middleware('auth:admin')->group(function () {
 
         Route::get('unverified-listings', [Admin\ListingController::class, 'unverifiedIndex'])
             ->name('unverified-listings.index');
+
+        Route::get('visited-listings', [Admin\ListingController::class, 'visitedIndex'])
+            ->name('visited-listings.index');
 
         Route::get('deactivated-listings', [Admin\ListingController::class, 'deactivatedIndex'])
             ->name('deactivated-listings.index');
