@@ -66,6 +66,13 @@ const sections = [
                 requires: 'listings.field-work',
                 matches: (path) => path === '/field/submitted-listings',
             },
+            {
+                name: 'Verified',
+                href: '/field/verified-listings',
+                icon: 'shield-check',
+                requires: 'listings.field-work',
+                matches: (path) => path === '/field/verified-listings',
+            },
         ],
     },
 ];
@@ -84,6 +91,7 @@ const iconPaths = {
     list: 'M3 6h18M3 12h18M3 18h18',
     star: 'M12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26Z',
     'check-circle': 'M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4 12 14.01l-3-3',
+    'shield-check': 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z M9 12l2 2 4-4',
 };
 </script>
 

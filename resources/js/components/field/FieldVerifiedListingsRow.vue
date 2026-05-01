@@ -10,9 +10,9 @@ const dateTimeFormatter = new Intl.DateTimeFormat('en-US', {
     hour: '2-digit', minute: '2-digit',
 });
 
-const formattedSubmittedAt = computed(() => {
-    if (!props.row.visited_at) return '';
-    return dateTimeFormatter.format(new Date(props.row.visited_at));
+const formattedVerifiedAt = computed(() => {
+    if (!props.row.verified_at) return '';
+    return dateTimeFormatter.format(new Date(props.row.verified_at));
 });
 </script>
 
@@ -22,12 +22,12 @@ const formattedSubmittedAt = computed(() => {
         <td class="px-4 py-3 text-gray-600 dark:text-gray-300">{{ row.type_label }}</td>
         <td class="px-4 py-3 text-gray-600 dark:text-gray-300">{{ row.barangay_label }}</td>
         <td class="px-4 py-3 text-gray-600 dark:text-gray-300">{{ row.directions }}</td>
-        <td class="px-4 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ formattedSubmittedAt }}</td>
+        <td class="px-4 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ formattedVerifiedAt }}</td>
 
         <td class="px-4 py-3">
             <div class="flex items-center justify-center">
                 <a
-                    :href="`/field/listings/${row.uuid}/preview?from=submitted`"
+                    :href="`/field/listings/${row.uuid}/preview?from=verified`"
                     class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
                     title="Preview"
                 >

@@ -13,6 +13,7 @@ use App\Http\Resources\FieldListingRequestVerificationResource;
 use App\Http\Resources\FieldListingResource;
 use App\Http\Resources\FieldPriorityListingResource;
 use App\Http\Resources\FieldSubmittedListingResource;
+use App\Http\Resources\FieldVerifiedListingResource;
 use App\Models\Amenity;
 use App\Models\Listing;
 use App\Models\ListingImage;
@@ -504,14 +505,13 @@ class ListingController extends Controller
         ]);
     }
 
-    public function preview(Listing $listing): View
+    public function preview(Request $request, Listing $listing): View
     {
         $userId = auth('admin')->id();
 
         abort_unless(
             $listing->assigned_to === $userId
-                && $listing->queue_status === QueueStatus::visited()->value
-                && ! $listing->is_verified,
+                && $listing->queue_status === QueueStatus::visited()->value,
             404,
         );
 
@@ -520,8 +520,14 @@ class ListingController extends Controller
             'amenities',
         ]);
 
+        $from = $request->query('from');
+        if (! in_array($from, ['submitted', 'verified'], true)) {
+            $from = 'submitted';
+        }
+
         return view('field.listings.preview', [
             'listing' => $listing,
+            'from'    => $from,
         ]);
     }
 
@@ -551,6 +557,39 @@ class ListingController extends Controller
 
         return view('field.submitted-listings', [
             'submitted'   => FieldSubmittedListingResource::collection($rows)
+                ->response()
+                ->getData(true),
+            'q'           => $q,
+            'isSearching' => $isSearching,
+        ]);
+    }
+
+    public function verifiedIndex(Request $request): View
+    {
+        $userId = auth('admin')->id();
+        $q = trim((string) $request->query('q', ''));
+
+        if ($q !== '') {
+            $rows = Listing::search($q)
+                ->where('assigned_to', $userId)
+                ->where('queue_status', QueueStatus::visited()->value)
+                ->where('is_verified', true)
+                ->query(fn ($eloquent) => $eloquent->with('displayImage'))
+                ->paginate(10);
+
+            $isSearching = true;
+        } else {
+            $rows = Listing::with('displayImage')
+                ->verifiedByOfficer($userId)
+                ->orderByDesc('verified_at')
+                ->orderByDesc('id')
+                ->paginate(10);
+
+            $isSearching = false;
+        }
+
+        return view('field.verified-listings', [
+            'verified'    => FieldVerifiedListingResource::collection($rows)
                 ->response()
                 ->getData(true),
             'q'           => $q,

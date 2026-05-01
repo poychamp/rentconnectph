@@ -26,6 +26,8 @@
         'source_url'          => $listing->source_url,
         'verification_notes'  => $listing->verification_notes,
         'visited_at'          => $listing->visited_at?->toIso8601String(),
+        'is_verified'         => (bool) $listing->is_verified,
+        'verified_at'         => $listing->verified_at?->toIso8601String(),
     ];
 
     $photosPayload = $listing->images->map(fn ($img) => [
@@ -50,6 +52,7 @@
         photos:          @json($photosPayload),
         amenities:       @json($amenitiesPayload),
         mapboxStaticUrl: @json($mapboxStaticUrl),
+        from:            @json($from),
     };
 </script>
 @endpush

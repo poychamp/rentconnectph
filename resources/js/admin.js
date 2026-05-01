@@ -32,6 +32,7 @@ if (el) {
         'field-priority':           () => import('./FieldPriority.vue'),
         'field-submitted-listings': () => import('./FieldSubmittedListings.vue'),
         'field-listing-preview':    () => import('./FieldListingPreview.vue'),
+        'field-verified-listings':  () => import('./FieldVerifiedListings.vue'),
     };
 
     const loadRoot = roots[page] || roots['admin-login'];

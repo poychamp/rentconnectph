@@ -162,6 +162,14 @@ class Listing extends Model
             ->where('is_verified', false);
     }
 
+    public function scopeVerifiedByOfficer(Builder $query, int $userId): Builder
+    {
+        return $query
+            ->where('assigned_to', $userId)
+            ->where('queue_status', QueueStatus::visited()->value)
+            ->where('is_verified', true);
+    }
+
     public function scopeAwaitingVerification(Builder $query): Builder
     {
         return $query

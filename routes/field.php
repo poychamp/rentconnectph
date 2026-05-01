@@ -38,6 +38,9 @@ Route::middleware('auth:admin')->group(function () {
         Route::get('submitted-listings', [Field\ListingController::class, 'submittedIndex'])
             ->name('submitted-listings.index');
 
+        Route::get('verified-listings', [Field\ListingController::class, 'verifiedIndex'])
+            ->name('verified-listings.index');
+
         Route::put('api/listings/{listing:uuid}/priority-toggle', [Field\Api\ListingController::class, 'priorityToggle'])
             ->middleware('throttle:60,1')
             ->name('api.listings.priority-toggle');

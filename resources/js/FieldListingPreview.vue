@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import FieldSidebar from './components/field/FieldSidebar.vue';
 import FieldTopBar  from './components/field/FieldTopBar.vue';
 import FieldPreviewListingPhotoGallery     from './components/field/FieldPreviewListingPhotoGallery.vue';
@@ -24,6 +24,11 @@ const listing         = initial.listing         ?? {};
 const photos          = initial.photos          ?? [];
 const amenities       = initial.amenities       ?? [];
 const mapboxStaticUrl = initial.mapboxStaticUrl ?? null;
+const from            = initial.from            ?? 'submitted';
+
+const subtitle = computed(() => listing.is_verified
+    ? 'Read-only — verified by admin'
+    : 'Read-only — awaiting admin review');
 </script>
 
 <template>
@@ -31,7 +36,7 @@ const mapboxStaticUrl = initial.mapboxStaticUrl ?? null;
         <FieldSidebar :user="user" />
 
         <div class="flex-1 flex flex-col min-w-0">
-            <FieldTopBar title="Preview Listing" subtitle="Read-only — awaiting admin review" />
+            <FieldTopBar title="Preview Listing" :subtitle="subtitle" />
 
             <main class="flex-1 overflow-y-auto px-6 pt-2 pb-6 lg:px-10 lg:pt-3 lg:pb-10 space-y-4">
                 <FieldPreviewListingVisitedBanner :listing="listing" />
@@ -50,7 +55,7 @@ const mapboxStaticUrl = initial.mapboxStaticUrl ?? null;
                 </div>
             </main>
 
-            <FieldPreviewListingBar />
+            <FieldPreviewListingBar :from="from" />
         </div>
     </div>
 </template>

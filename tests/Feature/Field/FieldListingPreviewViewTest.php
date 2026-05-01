@@ -33,6 +33,14 @@ class FieldListingPreviewViewTest extends TestCase
         ], $overrides));
     }
 
+    private function verifiedListingFor(User $officer, array $overrides = []): Listing
+    {
+        return $this->submittedListingFor($officer, array_merge([
+            'is_verified' => true,
+            'verified_at' => Carbon::parse('2026-04-30 16:00:00'),
+        ], $overrides));
+    }
+
     public function test_it_redirects_guest_to_login(): void
     {
         $marco = User::factory()->field()->create();
@@ -76,18 +84,6 @@ class FieldListingPreviewViewTest extends TestCase
         $this->get(route('field.listings.preview', $dead->uuid))->assertNotFound();
     }
 
-    public function test_it_returns_404_when_listing_is_already_verified(): void
-    {
-        $marco = $this->asMarco();
-        $verified = $this->submittedListingFor($marco, [
-            'is_verified' => true,
-            'verified_at' => Carbon::parse('2026-04-30 16:00:00'),
-        ]);
-
-        $this->get(route('field.listings.preview', $verified->uuid))
-            ->assertNotFound();
-    }
-
     public function test_it_returns_review_page_with_eager_loaded_relations(): void
     {
         $marco = $this->asMarco();
@@ -109,5 +105,51 @@ class FieldListingPreviewViewTest extends TestCase
             $viewListing->relationLoaded('amenities'),
             'amenities relation must be eager-loaded for the amenities card',
         );
+    }
+
+    public function test_it_loads_preview_for_verified_listings_assigned_to_the_current_officer(): void
+    {
+        $marco = $this->asMarco();
+        $listing = $this->verifiedListingFor($marco);
+
+        $response = $this->get(route('field.listings.preview', $listing->uuid));
+
+        $response->assertOk();
+        $viewListing = $response->viewData('listing');
+        $this->assertSame($listing->uuid, $viewListing->uuid);
+        $this->assertTrue((bool) $viewListing->is_verified);
+    }
+
+    public function test_it_passes_default_from_origin_as_submitted_when_query_param_missing(): void
+    {
+        $marco = $this->asMarco();
+        $listing = $this->submittedListingFor($marco);
+
+        $response = $this->get(route('field.listings.preview', $listing->uuid));
+
+        $response->assertOk();
+        $this->assertSame('submitted', $response->viewData('from'));
+    }
+
+    public function test_it_passes_from_origin_as_verified_when_query_param_is_verified(): void
+    {
+        $marco = $this->asMarco();
+        $listing = $this->verifiedListingFor($marco);
+
+        $response = $this->get(route('field.listings.preview', $listing->uuid) . '?from=verified');
+
+        $response->assertOk();
+        $this->assertSame('verified', $response->viewData('from'));
+    }
+
+    public function test_it_falls_back_to_submitted_when_from_query_param_is_invalid(): void
+    {
+        $marco = $this->asMarco();
+        $listing = $this->submittedListingFor($marco);
+
+        $response = $this->get(route('field.listings.preview', $listing->uuid) . '?from=garbage');
+
+        $response->assertOk();
+        $this->assertSame('submitted', $response->viewData('from'));
     }
 }
