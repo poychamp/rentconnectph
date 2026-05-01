@@ -118,4 +118,14 @@ class AdminListingRejectTest extends TestCase
             'rejected event created_at must be within 1s of Carbon::now() at request time'
         );
     }
+
+    public function test_it_forbids_field_officer(): void
+    {
+        $field = User::factory()->field()->create();
+        $this->actingAs($field, 'admin');
+        $listing = $this->unverifiedLiveListing();
+
+        $this->put(route('admin.listings.reject', $listing->uuid))
+            ->assertForbidden();
+    }
 }

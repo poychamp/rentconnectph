@@ -23,9 +23,10 @@ const numOr = (v, fallback) => v === undefined || v === null || v === '' ? fallb
 const toBool = (v) => v === true || v === '1' || v === 1;
 
 const user = ref(window.__INITIAL_DASHBOARD__?.user ?? {
-    name:       'Admin',
-    initials:   'AD',
-    role_label: 'Super Admin',
+    name:        'Admin',
+    initials:    'AD',
+    role_label:  'Super Admin',
+    permissions: [],
 });
 
 const formData = ref({

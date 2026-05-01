@@ -8,7 +8,7 @@ import AdminFeaturedListingsTable from './components/admin/AdminFeaturedListings
 const initialDashboard = window.__INITIAL_DASHBOARD__ ?? {};
 const initialFeatured  = window.__INITIAL_FEATURED__  ?? { data: [] };
 
-const user = ref(initialDashboard.user ?? { name: 'Admin', initials: 'AD', role_label: 'Super Admin' });
+const user = ref(initialDashboard.user ?? { name: 'Admin', initials: 'AD', role_label: 'Super Admin', permissions: [] });
 
 const rows = ref(initialFeatured.data);
 let lastCommittedOrder = rows.value.map((r) => r.uuid);

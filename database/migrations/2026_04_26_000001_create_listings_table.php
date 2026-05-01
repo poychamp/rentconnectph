@@ -27,6 +27,8 @@ return new class extends Migration
             $table->string('prequal_status', 32)->nullable();
             $table->string('queue_status', 32)->nullable();
             $table->foreignId('assigned_to')->nullable()->constrained('users')->cascadeOnDelete();
+            $table->timestamp('assigned_at')->nullable();
+            $table->unsignedInteger('field_priority_order')->nullable();
             $table->string('directions', 500)->nullable();
             $table->string('contact_type', 32)->nullable();
             $table->text('verification_notes')->nullable();
@@ -48,6 +50,7 @@ return new class extends Migration
             $table->index('prequal_status');
             $table->index('queue_status');
             $table->index('assigned_to');
+            $table->index('field_priority_order');
             $table->index('contact_type');
         });
     }

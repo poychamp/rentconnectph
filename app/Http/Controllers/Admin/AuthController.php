@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\AppRole;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -70,7 +71,12 @@ class AuthController extends Controller
         RateLimiter::clear($throttleKey);
         $request->session()->regenerate();
 
-        return redirect()->intended(route('admin.dashboard'));
+        $user = Auth::guard('admin')->user();
+        $defaultRoute = $user->hasRole(AppRole::field()->value)
+            ? route('field.dashboard')
+            : route('admin.dashboard');
+
+        return redirect()->intended($defaultRoute);
     }
 
     public function logout(Request $request): RedirectResponse

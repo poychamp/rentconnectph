@@ -17,9 +17,10 @@ const numOrNull = (v) => v === undefined || v === null || v === '' ? null : Numb
 const numOr = (v, fallback) => v === undefined || v === null || v === '' ? fallback : (Number(v) || fallback);
 
 const user = ref(window.__INITIAL_DASHBOARD__?.user ?? {
-    name:       'Admin',
-    initials:   'AD',
-    role_label: 'Super Admin',
+    name:        'Admin',
+    initials:    'AD',
+    role_label:  'Super Admin',
+    permissions: [],
 });
 
 const formData = ref({

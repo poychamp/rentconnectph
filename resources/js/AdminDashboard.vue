@@ -5,9 +5,10 @@ import AdminTopBar from './components/admin/AdminTopBar.vue';
 import AdminGreeting from './components/admin/AdminGreeting.vue';
 
 const user = ref({
-    name:       'Admin',
-    initials:   'AD',
-    role_label: 'Super Admin',
+    name:        'Admin',
+    initials:    'AD',
+    role_label:  'Super Admin',
+    permissions: [],
 });
 
 onMounted(() => {

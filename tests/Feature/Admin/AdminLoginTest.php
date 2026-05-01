@@ -92,6 +92,22 @@ class AdminLoginTest extends TestCase
         $this->assertTrue(Auth::guard('admin')->user()->is($admin));
     }
 
+    public function test_it_redirects_field_officer_to_field_dashboard_on_successful_login(): void
+    {
+        $field = User::factory()->field()->create([
+            'password' => Hash::make('correct-password'),
+        ]);
+
+        $response = $this->post(route('admin.login.attempt'), [
+            'email' => $field->email,
+            'password' => 'correct-password',
+        ]);
+
+        $response->assertRedirect(route('field.dashboard'));
+        $this->assertTrue(Auth::guard('admin')->check());
+        $this->assertTrue(Auth::guard('admin')->user()->is($field));
+    }
+
     public function test_it_does_not_persist_remember_token_without_remember_me(): void
     {
         $admin = User::factory()->superAdmin()->create([

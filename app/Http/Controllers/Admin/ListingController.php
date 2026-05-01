@@ -284,6 +284,9 @@ class ListingController extends Controller
                 $updateData['directions']         = $validated['directions'];
                 $updateData['contact_type']       = $validated['contact_type'];
                 $updateData['verification_notes'] = $validated['verification_notes'] ?? null;
+                if ($assignedTo !== $listing->assigned_to) {
+                    $updateData['assigned_at'] = $assignedTo !== null ? Carbon::now() : null;
+                }
                 $updateData['assigned_to']        = $assignedTo;
                 // Auto-transition queue_status based on assignment.
                 $updateData['queue_status']       = $assignedTo !== null

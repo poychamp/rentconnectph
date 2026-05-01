@@ -706,4 +706,131 @@ class AdminListingUnverifiedUpdateTest extends TestCase
         $this->assertNull($listing->verification_notes);
         $this->assertNull($listing->assigned_to);
     }
+
+    public function test_it_forbids_field_officer(): void
+    {
+        $field = User::factory()->field()->create();
+        $this->actingAs($field, 'admin');
+        $listing = $this->makeUnverifiedListing();
+
+        $this->put(route('admin.listings.unverified-update', $listing->uuid), $this->notCalledPayload($listing))
+            ->assertForbidden();
+    }
+
+    // =========================================================================
+    // assigned_at lifecycle (4) — set on flip null→user, reset on reassign,
+    // cleared on flip user→null, untouched when assigned_to unchanged.
+    // =========================================================================
+
+    public function test_it_sets_assigned_at_when_assigned_to_flips_from_null_to_user(): void
+    {
+        $this->asAdmin();
+        $field = $this->makeFieldUser();
+        $listing = $this->makeUnverifiedListing(state: [
+            'prequal_status' => 'called_yes',
+            'queue_status'   => 'unassigned',
+            'assigned_to'    => null,
+            'assigned_at'    => null,
+        ]);
+
+        $before = Carbon::now()->subSecond();
+        $this->put(
+            route('admin.listings.unverified-update', $listing->uuid),
+            $this->calledYesPayload($listing, ['assigned_to' => $field->id])
+        );
+        $after = Carbon::now()->addSecond();
+
+        $listing->refresh();
+        $this->assertSame($field->id, $listing->assigned_to);
+        $this->assertNotNull($listing->assigned_at);
+        $this->assertTrue(
+            $listing->assigned_at->between($before, $after),
+            'assigned_at must be ~Carbon::now() at request time'
+        );
+    }
+
+    public function test_it_resets_assigned_at_when_reassigned_to_different_user(): void
+    {
+        $this->asAdmin();
+        $officerA = $this->makeFieldUser('Officer A');
+        $officerB = $this->makeFieldUser('Officer B');
+
+        $oldAssignedAt = Carbon::now()->subDays(3);
+        $listing = $this->makeUnverifiedListing(state: [
+            'prequal_status' => 'called_yes',
+            'queue_status'   => 'assigned',
+            'assigned_to'    => $officerA->id,
+            'assigned_at'    => $oldAssignedAt,
+        ]);
+
+        $before = Carbon::now()->subSecond();
+        $this->put(
+            route('admin.listings.unverified-update', $listing->uuid),
+            $this->calledYesPayload($listing, ['assigned_to' => $officerB->id])
+        );
+        $after = Carbon::now()->addSecond();
+
+        $listing->refresh();
+        $this->assertSame($officerB->id, $listing->assigned_to);
+        $this->assertTrue(
+            $listing->assigned_at->between($before, $after),
+            'assigned_at must reset to ~Carbon::now() on reassignment'
+        );
+        $this->assertTrue(
+            $listing->assigned_at->greaterThan($oldAssignedAt),
+            'assigned_at must be newer than the previous timestamp'
+        );
+    }
+
+    public function test_it_clears_assigned_at_when_assigned_to_flips_to_null(): void
+    {
+        $this->asAdmin();
+        $officer = $this->makeFieldUser();
+        $listing = $this->makeUnverifiedListing(state: [
+            'prequal_status' => 'called_yes',
+            'queue_status'   => 'assigned',
+            'assigned_to'    => $officer->id,
+            'assigned_at'    => Carbon::now()->subDays(1),
+        ]);
+
+        $this->put(
+            route('admin.listings.unverified-update', $listing->uuid),
+            $this->calledYesPayload($listing, ['assigned_to' => null])
+        );
+
+        $listing->refresh();
+        $this->assertNull($listing->assigned_to);
+        $this->assertNull($listing->assigned_at);
+    }
+
+    public function test_it_leaves_assigned_at_untouched_when_assigned_to_unchanged(): void
+    {
+        $this->asAdmin();
+        $officer = $this->makeFieldUser();
+
+        $original = Carbon::now()->subDays(2)->startOfMinute();
+        $listing = $this->makeUnverifiedListing(state: [
+            'prequal_status' => 'called_yes',
+            'queue_status'   => 'assigned',
+            'assigned_to'    => $officer->id,
+            'assigned_at'    => $original,
+        ]);
+
+        // Edit only the title; keep assigned_to the same.
+        $this->put(
+            route('admin.listings.unverified-update', $listing->uuid),
+            $this->calledYesPayload($listing, [
+                'title'       => 'Edited title only',
+                'assigned_to' => $officer->id,
+            ])
+        );
+
+        $listing->refresh();
+        $this->assertSame($officer->id, $listing->assigned_to);
+        $this->assertSame(
+            $original->toDateTimeString(),
+            $listing->assigned_at->toDateTimeString(),
+            'assigned_at must not change when assigned_to is unchanged'
+        );
+    }
 }

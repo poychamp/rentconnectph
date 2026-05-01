@@ -13,7 +13,7 @@ import AdminReopenListingBar             from './components/admin/AdminReopenLis
 const initial = window.__INITIAL_REOPEN_LISTING__ ?? {};
 
 const user = ref(window.__INITIAL_DASHBOARD__?.user ?? {
-    name: 'Admin', initials: 'AD', role_label: 'Super Admin',
+    name: 'Admin', initials: 'AD', role_label: 'Super Admin', permissions: [],
 });
 
 const listingUuid     = initial.listingUuid     ?? '';

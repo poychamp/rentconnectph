@@ -23,6 +23,9 @@ if (el) {
         'admin-rejected-listings':  () => import('./AdminRejectedListings.vue'),
         'admin-reopen-listing':     () => import('./AdminListingReopen.vue'),
         'admin-featured-listings':  () => import('./AdminFeaturedListings.vue'),
+        'field-dashboard':          () => import('./FieldDashboard.vue'),
+        'field-listings':           () => import('./FieldListings.vue'),
+        'field-listing-edit':       () => import('./FieldListingEdit.vue'),
     };
 
     const loadRoot = roots[page] || roots['admin-login'];

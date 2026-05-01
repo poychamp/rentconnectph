@@ -136,4 +136,13 @@ class ListingFeaturedReorderTest extends TestCase
             ->all();
         $this->assertSame([1, 2, 3], $sliceOrders);
     }
+
+    public function test_it_forbids_field_officer(): void
+    {
+        $field = User::factory()->field()->create();
+        $this->actingAs($field, 'admin');
+
+        $this->putJson(route('admin.api.listings.featured-sort'), ['order' => []])
+            ->assertForbidden();
+    }
 }

@@ -62,4 +62,19 @@ class UserFactory extends Factory
                 $user->assignRole($role);
             });
     }
+
+    /**
+     * Indicate that the user is a field officer (assigns field role on admin guard).
+     */
+    public function field(): static
+    {
+        return $this->afterCreating(function (User $user) {
+            $role = Role::firstOrCreate([
+                'name' => AppRole::field()->value,
+                'guard_name' => AppGuard::admin()->value,
+            ]);
+
+            $user->assignRole($role);
+        });
+    }
 }

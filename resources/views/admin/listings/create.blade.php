@@ -5,11 +5,7 @@
 
 @push('scripts')
 @php
-    $authed = auth('admin')->user();
-    $initials = collect(explode(' ', $authed->name))
-        ->map(fn ($p) => mb_strtoupper(mb_substr($p, 0, 1)))
-        ->take(2)
-        ->implode('');
+    $authUser = (new \App\Http\Resources\AdminAuthUserResource(auth('admin')->user()))->resolve();
 
     // Enrich old('photos') with the S3 GET URL for each tmp key so PhotoUpload
     // can show the preview after a redirect-back. The blob: preview URL we used
@@ -28,11 +24,7 @@
 @endphp
 <script>
     window.__INITIAL_DASHBOARD__ = {
-        user: {
-            name:       @json($authed->name),
-            initials:   @json($initials),
-            role_label: 'Super Admin',
-        },
+        user: @json($authUser),
     };
 
     window.__INITIAL_ADD_LISTING__ = {

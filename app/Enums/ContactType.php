@@ -9,7 +9,7 @@ use Spatie\Enum\Enum;
  * @method static self authorizedRep()
  * @method static self broker()
  * @method static self caretaker()
- * @method static self other()
+ * @method static self others()
  */
 class ContactType extends Enum
 {
@@ -20,7 +20,7 @@ class ContactType extends Enum
             'authorizedRep' => 'authorized_rep',
             'broker'        => 'broker',
             'caretaker'     => 'caretaker',
-            'other'         => 'other',
+            'others'        => 'others',
         ];
     }
 
@@ -31,7 +31,7 @@ class ContactType extends Enum
             'authorizedRep' => 'Authorized Rep',
             'broker'        => 'Broker',
             'caretaker'     => 'Caretaker',
-            'other'         => 'Other',
+            'others'        => 'Others',
         ];
     }
 }

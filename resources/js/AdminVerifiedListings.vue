@@ -12,7 +12,7 @@ const initialVerified  = window.__INITIAL_VERIFIED__  ?? {
     meta: { current_page: 1, last_page: 1, total: 0, per_page: 10 },
 };
 
-const user = ref(initialDashboard.user ?? { name: 'Admin', initials: 'AD', role_label: 'Super Admin' });
+const user = ref(initialDashboard.user ?? { name: 'Admin', initials: 'AD', role_label: 'Super Admin', permissions: [] });
 
 const rows        = ref(initialVerified.data);
 const currentPage = ref(initialVerified.meta.current_page);

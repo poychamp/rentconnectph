@@ -13,7 +13,7 @@ import AdminRestoreListingBar                 from './components/admin/AdminRest
 const initial = window.__INITIAL_RESTORE_LISTING__ ?? {};
 
 const user = ref(window.__INITIAL_DASHBOARD__?.user ?? {
-    name: 'Admin', initials: 'AD', role_label: 'Super Admin',
+    name: 'Admin', initials: 'AD', role_label: 'Super Admin', permissions: [],
 });
 
 const listingUuid     = initial.listingUuid     ?? '';

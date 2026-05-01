@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Concerns\HasUuid;
+use App\Enums\QueueStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -18,14 +20,18 @@ class Listing extends Model
     public function toSearchableArray(): array
     {
         $array = [
-            'uuid'          => $this->uuid,
-            'title'         => $this->title,
-            'description'   => $this->description,
-            'type'          => $this->type,
-            'barangay'      => $this->barangay,
-            'price_monthly' => $this->price_monthly,
-            'is_verified'   => $this->is_verified ? '1' : '0',
-            'verified_at'   => $this->verified_at?->getTimestamp(),
+            'uuid'           => $this->uuid,
+            'title'          => $this->title,
+            'description'    => $this->description,
+            'type'           => $this->type,
+            'barangay'       => $this->barangay,
+            'price_monthly'  => $this->price_monthly,
+            'is_verified'    => $this->is_verified ? '1' : '0',
+            'verified_at'    => $this->verified_at?->getTimestamp(),
+            'directions'     => $this->directions,
+            'contact_phone'  => $this->contact_phone,
+            'assigned_to'    => $this->assigned_to,
+            'queue_status'   => $this->queue_status,
         ];
 
         // Algolia-only: include relation-derived + computed labeled fields.
@@ -66,6 +72,8 @@ class Listing extends Model
         'verified_at',
         'is_featured',
         'featured_order',
+        'field_priority_order',
+        'assigned_at',
     ];
 
     protected $casts = [
@@ -73,6 +81,7 @@ class Listing extends Model
         'is_featured' => 'boolean',
         'featured_order' => 'integer',
         'verified_at' => 'datetime',
+        'assigned_at' => 'datetime',
         'latitude' => 'float',
         'longitude' => 'float',
     ];
@@ -90,6 +99,12 @@ class Listing extends Model
     public function assignedTo(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_to');
+    }
+
+    public function scopeForOfficer(Builder $query, int $userId): Builder
+    {
+        return $query->where('assigned_to', $userId)
+            ->where('queue_status', QueueStatus::assigned()->value);
     }
 
     public function amenities(): BelongsToMany

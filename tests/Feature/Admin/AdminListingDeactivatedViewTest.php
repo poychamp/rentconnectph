@@ -198,7 +198,7 @@ class AdminListingDeactivatedViewTest extends TestCase
         ListingLifecycleEvent::factory()->deactivated()->create([
             'listing_id' => $spacious->id,
             'actor_id'   => $admin->id,
-            'reason'     => 'other',
+            'reason'     => 'others',
             'created_at' => Carbon::now(),
         ]);
 

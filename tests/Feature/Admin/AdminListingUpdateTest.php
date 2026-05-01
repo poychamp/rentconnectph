@@ -504,4 +504,14 @@ class AdminListingUpdateTest extends TestCase
         $this->assertArrayNotHasKey('_token', $notes);
         $this->assertArrayNotHasKey('_method', $notes);
     }
+
+    public function test_it_forbids_field_officer(): void
+    {
+        $field = User::factory()->field()->create();
+        $this->actingAs($field, 'admin');
+        $listing = $this->makeListing();
+
+        $this->put(route('admin.listings.update', $listing->uuid), $this->validPayload($listing))
+            ->assertForbidden();
+    }
 }

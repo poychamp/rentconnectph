@@ -196,4 +196,16 @@ class AdminListingDeactivateTest extends TestCase
         $event = ListingLifecycleEvent::where('listing_id', $listing->id)->firstOrFail();
         $this->assertNull($event->notes);
     }
+
+    public function test_it_forbids_field_officer(): void
+    {
+        $field = User::factory()->field()->create();
+        $this->actingAs($field, 'admin');
+        $listing = $this->verifiedLiveListing();
+
+        $this->put(
+            route('admin.listings.deactivate', ['listing' => $listing->uuid]),
+            ['reason' => 'unavailable']
+        )->assertForbidden();
+    }
 }

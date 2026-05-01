@@ -915,4 +915,13 @@ class AdminListingStoreTest extends TestCase
         $this->assertArrayNotHasKey('_token', $notes);
         $this->assertArrayNotHasKey('_method', $notes);
     }
+
+    public function test_it_forbids_field_officer(): void
+    {
+        $field = User::factory()->field()->create();
+        $this->actingAs($field, 'admin');
+
+        $this->post(route('admin.listings.store'), $this->validPayload())
+            ->assertForbidden();
+    }
 }

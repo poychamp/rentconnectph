@@ -1,11 +1,17 @@
 <script setup>
+import { computed } from 'vue';
 import AdminLogo from './AdminLogo.vue';
 
-defineProps({
+const props = defineProps({
     user: {
         type: Object,
         required: true,
-        validator: (u) => u && typeof u.name === 'string' && typeof u.initials === 'string' && typeof u.role_label === 'string',
+        validator: (u) =>
+            u
+            && typeof u.name === 'string'
+            && typeof u.initials === 'string'
+            && typeof u.role_label === 'string'
+            && Array.isArray(u.permissions),
     },
 });
 
@@ -21,6 +27,13 @@ function isActive(item) {
     return currentPath === item.href;
 }
 
+// Mirrors the server-side `Gate::before` super-admin bypass: a `'*'` entry in
+// `permissions` short-circuits every check to true. See AdminAuthUserResource.
+function userCan(perm) {
+    const list = props.user.permissions ?? [];
+    return list.includes('*') || list.includes(perm);
+}
+
 const sections = [
     {
         label: 'Operations',
@@ -29,6 +42,7 @@ const sections = [
                 name: 'Dashboard',
                 href: '/admin',
                 icon: 'home',
+                requires: 'admin.access',
                 matches: (path) => path === '/admin' || path === '/admin/',
             },
         ],
@@ -36,21 +50,23 @@ const sections = [
     {
         label: 'Listings',
         items: [
-            { name: 'Add Listing',          href: '/admin/listings/create',         icon: 'plus' },
-            { name: 'Verified Listings',    href: '/admin/verified-listings',       icon: 'shield-check' },
-            { name: 'Featured Listings',    href: '/admin/featured-listings',       icon: 'star' },
+            { name: 'Add Listing',          href: '/admin/listings/create',         icon: 'plus',            requires: 'listings.manage' },
+            { name: 'Verified Listings',    href: '/admin/verified-listings',       icon: 'shield-check',    requires: 'listings.manage' },
+            { name: 'Featured Listings',    href: '/admin/featured-listings',       icon: 'star',            requires: 'listings.manage' },
             {
                 name: 'Unverified Listings',
                 href: '/admin/unverified-listings',
                 icon: 'shield-question',
+                requires: 'listings.manage',
                 matches: (path) => path === '/admin/unverified-listings'
                     || /^\/admin\/listings\/[^\/]+\/unverified-edit$/.test(path),
             },
-            { name: 'Deactivated Listings', href: '/admin/deactivated-listings',    icon: 'archive' },
+            { name: 'Deactivated Listings', href: '/admin/deactivated-listings',    icon: 'archive',         requires: 'listings.manage' },
             {
                 name: 'Rejected Listings',
                 href: '/admin/rejected-listings',
                 icon: 'circle-x',
+                requires: 'listings.manage',
                 matches: (path) => path === '/admin/rejected-listings'
                     || /^\/admin\/listings\/[^\/]+\/reopen$/.test(path),
             },
@@ -59,17 +75,26 @@ const sections = [
     {
         label: 'Catalog',
         items: [
-            { name: 'Amenities', href: '#', icon: 'tag' },
+            { name: 'Amenities', href: '#', icon: 'tag', requires: 'listings.manage' },
         ],
     },
     {
         label: 'Admin',
         items: [
-            { name: 'Users',    href: '#', icon: 'user-cog' },
-            { name: 'Settings', href: '#', icon: 'settings' },
+            { name: 'Users',    href: '#', icon: 'user-cog', requires: 'users.manage' },
+            { name: 'Settings', href: '#', icon: 'settings', requires: 'system.admin' },
         ],
     },
 ];
+
+const visibleSections = computed(() =>
+    sections
+        .map((s) => ({
+            ...s,
+            items: s.items.filter((i) => !i.requires || userCan(i.requires)),
+        }))
+        .filter((s) => s.items.length > 0),
+);
 
 const iconPaths = {
     home:     'M3 12 12 4l9 8M5 10v10h4v-6h6v6h4V10',
@@ -93,7 +118,9 @@ const iconPaths = {
     <aside class="w-[220px] shrink-0 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col">
         <!-- Header -->
         <div class="border-b border-gray-200 dark:border-gray-800 flex flex-col items-center" style="padding: 18px 16px 16px;">
-            <AdminLogo size="md" />
+            <a href="/admin" class="hover:opacity-80 transition-opacity" title="Admin home">
+                <AdminLogo size="md" />
+            </a>
             <p class="mt-1.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-gray-400 dark:text-gray-500">
                 Admin Central
             </p>
@@ -101,7 +128,7 @@ const iconPaths = {
 
         <!-- Nav -->
         <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-6">
-            <div v-for="section in sections" :key="section.label">
+            <div v-for="section in visibleSections" :key="section.label">
                 <p class="px-2 mb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">
                     {{ section.label }}
                 </p>

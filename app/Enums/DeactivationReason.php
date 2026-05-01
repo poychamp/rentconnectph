@@ -8,7 +8,7 @@ use Spatie\Enum\Enum;
  * @method static self rentedOut()
  * @method static self rentedOutClosed()
  * @method static self unavailable()
- * @method static self other()
+ * @method static self others()
  */
 class DeactivationReason extends Enum
 {
@@ -18,7 +18,7 @@ class DeactivationReason extends Enum
             'rentedOut'       => 'rented_out',
             'rentedOutClosed' => 'rented_out_closed',
             'unavailable'     => 'unavailable',
-            'other'           => 'other',
+            'others'          => 'others',
         ];
     }
 
@@ -28,7 +28,7 @@ class DeactivationReason extends Enum
             'rentedOut'       => 'Rented Out',                // off-platform: owner rented it, we didn't close
             'rentedOutClosed' => 'Rented Out (Closed)',       // closed deal — platform attributed, ROI tracked
             'unavailable'     => 'Unavailable',
-            'other'           => 'Other',
+            'others'          => 'Others',
         ];
     }
 }
