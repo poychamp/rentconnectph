@@ -924,4 +924,22 @@ class AdminListingStoreTest extends TestCase
         $this->post(route('admin.listings.store'), $this->validPayload())
             ->assertForbidden();
     }
+
+    public function test_it_silently_ignores_listed_at_in_request_body(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        $response = $this->post(
+            route('admin.listings.store'),
+            $this->validPayload(['listed_at' => '2030-12-31 23:59:59'])
+        );
+
+        $response->assertRedirect();
+        $response->assertSessionHasNoErrors();
+
+        $listing = Listing::latest('id')->first();
+        $this->assertNotNull($listing);
+        $this->assertNull($listing->listed_at);
+    }
 }

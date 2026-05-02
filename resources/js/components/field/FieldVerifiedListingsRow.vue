@@ -10,9 +10,9 @@ const dateTimeFormatter = new Intl.DateTimeFormat('en-US', {
     hour: '2-digit', minute: '2-digit',
 });
 
-const formattedVerifiedAt = computed(() => {
-    if (!props.row.verified_at) return '';
-    return dateTimeFormatter.format(new Date(props.row.verified_at));
+const formattedListedAt = computed(() => {
+    if (!props.row.listed_at) return '';
+    return dateTimeFormatter.format(new Date(props.row.listed_at));
 });
 </script>
 
@@ -22,7 +22,7 @@ const formattedVerifiedAt = computed(() => {
         <td class="px-4 py-3 text-gray-600 dark:text-gray-300">{{ row.type_label }}</td>
         <td class="px-4 py-3 text-gray-600 dark:text-gray-300">{{ row.barangay_label }}</td>
         <td class="px-4 py-3 text-gray-600 dark:text-gray-300">{{ row.directions }}</td>
-        <td class="px-4 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ formattedVerifiedAt }}</td>
+        <td class="px-4 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">{{ formattedListedAt }}</td>
 
         <td class="px-4 py-3">
             <div class="flex items-center justify-center gap-1">

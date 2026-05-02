@@ -28,6 +28,7 @@
         'visited_at'          => $listing->visited_at?->toIso8601String(),
         'is_verified'         => (bool) $listing->is_verified,
         'verified_at'         => $listing->verified_at?->toIso8601String(),
+        'listed_at'           => $listing->listed_at?->toIso8601String(),
     ];
 
     $photosPayload = $listing->images->map(fn ($img) => [

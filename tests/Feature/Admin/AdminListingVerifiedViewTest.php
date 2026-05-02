@@ -9,7 +9,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\SeedDatabaseAfterRefresh;
 use Tests\TestCase;
 
-class AdminVerifiedListingsTest extends TestCase
+class AdminListingVerifiedViewTest extends TestCase
 {
     use RefreshDatabase, SeedDatabaseAfterRefresh;
 
@@ -75,7 +75,7 @@ class AdminVerifiedListingsTest extends TestCase
         // Resource shape — keys + human-readable labels
         $first = $payload['data'][0];
         $this->assertEqualsCanonicalizing(
-            ['id', 'uuid', 'name', 'type_label', 'barangay_label', 'price', 'verified_at', 'updated_at'],
+            ['id', 'uuid', 'name', 'type_label', 'barangay_label', 'price', 'verified_at', 'listed_at', 'updated_at'],
             array_keys($first)
         );
         $this->assertSame('Apartment',     $first['type_label']);

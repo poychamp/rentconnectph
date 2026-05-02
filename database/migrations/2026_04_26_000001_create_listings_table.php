@@ -36,6 +36,7 @@ return new class extends Migration
             $table->text('verification_notes')->nullable();
             $table->boolean('is_verified')->default(false);
             $table->timestamp('verified_at')->nullable();
+            $table->timestamp('listed_at')->nullable();
             $table->boolean('is_featured')->default(false);
             $table->unsignedInteger('featured_order')->nullable();
             $table->unsignedBigInteger('display_image_id')->nullable();

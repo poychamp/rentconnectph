@@ -339,6 +339,9 @@ class ListingController extends Controller
         DB::transaction(function () use ($request, $listing, $validated, $photos, $removedImageIds) {
             // Editable fields only. queue_status, visited_at, assigned_to, assigned_at —
             // immutable. Calls-team-locked fields silent-ignored (NOT in this array).
+            // Hoisted $now so verified_at and listed_at share the exact same instant
+            // (separate Carbon::now() calls can drift by microseconds under fast loads).
+            $now = Carbon::now();
             $listing->update([
                 'title'         => $validated['title'],
                 'description'   => $validated['description'] ?? null,
@@ -353,7 +356,8 @@ class ListingController extends Controller
                 'directions'    => $validated['directions'],
                 'is_featured'   => (bool) ($validated['is_featured'] ?? false),
                 'is_verified'   => true,
-                'verified_at'   => Carbon::now(),
+                'verified_at'   => $now,
+                'listed_at'     => $now,
             ]);
 
             if (! empty($removedImageIds)) {
@@ -885,6 +889,7 @@ class ListingController extends Controller
 
         DB::transaction(function () use ($listing) {
             $listing->restore();
+            $listing->update(['listed_at' => Carbon::now()]);
 
             ListingLifecycleEvent::create([
                 'listing_id' => $listing->id,

@@ -124,6 +124,9 @@ return [
                     'filterOnly(barangay)',
                     'filterOnly(price_monthly)',
                 ],
+                'customRanking' => [
+                    'desc(listed_at)',
+                ],
             ],
         ],
     ],

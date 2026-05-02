@@ -16,7 +16,7 @@ defineProps({
                         <th class="px-4 py-3">Type</th>
                         <th class="px-4 py-3">Barangay</th>
                         <th class="px-4 py-3">Price</th>
-                        <th class="px-4 py-3">Verified</th>
+                        <th class="px-4 py-3">Listed</th>
                         <th class="px-4 py-3">
                             <span class="inline-flex items-center gap-1 uppercase tracking-wider">
                                 Updated

@@ -23,6 +23,7 @@ class FieldVerifiedListingResource extends JsonResource
             'display_image_url' => $this->displayImage?->url,
             'visited_at'        => $this->visited_at?->toIso8601String(),
             'verified_at'       => $this->verified_at?->toIso8601String(),
+            'listed_at'         => $this->listed_at?->toIso8601String(),
         ];
     }
 }

@@ -19,7 +19,7 @@ class HomeController extends Controller
 
         $recent = Listing::with('displayImage')
             ->withCount('images')
-            ->recentlyVerified()
+            ->recentlyListed()
             ->limit(6)
             ->get();
 

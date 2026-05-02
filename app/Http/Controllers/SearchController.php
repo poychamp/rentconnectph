@@ -34,7 +34,7 @@ class SearchController extends Controller
             $query = Listing::with('displayImage')
                 ->withCount('images')
                 ->verified()
-                ->orderByDesc('verified_at');
+                ->orderByDesc('listed_at');
             if (!empty($type)) $query->whereIn('type', $type);
             if ($area)         $query->where('barangay', $area);
             if ($budget)       $this->applyBudgetEloquent($query, $budget);

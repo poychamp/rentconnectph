@@ -13,18 +13,18 @@ const formattedVisitedAt = computed(() => {
     return dateTimeFormatter.format(new Date(props.listing.visited_at));
 });
 
-const formattedVerifiedAt = computed(() => {
-    if (!props.listing.verified_at) return '';
-    return dateTimeFormatter.format(new Date(props.listing.verified_at));
+const formattedListedAt = computed(() => {
+    if (!props.listing.listed_at) return '';
+    return dateTimeFormatter.format(new Date(props.listing.listed_at));
 });
 
 const isVerified = computed(() => !!props.listing.is_verified);
 </script>
 
 <template>
-    <!-- Verified state — emerald, "Verified by admin on [date]" -->
+    <!-- Verified state — emerald, "Listed by admin on [date]" -->
     <div
-        v-if="isVerified && formattedVerifiedAt"
+        v-if="isVerified && formattedListedAt"
         class="rounded-lg border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/50 dark:bg-emerald-950/20 px-6 py-4"
     >
         <div class="flex items-start gap-3">
@@ -33,7 +33,7 @@ const isVerified = computed(() => !!props.listing.is_verified);
                 <polyline points="22 4 12 14.01 9 11.01" />
             </svg>
             <div class="flex-1 text-sm text-emerald-900 dark:text-emerald-200">
-                <p><span class="font-semibold">Verified by admin on {{ formattedVerifiedAt }}.</span></p>
+                <p><span class="font-semibold">Listed by admin on {{ formattedListedAt }}.</span></p>
             </div>
         </div>
     </div>

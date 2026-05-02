@@ -26,6 +26,7 @@ class ListingFactory extends Factory
             'contact_phone' => fake()->numerify('+639#########'),
             'is_verified' => true,
             'verified_at' => fake()->dateTimeBetween('-30 days', 'now'),
+            'listed_at' => fake()->dateTimeBetween('-30 days', 'now'),
             'is_featured' => false,
             'display_image_id' => null,
         ];
@@ -41,6 +42,7 @@ class ListingFactory extends Factory
         return $this->state([
             'is_verified' => false,
             'verified_at' => null,
+            'listed_at' => null,
         ]);
     }
 

@@ -14,21 +14,26 @@ class SearchTest extends TestCase
 {
     use RefreshDatabase, SeedDatabaseAfterRefresh;
 
-    public function test_it_returns_only_verified_listings_sorted_by_verified_at_desc_with_expected_payload_shape(): void
+    public function test_it_returns_only_verified_listings_sorted_by_listed_at_desc_with_expected_payload_shape(): void
     {
-        $datesByCreationOrder = [
+        // verified_at is shared across all 4 rows so it can't be the accidental sort key —
+        // a verified_at DESC sort would tie and fall back to DB insertion order, which
+        // would NOT match the expected listed_at DESC return order.
+        $sharedVerifiedAt = Carbon::parse('2026-01-01 00:00:00');
+        $listedDatesByCreationOrder = [
             Carbon::now()->subDays(5),
             Carbon::now()->subDays(20),
             Carbon::now()->subDays(1),
             Carbon::now()->subDays(10),
         ];
         $verifiedIds = [];
-        foreach ($datesByCreationOrder as $date) {
+        foreach ($listedDatesByCreationOrder as $date) {
             $listing = Listing::factory()->withImages(2)->create([
                 'type'        => 'apartment',
                 'barangay'    => 'pueblo_de_oro',
                 'is_verified' => true,
-                'verified_at' => $date,
+                'verified_at' => $sharedVerifiedAt,
+                'listed_at'   => $date,
             ]);
             $verifiedIds[] = $listing->id;
         }
@@ -74,7 +79,7 @@ class SearchTest extends TestCase
         $this->assertSame(
             [$verifiedIds[2], $verifiedIds[0], $verifiedIds[3], $verifiedIds[1]],
             $returnedIds,
-            'Rows must be ordered by verified_at DESC'
+            'Rows must be ordered by listed_at DESC'
         );
 
         foreach ($returnedIds as $id) {

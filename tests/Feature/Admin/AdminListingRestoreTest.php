@@ -139,4 +139,36 @@ class AdminListingRestoreTest extends TestCase
         $this->put(route('admin.listings.restore', $listing->uuid))
             ->assertForbidden();
     }
+
+    public function test_it_bumps_listed_at_to_now_and_leaves_verified_at_untouched(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        $originalVerifiedAt = Carbon::parse('2026-04-02 10:00:00');
+        $originalListedAt   = Carbon::parse('2026-04-02 10:00:00');
+
+        $listing = Listing::factory()->create([
+            'is_verified' => true,
+            'verified_at' => $originalVerifiedAt,
+            'listed_at'   => $originalListedAt,
+        ]);
+        $listing->delete();
+
+        Carbon::setTestNow(Carbon::parse('2026-05-02 14:30:00'));
+
+        $this->put(route('admin.listings.restore', $listing->uuid));
+
+        $reloaded = Listing::find($listing->id);
+        $this->assertTrue(
+            $reloaded->verified_at->equalTo($originalVerifiedAt),
+            'verified_at must NOT change on restore (provenance is immutable)'
+        );
+        $this->assertTrue(
+            $reloaded->listed_at->equalTo(Carbon::parse('2026-05-02 14:30:00')),
+            'listed_at must be bumped to now on restore'
+        );
+
+        Carbon::setTestNow();
+    }
 }

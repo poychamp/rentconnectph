@@ -965,4 +965,20 @@ class AdminListingUnverifiedUpdateTest extends TestCase
             'assigned_at must not change when assigned_to is unchanged'
         );
     }
+
+    public function test_it_silently_ignores_listed_at_in_request_body(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        $listing = $this->makeUnverifiedListing(2, ['listed_at' => null]);
+
+        $this->put(
+            route('admin.listings.unverified-update', $listing->uuid),
+            $this->notCalledPayload($listing, ['listed_at' => '2030-12-31 23:59:59'])
+        );
+
+        $listing->refresh();
+        $this->assertNull($listing->listed_at);
+    }
 }

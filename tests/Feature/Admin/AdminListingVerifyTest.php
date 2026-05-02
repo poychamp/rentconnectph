@@ -42,6 +42,7 @@ class AdminListingVerifyTest extends TestCase
             ->create(array_merge([
                 'is_verified'        => false,
                 'verified_at'        => null,
+                'listed_at'          => null,
                 'queue_status'       => QueueStatus::visited()->value,
                 'visited_at'         => Carbon::parse('2026-04-30 14:00:00'),
                 'assigned_to'        => $field->id,
@@ -209,6 +210,26 @@ class AdminListingVerifyTest extends TestCase
         $this->assertTrue($fresh->is_verified);
         $this->assertNotNull($fresh->verified_at);
         $this->assertTrue($fresh->verified_at->equalTo(Carbon::parse('2026-05-15 09:30:00')));
+
+        Carbon::setTestNow();
+    }
+
+    public function test_it_sets_listed_at_to_the_same_value_as_verified_at_on_verify(): void
+    {
+        $this->asAdmin();
+        $listing = $this->visitedListing();
+
+        Carbon::setTestNow(Carbon::parse('2026-05-15 09:30:00'));
+
+        $this->put(route('admin.listings.verify', $listing->uuid), $this->validPayload($listing));
+
+        $fresh = $listing->fresh();
+        $this->assertNotNull($fresh->listed_at);
+        $this->assertTrue($fresh->listed_at->equalTo(Carbon::parse('2026-05-15 09:30:00')));
+        $this->assertTrue(
+            $fresh->listed_at->equalTo($fresh->verified_at),
+            'listed_at must equal verified_at on first verify'
+        );
 
         Carbon::setTestNow();
     }

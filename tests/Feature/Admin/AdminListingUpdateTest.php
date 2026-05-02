@@ -533,4 +533,21 @@ class AdminListingUpdateTest extends TestCase
         $this->put(route('admin.listings.update', $listing->uuid), $this->validPayload($listing))
             ->assertForbidden();
     }
+
+    public function test_it_silently_ignores_listed_at_in_request_body(): void
+    {
+        $this->asAdmin();
+        $listing = $this->makeListing(2, [
+            'listed_at' => Carbon::parse('2026-02-01 00:00:00'),
+        ]);
+        $originalListedAt = $listing->listed_at->format('Y-m-d H:i:s');
+
+        $this->put(
+            route('admin.listings.update', $listing->uuid),
+            $this->validPayload($listing, ['listed_at' => '2030-12-31 23:59:59'])
+        );
+
+        $listing->refresh();
+        $this->assertSame($originalListedAt, $listing->listed_at->format('Y-m-d H:i:s'));
+    }
 }

@@ -18,6 +18,7 @@ class AdminVerifiedListingResource extends JsonResource
             'barangay_label' => Barangay::from($this->barangay)->label,
             'price'          => $this->price_monthly,
             'verified_at'    => $this->verified_at?->toIso8601String(),
+            'listed_at'      => $this->listed_at?->toIso8601String(),
             'updated_at'     => $this->updated_at?->toIso8601String(),
         ];
     }

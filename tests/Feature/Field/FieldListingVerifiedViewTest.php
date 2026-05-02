@@ -105,15 +105,36 @@ class FieldListingVerifiedViewTest extends TestCase
 
     public function test_it_orders_by_verified_at_desc_then_id_desc(): void
     {
+        // Defense-in-depth: listed_at values are deliberately INVERSE of verified_at.
+        // Sort by verified_at DESC produces [newest, middle, tieLater, tieEarlier, oldest].
+        // Sort by listed_at DESC would produce [oldest, middle, tieLater, tieEarlier, newest].
+        // The assertion below pins the verified_at ordering, so an accidental
+        // controller flip to listed_at would fail this test (per FRD-034 § 8.1
+        // pin: field-side stays on verified_at — Marco's per-officer work tracker).
         $marco = $this->asMarco();
 
-        $oldest = $this->verifiedListingFor($marco, ['verified_at' => Carbon::parse('2026-04-28 09:00:00')]);
-        $middle = $this->verifiedListingFor($marco, ['verified_at' => Carbon::parse('2026-04-29 09:00:00')]);
-        $newest = $this->verifiedListingFor($marco, ['verified_at' => Carbon::parse('2026-04-30 09:00:00')]);
+        $oldest = $this->verifiedListingFor($marco, [
+            'verified_at' => Carbon::parse('2026-04-28 09:00:00'),
+            'listed_at'   => Carbon::parse('2026-05-01 09:00:00'),
+        ]);
+        $middle = $this->verifiedListingFor($marco, [
+            'verified_at' => Carbon::parse('2026-04-29 09:00:00'),
+            'listed_at'   => Carbon::parse('2026-04-25 09:00:00'),
+        ]);
+        $newest = $this->verifiedListingFor($marco, [
+            'verified_at' => Carbon::parse('2026-04-30 09:00:00'),
+            'listed_at'   => Carbon::parse('2026-04-20 09:00:00'),
+        ]);
 
         // Tie-break: same verified_at, id DESC wins.
-        $tieEarlier = $this->verifiedListingFor($marco, ['verified_at' => Carbon::parse('2026-04-28 18:00:00')]);
-        $tieLater   = $this->verifiedListingFor($marco, ['verified_at' => Carbon::parse('2026-04-28 18:00:00')]);
+        $tieEarlier = $this->verifiedListingFor($marco, [
+            'verified_at' => Carbon::parse('2026-04-28 18:00:00'),
+            'listed_at'   => Carbon::parse('2026-04-22 09:00:00'),
+        ]);
+        $tieLater = $this->verifiedListingFor($marco, [
+            'verified_at' => Carbon::parse('2026-04-28 18:00:00'),
+            'listed_at'   => Carbon::parse('2026-04-23 09:00:00'),
+        ]);
 
         $response = $this->get(route('field.verified-listings.index'));
         $uuids = collect($response->viewData('verified')['data'])->pluck('uuid')->all();
@@ -166,6 +187,7 @@ class FieldListingVerifiedViewTest extends TestCase
         $this->assertArrayHasKey('display_image_url', $row);
         $this->assertArrayHasKey('visited_at', $row);
         $this->assertArrayHasKey('verified_at', $row);
+        $this->assertArrayHasKey('listed_at', $row);
         $this->assertNotNull($row['verified_at']);
 
         // Out-of-scope fields stay out.

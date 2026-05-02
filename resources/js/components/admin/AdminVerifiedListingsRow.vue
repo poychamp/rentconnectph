@@ -14,8 +14,8 @@ const dateTimeFormatter = new Intl.DateTimeFormat('en-US', {
     hour: '2-digit', minute: '2-digit',
 });
 
-const formattedDate = computed(() =>
-    dateTimeFormatter.format(new Date(props.row.verified_at))
+const formattedListedAt = computed(() =>
+    dateTimeFormatter.format(new Date(props.row.listed_at))
 );
 
 const formattedUpdatedAt = computed(() =>
@@ -33,7 +33,7 @@ const formattedUpdatedAt = computed(() =>
 
         <td class="px-4 py-3 font-medium">{{ formattedPrice }}</td>
 
-        <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ formattedDate }}</td>
+        <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ formattedListedAt }}</td>
 
         <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ formattedUpdatedAt }}</td>
 

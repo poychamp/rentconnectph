@@ -27,7 +27,7 @@ class Listing extends Model
             'barangay'       => $this->barangay,
             'price_monthly'  => $this->price_monthly,
             'is_verified'    => $this->is_verified ? '1' : '0',
-            'verified_at'    => $this->verified_at?->getTimestamp(),
+            'listed_at'      => $this->listed_at?->getTimestamp(),
             'directions'     => $this->directions,
             'contact_phone'  => $this->contact_phone,
             'assigned_to'    => $this->assigned_to,
@@ -70,6 +70,7 @@ class Listing extends Model
         'display_image_id',
         'is_verified',
         'verified_at',
+        'listed_at',
         'is_featured',
         'featured_order',
         'field_priority_order',
@@ -84,6 +85,7 @@ class Listing extends Model
         'is_field_priority' => 'boolean',
         'featured_order' => 'integer',
         'verified_at' => 'datetime',
+        'listed_at' => 'datetime',
         'assigned_at' => 'datetime',
         'visited_at' => 'datetime',
         'latitude' => 'float',
@@ -177,8 +179,8 @@ class Listing extends Model
             ->where('is_verified', false);
     }
 
-    public function scopeRecentlyVerified($query)
+    public function scopeRecentlyListed($query)
     {
-        return $query->verified()->orderByDesc('verified_at');
+        return $query->verified()->orderByDesc('listed_at');
     }
 }
