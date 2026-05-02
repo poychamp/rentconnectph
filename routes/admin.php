@@ -79,6 +79,38 @@ Route::middleware('auth:admin')->group(function () {
             ->name('listings.reopen');
     });
 
+    // Amenity catalog management — gated by `amenities.manage`. Super-admin only
+    // via Gate::before bypass; permission exists in DB but no explicit role grant.
+    Route::middleware('can:' . AppPermission::amenitiesManage()->value)->group(function () {
+        Route::get('amenities', [Admin\AmenityController::class, 'index'])
+            ->name('amenities.index');
+
+        Route::get('amenities/create', [Admin\AmenityController::class, 'create'])
+            ->name('amenities.create');
+
+        Route::post('amenities', [Admin\AmenityController::class, 'store'])
+            ->name('amenities.store');
+
+        Route::get('amenities/{amenity:uuid}/edit', [Admin\AmenityController::class, 'edit'])
+            ->name('amenities.edit');
+
+        Route::put('amenities/{amenity:uuid}', [Admin\AmenityController::class, 'update'])
+            ->name('amenities.update');
+
+        Route::delete('amenities/{amenity:uuid}', [Admin\AmenityController::class, 'destroy'])
+            ->name('amenities.destroy');
+
+        Route::put('amenities/{amenity:uuid}/restore', [Admin\AmenityController::class, 'restore'])
+            ->withTrashed()
+            ->name('amenities.restore');
+
+        Route::put('api/amenities/sort', [Admin\Api\AmenityController::class, 'updateSort'])
+            ->name('api.amenities.sort');
+
+        Route::get('deleted-amenities', [Admin\AmenityController::class, 'deletedIndex'])
+            ->name('deleted-amenities.index');
+    });
+
     // Vapor's signed S3 URL endpoint — browser calls this to get a pre-signed URL,
     // then PUTs the file directly to S3. Gated to admins so non-admins can't generate URLs.
     Route::post('vapor/signed-storage-url', [\Laravel\Vapor\Http\Controllers\SignedStorageUrlController::class, 'store'])

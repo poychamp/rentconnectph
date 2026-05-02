@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Amenity;
 use App\Models\Listing;
 use App\Models\ListingImage;
 use Illuminate\Console\Command;
@@ -65,7 +66,15 @@ class RestoreUnverifiedNotCalledListings extends Command
             $listing->update(['display_image_id' => $firstImageId]);
         }
 
-        $this->info("Created listing {$uuid} ({$listing->title}) with " . count($imageUrls) . " image(s).");
+        // Per the source listing's description: only "Parking" maps cleanly to our
+        // catalog (Semi-furnished is partial and intentionally omitted; gated
+        // community isn't an amenity). Attach by slug so this stays portable
+        // across catalog renames + sort_order shuffles.
+        $amenitySlugs = ['parking'];
+        $amenityIds = Amenity::whereIn('slug', $amenitySlugs)->pluck('id');
+        $listing->amenities()->attach($amenityIds);
+
+        $this->info("Created listing {$uuid} ({$listing->title}) with " . count($imageUrls) . " image(s) and " . $amenityIds->count() . " amenity(ies).");
         return self::SUCCESS;
     }
 }

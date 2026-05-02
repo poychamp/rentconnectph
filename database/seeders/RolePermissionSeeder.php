@@ -51,6 +51,7 @@ class RolePermissionSeeder extends Seeder
                 AppPermission::adminAccess()->value,       // /admin/* surface entry — desk-team Dashboard + future admin-only pages; field officers don't get this
                 AppPermission::listingsManage()->value,    // desk-team scope: queue, verify, deactivate, reject, restore, reopen, feature, assign field officer
                 AppPermission::listingsFieldWork()->value, // field-officer scope: visit updates, field photos, own assignments (future UI)
+                AppPermission::amenitiesManage()->value,   // amenity catalog CRUD; super-admin only via Gate::before, no role grants
                 AppPermission::usersManage()->value,       // reserved
                 AppPermission::systemAdmin()->value,       // reserved
             ],

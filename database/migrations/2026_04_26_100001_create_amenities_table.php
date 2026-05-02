@@ -14,7 +14,7 @@ return new class extends Migration
             $table->string('name', 80);
             $table->string('slug', 32);
             $table->string('icon', 32)->nullable();
-            $table->unsignedSmallInteger('sort_order')->default(0);
+            $table->unsignedSmallInteger('sort_order')->nullable();
             $table->timestamps();
             $table->softDeletes();
 

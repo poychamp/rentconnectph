@@ -118,7 +118,14 @@ const sections = [
     {
         label: 'Catalog',
         items: [
-            { name: 'Amenities', href: '#', icon: 'tag', requires: 'listings.manage' },
+            {
+                name: 'Amenities',
+                href: '/admin/amenities',
+                icon: 'tag',
+                requires: 'amenities.manage',
+                matches: (path) => path.startsWith('/admin/amenities')
+                    || path.startsWith('/admin/deleted-amenities'),
+            },
         ],
     },
     {

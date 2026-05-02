@@ -18,7 +18,7 @@ class AmenityFactory extends Factory
             'name' => ucfirst($name),
             'slug' => Str::slug($name),
             'icon' => null,
-            'sort_order' => 0,
+            'sort_order' => null,
         ];
     }
 }
