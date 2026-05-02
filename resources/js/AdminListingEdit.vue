@@ -9,6 +9,8 @@ import AdminEditListingDangerZone from './components/admin/AdminEditListingDange
 import AdminEditListingRejectZone from './components/admin/AdminEditListingRejectZone.vue';
 import AdminEditListingPrequalCard from './components/admin/AdminEditListingPrequalCard.vue';
 import AdminEditListingCallContextCard from './components/admin/AdminEditListingCallContextCard.vue';
+import AdminEditListingCallsContextCard from './components/admin/AdminEditListingCallsContextCard.vue';
+import AdminEditListingLeadCard from './components/admin/AdminEditListingLeadCard.vue';
 
 // Read initial state synchronously at setup so children inherit a fully-populated
 // form on first render. oldInput (validation failure path) wins over listing
@@ -46,6 +48,11 @@ const isUnverifiedSlice = typeof window !== 'undefined'
 
 // Persisted prequal state for the read-only badge — comes off the listing payload.
 const prequalStatus = persisted?.prequal_status ?? null;
+
+// Field-officer attribution scalars for the verified-slice banner card. Top-level
+// keys on __INITIAL_EDIT_LISTING__ (not part of the editable form state).
+const assignedToName = initial?.assignedToName ?? null;
+const visitedAt      = initial?.visitedAt      ?? null;
 
 // Origin tracking — picked up from ?from= on the edit URL (e.g.
 // /admin/listings/{uuid}/edit?from=unverified). Round-tripped through the form
@@ -94,12 +101,24 @@ const errorCount = computed(() => Object.keys(addListingFormErrors.value).length
 // when a value is provided, regardless of slice. Server is the source of truth.
 function isFieldRequired(field, prequalStatus) {
     if (!isUnverifiedSlice) {
-        return ['title', 'listing_type', 'price_monthly', 'barangay', 'beds', 'baths', 'sqm', 'photos'].includes(field);
+        // Verified-slice required set: mirrors server-side rules in
+        // Admin\ListingController::update. beds/baths/sqm are nullable.
+        return ['title', 'listing_type', 'price_monthly', 'barangay', 'latitude', 'longitude', 'photos'].includes(field);
     }
     if (['title', 'contact_phone', 'prequal_status'].includes(field)) return true;
     if (prequalStatus === 'called_yes' && ['directions', 'contact_type'].includes(field)) return true;
     return false;
 }
+
+// Field set validateAll iterates per slice. Verified slice only includes
+// editable inputs — locked calls-team / prequal fields are silent-ignored
+// server-side and shouldn't trip client-side validation either.
+const VERIFIED_SLICE_VALIDATABLE = [
+    'title', 'listing_type', 'price_monthly', 'barangay',
+    'beds', 'baths', 'sqm',
+    'latitude', 'longitude',
+    'photos',
+];
 
 const VALIDATORS = {
     title: (f) => {
@@ -181,14 +200,18 @@ const VALIDATORS = {
         return null;
     },
     latitude: (f) => {
-        if (f.latitude === null || f.latitude === '' || f.latitude === undefined) return null;
+        const empty = f.latitude === null || f.latitude === '' || f.latitude === undefined;
+        if (empty && isFieldRequired('latitude', f.prequal_status)) return 'Latitude is required.';
+        if (empty) return null;
         const n = Number(f.latitude);
         if (!Number.isFinite(n)) return null;
         if (n < -90 || n > 90) return 'Latitude must be between -90 and 90.';
         return null;
     },
     longitude: (f) => {
-        if (f.longitude === null || f.longitude === '' || f.longitude === undefined) return null;
+        const empty = f.longitude === null || f.longitude === '' || f.longitude === undefined;
+        if (empty && isFieldRequired('longitude', f.prequal_status)) return 'Longitude is required.';
+        if (empty) return null;
         const n = Number(f.longitude);
         if (!Number.isFinite(n)) return null;
         if (n < -180 || n > 180) return 'Longitude must be between -180 and 180.';
@@ -237,8 +260,11 @@ function clearFieldError(field) {
 }
 
 function validateAll() {
+    const fields = isUnverifiedSlice
+        ? Object.keys(VALIDATORS)
+        : VERIFIED_SLICE_VALIDATABLE;
     let ok = true;
-    for (const field of Object.keys(VALIDATORS)) {
+    for (const field of fields) {
         if (!validateField(field)) ok = false;
     }
     return ok;
@@ -272,6 +298,12 @@ onMounted(() => {
             />
 
             <main ref="mainRef" class="flex-1 overflow-y-auto px-6 pt-2 pb-6 lg:px-10 lg:pt-3 lg:pb-10">
+                <AdminEditListingLeadCard
+                    v-if="!isUnverifiedSlice"
+                    class="mt-5"
+                    :source-sites="formData.sourceSites"
+                />
+
                 <div
                     v-if="errorCount > 0"
                     class="mt-6 rounded-md border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/30 px-4 py-3 flex items-start gap-3"
@@ -281,13 +313,15 @@ onMounted(() => {
                         <circle cx="12" cy="12" r="10"/>
                         <path d="M12 8v4M12 16h.01"/>
                     </svg>
-                    <div class="text-sm text-red-800 dark:text-red-200">
+                    <div class="text-sm text-red-800 dark:text-red-200 flex-1 min-w-0">
                         <p class="font-medium">
-                            Couldn't save — {{ errorCount }} {{ errorCount === 1 ? 'field needs' : 'fields need' }} attention.
+                            Couldn't save — {{ errorCount }} {{ errorCount === 1 ? 'issue' : 'issues' }} need attention.
                         </p>
-                        <p class="mt-0.5 text-xs text-red-700/80 dark:text-red-300/80">
-                            Fix the highlighted fields below and try again.
-                        </p>
+                        <ul class="mt-1 text-xs text-red-700/80 dark:text-red-300/80 space-y-0.5 list-disc list-inside">
+                            <li v-for="(messages, field) in addListingFormErrors" :key="field">
+                                <span class="font-medium">{{ field }}:</span> {{ messages[0] }}
+                            </li>
+                        </ul>
                     </div>
                 </div>
 
@@ -311,6 +345,15 @@ onMounted(() => {
                     :barangays="formData.barangays"
                     :source-sites="formData.sourceSites"
                     :amenities="formData.amenities"
+                    :read-only-lead="!isUnverifiedSlice"
+                    :hide-lead="!isUnverifiedSlice"
+                />
+
+                <AdminEditListingCallsContextCard
+                    v-if="!isUnverifiedSlice"
+                    class="mt-6"
+                    :contact-types="formData.contactTypes"
+                    :read-only="true"
                 />
 
                 <AdminEditListingDangerZone />

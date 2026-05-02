@@ -3,7 +3,6 @@ import { ref, computed, inject, toRef } from 'vue';
 
 const form = inject('addListingForm');
 const featureOnHomepage = toRef(form, 'is_featured');
-const verified = toRef(form, 'is_verified');
 
 const { validateAll } = inject('addListingFormValidate', { validateAll: () => true });
 const scrollFormToTop = inject('scrollFormToTop', () => {});
@@ -15,10 +14,11 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? 
 const listingUuid = window.__INITIAL_EDIT_LISTING__?.listingUuid ?? '';
 const formAction = computed(() => `/admin/listings/${listingUuid}`);
 
-// Cancel returns to the page the admin came from. Same `from` value the form
-// uses for its post-save redirect — keeps Cancel and Save symmetric.
-const cancelHref = computed(() => form.from === 'unverified'
-    ? '/admin/unverified-listings'
+// Cancel returns to the page the admin came from. Mirrors the post-save
+// redirect targets in Admin\ListingController::update so Cancel + Save land
+// on the same origin page. Verified-only — unverified slice has its own bar.
+const cancelHref = computed(() => form.from === 'featured'
+    ? '/admin/featured-listings'
     : '/admin/verified-listings'
 );
 
@@ -96,29 +96,6 @@ function save() {
         </p>
 
         <div class="flex-1"></div>
-
-        <label
-            :class="[
-                'flex items-center gap-2 text-sm cursor-pointer rounded-md px-2.5 py-1.5 border transition',
-                verified
-                    ? 'border-orange-200 dark:border-orange-900/60 bg-orange-50 dark:bg-orange-950/30 text-orange-900 dark:text-orange-100 shadow-[0_0_0_3px_rgba(249,115,22,0.08)]'
-                    : 'border-transparent text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800',
-            ]"
-        >
-            <input
-                type="checkbox"
-                v-model="verified"
-                class="rounded border-gray-300 text-orange-500 focus:ring-orange-500"
-            >
-            <svg
-                class="w-4 h-4 transition"
-                :class="verified ? 'text-orange-500' : 'text-gray-400 dark:text-gray-500'"
-                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-            >
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-            </svg>
-            <span :class="verified ? 'font-medium' : ''">Verified</span>
-        </label>
 
         <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
             <input

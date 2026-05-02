@@ -49,29 +49,62 @@ const sections = [
                 href: '/field/listings',
                 icon: 'list',
                 requires: 'listings.field-work',
-                matches: (path) => path === '/field/listings'
-                    || /^\/field\/listings\/[^\/]+$/.test(path),
+                matches: (path) => {
+                    if (path === '/field/listings') return true;
+                    if (/^\/field\/listings\/[^\/]+$/.test(path)) return true;
+                    // Sub-routes (edit / request-verification / preview) —
+                    // active when admin came from the queue (?from=listings).
+                    if (/^\/field\/listings\/[^\/]+\/(edit|request-verification|preview)$/.test(path)) {
+                        const from = new URLSearchParams(window.location.search).get('from');
+                        return from === 'listings';
+                    }
+                    return false;
+                },
             },
             {
                 name: 'Priority',
                 href: '/field/priority',
                 icon: 'star',
                 requires: 'listings.field-work',
-                matches: (path) => path === '/field/priority',
+                matches: (path) => {
+                    if (path === '/field/priority') return true;
+                    // Sub-routes — active when admin came from priority.
+                    if (/^\/field\/listings\/[^\/]+\/(edit|request-verification|preview)$/.test(path)) {
+                        const from = new URLSearchParams(window.location.search).get('from');
+                        return from === 'priority';
+                    }
+                    return false;
+                },
             },
             {
                 name: 'Submitted',
                 href: '/field/submitted-listings',
                 icon: 'check-circle',
                 requires: 'listings.field-work',
-                matches: (path) => path === '/field/submitted-listings',
+                matches: (path) => {
+                    if (path === '/field/submitted-listings') return true;
+                    // Sub-routes — active when admin came from submitted.
+                    if (/^\/field\/listings\/[^\/]+\/(edit|request-verification|preview)$/.test(path)) {
+                        const from = new URLSearchParams(window.location.search).get('from');
+                        return from === 'submitted';
+                    }
+                    return false;
+                },
             },
             {
                 name: 'Verified',
                 href: '/field/verified-listings',
                 icon: 'shield-check',
                 requires: 'listings.field-work',
-                matches: (path) => path === '/field/verified-listings',
+                matches: (path) => {
+                    if (path === '/field/verified-listings') return true;
+                    // Sub-routes — active when admin came from verified.
+                    if (/^\/field\/listings\/[^\/]+\/(edit|request-verification|preview)$/.test(path)) {
+                        const from = new URLSearchParams(window.location.search).get('from');
+                        return from === 'verified';
+                    }
+                    return false;
+                },
             },
         ],
     },

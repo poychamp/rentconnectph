@@ -8,6 +8,7 @@ import AdminReopenListingDetailsCard     from './components/admin/AdminReopenLis
 import AdminReopenListingLocationCard    from './components/admin/AdminReopenListingLocationCard.vue';
 import AdminReopenListingAmenitiesCard   from './components/admin/AdminReopenListingAmenitiesCard.vue';
 import AdminReopenListingDescriptionCard from './components/admin/AdminReopenListingDescriptionCard.vue';
+import AdminReopenListingCallsContextCard from './components/admin/AdminReopenListingCallsContextCard.vue';
 import AdminReopenListingBar             from './components/admin/AdminReopenListingBar.vue';
 
 const initial = window.__INITIAL_REOPEN_LISTING__ ?? {};
@@ -36,14 +37,15 @@ const reopenErrors    = initial.reopenErrors    ?? null;
                 <AdminReopenListingRejectionBanner :rejection="rejection" />
 
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-                    <div class="lg:col-span-7">
-                        <AdminReopenListingPhotoGallery :photos="photos" />
+                    <div class="lg:col-span-7 space-y-4">
+                        <AdminReopenListingPhotoGallery    :photos="photos" />
+                        <AdminReopenListingDescriptionCard :description="listing.description" />
                     </div>
                     <div class="lg:col-span-5 space-y-4">
-                        <AdminReopenListingDetailsCard     :listing="listing" />
-                        <AdminReopenListingLocationCard    :listing="listing" :mapbox-url="mapboxStaticUrl" />
-                        <AdminReopenListingAmenitiesCard   :amenities="amenities" />
-                        <AdminReopenListingDescriptionCard :description="listing.description" />
+                        <AdminReopenListingDetailsCard      :listing="listing" />
+                        <AdminReopenListingCallsContextCard :listing="listing" />
+                        <AdminReopenListingLocationCard     :listing="listing" :mapbox-url="mapboxStaticUrl" />
+                        <AdminReopenListingAmenitiesCard    :amenities="amenities" />
                     </div>
                 </div>
             </main>

@@ -33,7 +33,10 @@ class AdminListingUpdateTest extends TestCase
     {
         return Listing::factory()
             ->withImages($imageCount)
-            ->state($state)
+            ->state(array_merge([
+                'is_verified' => true,
+                'verified_at' => Carbon::parse('2026-01-01 00:00:00'),
+            ], $state))
             ->create()
             ->fresh(['images', 'amenities']);
     }
@@ -62,7 +65,6 @@ class AdminListingUpdateTest extends TestCase
             'longitude'    => 124.6411,
             'amenities'    => [],
             'photos'       => $this->existingPhotos($listing),
-            'is_verified'  => true,
             'is_featured'  => false,
         ], $overrides);
     }
@@ -119,7 +121,6 @@ class AdminListingUpdateTest extends TestCase
             'baths'        => null,
             'sqm'          => null,
             'photos'       => [],
-            'is_verified'  => null,
         ]);
 
         $response->assertSessionHasErrors([
@@ -127,12 +128,13 @@ class AdminListingUpdateTest extends TestCase
             'listing_type' => 'Listing type is required.',
             'price_monthly' => 'Monthly rent is required.',
             'barangay'     => 'Barangay is required.',
-            'beds'         => 'Bedrooms is required.',
-            'baths'        => 'Bathrooms is required.',
-            'sqm'          => 'Floor area is required.',
+            'latitude'     => 'Latitude is required.',
+            'longitude'    => 'Longitude is required.',
             'photos'       => 'At least one photo is required.',
-            'is_verified'  => 'Verified flag is required.',
         ]);
+
+        // beds / baths / sqm are now nullable — must NOT fire required errors.
+        $response->assertSessionDoesntHaveErrors(['beds', 'baths', 'sqm']);
     }
 
     // =========================================================================
@@ -160,7 +162,6 @@ class AdminListingUpdateTest extends TestCase
                 ['key' => 'listings/foreign-uuid/cover.jpg', 'name' => 'x', 'size' => 1], // outside tmp/
                 ['existing_id' => $listingB->images->first()->id],                          // foreign listing's image
             ],
-            'is_verified'  => true,
             'is_featured'  => false,
         ]);
 
@@ -266,7 +267,6 @@ class AdminListingUpdateTest extends TestCase
             'longitude'    => 124.6573,
             'amenities'    => [$newAmenityA->id, $newAmenityB->id],
             'photos'       => $photos,
-            'is_verified'  => true,
             'is_featured'  => true,
         ]));
 
@@ -360,61 +360,80 @@ class AdminListingUpdateTest extends TestCase
     }
 
     // =========================================================================
-    // is_verified transitions (3 — behaviorally distinct)
+    // Slice guard — verified-only update endpoint
     // =========================================================================
 
-    public function test_it_sets_verified_at_to_now_when_toggling_false_to_true(): void
+    public function test_it_returns_404_when_listing_is_not_verified(): void
     {
         $this->asAdmin();
-        $listing = $this->makeListing(2, ['is_verified' => false, 'verified_at' => null]);
 
-        Carbon::setTestNow('2026-04-27 12:00:00');
+        $unverified = Listing::factory()
+            ->withImages(2)
+            ->state(['is_verified' => false, 'verified_at' => null])
+            ->create();
 
-        $this->put(route('admin.listings.update', $listing->uuid), $this->validPayload($listing, [
-            'is_verified' => true,
-        ]));
-
-        $listing->refresh();
-        $this->assertTrue($listing->is_verified);
-        $this->assertSame('2026-04-27 12:00:00', $listing->verified_at->format('Y-m-d H:i:s'));
-
-        Carbon::setTestNow();
+        $this->put(route('admin.listings.update', $unverified->uuid), $this->validPayload($unverified))
+            ->assertNotFound();
     }
 
-    public function test_it_sets_verified_at_to_null_when_toggling_true_to_false(): void
+    // =========================================================================
+    // Security boundary — read-only / locked fields are silent-ignored
+    // =========================================================================
+
+    public function test_it_silently_ignores_read_only_fields_in_request(): void
     {
         $this->asAdmin();
         $listing = $this->makeListing(2, [
-            'is_verified' => true,
-            'verified_at' => Carbon::parse('2026-01-01 00:00:00'),
+            'contact_phone'      => '+639170000000',
+            'source_site'        => 'rent_ph',
+            'source_url'         => 'https://rent.ph/orig',
+            'contact_type'       => 'owner',
+            'directions'         => 'Original directions.',
+            'verification_notes' => 'Original notes.',
+            'assigned_to'        => null,
+            'assigned_at'        => null,
+            'visited_at'         => Carbon::parse('2026-04-01 00:00:00'),
+            'queue_status'       => 'visited',
+            'prequal_status'     => null,
+            'is_field_priority'  => false,
+            'field_priority_order' => null,
         ]);
+        $originalVerifiedAt = $listing->verified_at->format('Y-m-d H:i:s');
 
         $this->put(route('admin.listings.update', $listing->uuid), $this->validPayload($listing, [
-            'is_verified' => false,
-        ]));
-
-        $listing->refresh();
-        $this->assertFalse($listing->is_verified);
-        $this->assertNull($listing->verified_at);
-    }
-
-    public function test_it_leaves_verified_at_unchanged_when_no_transition(): void
-    {
-        $this->asAdmin();
-        $original = Carbon::parse('2026-01-15 09:30:00');
-        $listing = $this->makeListing(2, ['is_verified' => true, 'verified_at' => $original]);
-
-        Carbon::setTestNow('2026-04-27 12:00:00');
-
-        $this->put(route('admin.listings.update', $listing->uuid), $this->validPayload($listing, [
-            'is_verified' => true,
+            'is_verified'          => false,
+            'contact_phone'        => '+639179999999',
+            'source_site'          => 'olx',
+            'source_url'           => 'https://attacker.test/x',
+            'contact_type'         => 'broker',
+            'directions'           => 'Hijacked directions.',
+            'verification_notes'   => 'Hijacked notes.',
+            'assigned_to'          => 99999,
+            'assigned_at'          => Carbon::parse('2030-12-31'),
+            'visited_at'           => Carbon::parse('2030-12-31'),
+            'verified_at'          => Carbon::parse('2030-12-31'),
+            'queue_status'         => 'unassigned',
+            'prequal_status'       => 'called_yes',
+            'is_field_priority'    => true,
+            'field_priority_order' => 999,
         ]));
 
         $listing->refresh();
         $this->assertTrue($listing->is_verified);
-        $this->assertSame($original->format('Y-m-d H:i:s'), $listing->verified_at->format('Y-m-d H:i:s'));
-
-        Carbon::setTestNow();
+        $this->assertSame($originalVerifiedAt, $listing->verified_at->format('Y-m-d H:i:s'));
+        $this->assertSame('+639170000000', $listing->contact_phone);
+        $this->assertSame('rent_ph', $listing->source_site);
+        $this->assertSame('https://rent.ph/orig', $listing->source_url);
+        $this->assertSame('owner', $listing->contact_type);
+        $this->assertSame('Original directions.', $listing->directions);
+        $this->assertSame('Original notes.', $listing->verification_notes);
+        $this->assertNull($listing->assigned_to);
+        $this->assertNull($listing->assigned_at);
+        $this->assertSame('2026-04-01', $listing->visited_at->format('Y-m-d'));
+        $this->assertSame('visited', $listing->queue_status);
+        $this->assertNull($listing->prequal_status);
+        $this->assertFalse((bool) $listing->is_field_priority);
+        $this->assertNull($listing->field_priority_order);
     }
 
     // =========================================================================

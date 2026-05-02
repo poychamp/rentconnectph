@@ -55,10 +55,48 @@ class ListingController extends Controller
 
     public function edit(Listing $listing): View
     {
-        $listing->load(['images' => fn ($q) => $q->orderBy('sort_order'), 'amenities']);
+        abort_unless($listing->is_verified, 404);
+
+        $listing->load([
+            'images' => fn ($q) => $q->orderBy('sort_order'),
+            'amenities',
+            'assignedTo',
+        ]);
+
+        $listingPayload = [
+            'id'                 => $listing->id,
+            'uuid'               => $listing->uuid,
+            'title'              => $listing->title,
+            'description'        => $listing->description,
+            'type'               => $listing->type,
+            'price_monthly'      => $listing->price_monthly,
+            'barangay'           => $listing->barangay,
+            'beds'               => $listing->beds,
+            'baths'              => $listing->baths,
+            'sqm'                => $listing->sqm,
+            'latitude'           => $listing->latitude,
+            'longitude'          => $listing->longitude,
+            'directions'         => $listing->directions,
+            'contact_phone'      => $listing->contact_phone,
+            'contact_type'       => $listing->contact_type,
+            'source_site'        => $listing->source_site,
+            'source_url'         => $listing->source_url,
+            'verification_notes' => $listing->verification_notes,
+            'assigned_to_name'   => $listing->assignedTo?->name,
+            'visited_at'         => $listing->visited_at?->toIso8601String(),
+            'is_featured'        => (bool) $listing->is_featured,
+            'amenities' => $listing->amenities->map(fn ($a) => [
+                'id' => $a->id, 'name' => $a->name, 'slug' => $a->slug, 'icon' => $a->icon,
+            ])->all(),
+            'images' => $listing->images->map(fn ($img) => [
+                'id'         => $img->id,
+                'url'        => $img->url,
+                'sort_order' => $img->sort_order,
+            ])->all(),
+        ];
 
         return view('admin.listings.edit', [
-            'listing'             => $listing,
+            'listing'             => $listingPayload,
             'listingTypes'        => collect(ListingType::toValues())
                 ->map(fn ($v) => ['value' => $v, 'label' => ListingType::from($v)->label])
                 ->all(),
@@ -67,6 +105,9 @@ class ListingController extends Controller
                 ->all(),
             'sourceSites'         => collect(SourceSite::toValues())
                 ->map(fn ($v) => ['value' => $v, 'label' => SourceSite::from($v)->label])
+                ->all(),
+            'contactTypes'        => collect(ContactType::toValues())
+                ->map(fn ($v) => ['value' => $v, 'label' => ContactType::from($v)->label])
                 ->all(),
             'amenities'           => Amenity::orderBy('sort_order')->get(['id', 'name', 'slug', 'icon']),
             'deactivationReasons' => collect(DeactivationReason::toValues())
@@ -610,6 +651,8 @@ class ListingController extends Controller
 
     public function update(Request $request, Listing $listing): RedirectResponse
     {
+        abort_unless($listing->is_verified, 404);
+
         $existingIds = $listing->images()->pluck('id')->all();
 
         $validated = $request->validate([
@@ -618,11 +661,11 @@ class ListingController extends Controller
             'listing_type'         => ['required', 'string', Rule::in(ListingType::toValues())],
             'price_monthly'         => ['required', 'integer', 'min:1'],
             'barangay'             => ['required', 'string', Rule::in(Barangay::toValues())],
-            'beds'                 => ['required', 'integer', 'min:0', 'max:20'],
-            'baths'                => ['required', 'integer', 'min:0', 'max:20'],
-            'sqm'                  => ['required', 'integer', 'min:1'],
-            'latitude'             => ['nullable', 'numeric', 'between:-90,90'],
-            'longitude'            => ['nullable', 'numeric', 'between:-180,180'],
+            'beds'                 => ['nullable', 'integer', 'min:0', 'max:20'],
+            'baths'                => ['nullable', 'integer', 'min:0', 'max:20'],
+            'sqm'                  => ['nullable', 'integer', 'min:1'],
+            'latitude'             => ['required', 'numeric', 'between:-90,90'],
+            'longitude'            => ['required', 'numeric', 'between:-180,180'],
             'amenities'            => ['nullable', 'array', 'max:50'],
             'amenities.*'          => ['integer', 'exists:amenities,id'],
             'photos'               => ['required', 'array', 'min:1', 'max:20'],
@@ -631,7 +674,6 @@ class ListingController extends Controller
             'photos.*.key'         => ['nullable', 'string', 'starts_with:tmp/'],
             'photos.*.name'        => ['nullable', 'string'],
             'photos.*.size'        => ['nullable', 'integer'],
-            'is_verified'          => ['required', 'boolean'],
             'is_featured'          => ['nullable', 'boolean'],
         ], [
             'title.required'        => 'Title is required.',
@@ -642,18 +684,16 @@ class ListingController extends Controller
             'price_monthly.min'      => 'Monthly rent must be at least ₱1.',
             'barangay.required'     => 'Barangay is required.',
             'barangay.in'           => 'Invalid barangay.',
-            'beds.required'         => 'Bedrooms is required.',
-            'baths.required'        => 'Bathrooms is required.',
-            'sqm.required'          => 'Floor area is required.',
             'sqm.min'               => 'Floor area must be at least 1 sqm.',
             'photos.required'          => 'At least one photo is required.',
             'photos.min'               => 'At least one photo is required.',
             'photos.max'               => 'Maximum 20 photos allowed.',
             'photos.*.key.starts_with' => 'Invalid photo key.',
             'amenities.*.exists'    => "One or more selected amenities don't exist.",
+            'latitude.required'     => 'Latitude is required.',
             'latitude.between'      => 'Latitude must be between -90 and 90.',
+            'longitude.required'    => 'Longitude is required.',
             'longitude.between'     => 'Longitude must be between -180 and 180.',
-            'is_verified.required'  => 'Verified flag is required.',
         ]);
 
         // Validation passed — but Laravel's wildcard validator reorders nested
@@ -679,29 +719,18 @@ class ListingController extends Controller
         $removedImageIds = array_values(array_diff($existingIds, $submittedExistingIds));
         $removedImageUrls = ListingImage::whereIn('id', $removedImageIds)->pluck('url')->all();
 
-        // is_verified transition: only update verified_at on actual transitions.
-        $wasVerified    = (bool) $listing->is_verified;
-        $willBeVerified = (bool) $validated['is_verified'];
-        $verifiedAt = match (true) {
-            ! $wasVerified && $willBeVerified => Carbon::now(),
-            $wasVerified && ! $willBeVerified => null,
-            default                           => $listing->verified_at,
-        };
-
-        DB::transaction(function () use ($request, $listing, $validated, $photos, $verifiedAt, $removedImageIds) {
+        DB::transaction(function () use ($request, $listing, $validated, $photos, $removedImageIds) {
             $listing->update([
                 'title'         => $validated['title'],
                 'description'   => $validated['description'] ?? null,
                 'type'          => $validated['listing_type'],
                 'price_monthly' => $validated['price_monthly'],
                 'barangay'      => $validated['barangay'],
-                'beds'          => $validated['beds'],
-                'baths'         => $validated['baths'],
-                'sqm'           => $validated['sqm'],
-                'latitude'      => $validated['latitude'] ?? null,
-                'longitude'     => $validated['longitude'] ?? null,
-                'is_verified'   => (bool) $validated['is_verified'],
-                'verified_at'   => $verifiedAt,
+                'beds'          => $validated['beds'] ?? null,
+                'baths'         => $validated['baths'] ?? null,
+                'sqm'           => $validated['sqm'] ?? null,
+                'latitude'      => $validated['latitude'],
+                'longitude'     => $validated['longitude'],
                 'is_featured'   => $validated['is_featured'] ?? false,
             ]);
 
@@ -818,8 +847,13 @@ class ListingController extends Controller
             ]);
         });
 
+        $redirectRoute = match ($request->input('from')) {
+            'featured' => 'admin.featured-listings.index',
+            default    => 'admin.verified-listings.index',
+        };
+
         return redirect()
-            ->route('admin.verified-listings.index')
+            ->route($redirectRoute)
             ->with('success', "Listing '{$listing->title}' deactivated.");
     }
 
@@ -833,6 +867,7 @@ class ListingController extends Controller
             'images' => fn ($q) => $q->orderBy('sort_order'),
             'amenities',
             'latestLifecycleEvent.actor',
+            'assignedTo',
         ]);
 
         return view('admin.listings.restore', [
@@ -1142,6 +1177,7 @@ class ListingController extends Controller
             'images' => fn ($q) => $q->orderBy('sort_order'),
             'amenities',
             'latestLifecycleEvent.actor',
+            'assignedTo',
         ]);
 
         return view('admin.listings.reopen', [

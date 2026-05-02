@@ -8,6 +8,7 @@ import AdminRestoreListingDetailsCard         from './components/admin/AdminRest
 import AdminRestoreListingLocationCard        from './components/admin/AdminRestoreListingLocationCard.vue';
 import AdminRestoreListingAmenitiesCard       from './components/admin/AdminRestoreListingAmenitiesCard.vue';
 import AdminRestoreListingDescriptionCard     from './components/admin/AdminRestoreListingDescriptionCard.vue';
+import AdminRestoreListingCallsContextCard    from './components/admin/AdminRestoreListingCallsContextCard.vue';
 import AdminRestoreListingBar                 from './components/admin/AdminRestoreListingBar.vue';
 
 const initial = window.__INITIAL_RESTORE_LISTING__ ?? {};
@@ -36,14 +37,15 @@ const restoreErrors   = initial.restoreErrors   ?? null;
                 <AdminRestoreListingDeactivationBanner :deactivation="deactivation" />
 
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-                    <div class="lg:col-span-7">
-                        <AdminRestoreListingPhotoGallery :photos="photos" />
+                    <div class="lg:col-span-7 space-y-4">
+                        <AdminRestoreListingPhotoGallery    :photos="photos" />
+                        <AdminRestoreListingDescriptionCard :description="listing.description" />
                     </div>
                     <div class="lg:col-span-5 space-y-4">
                         <AdminRestoreListingDetailsCard     :listing="listing" />
+                        <AdminRestoreListingCallsContextCard :listing="listing" />
                         <AdminRestoreListingLocationCard    :listing="listing" :mapbox-url="mapboxStaticUrl" />
                         <AdminRestoreListingAmenitiesCard   :amenities="amenities" />
-                        <AdminRestoreListingDescriptionCard :description="listing.description" />
                     </div>
                 </div>
             </main>

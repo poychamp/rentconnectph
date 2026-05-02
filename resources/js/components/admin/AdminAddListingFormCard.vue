@@ -11,6 +11,7 @@ const props = defineProps({
     sourceSites:  { type: Array, required: true },
     amenities:    { type: Array, required: true },
     readOnlyLead: { type: Boolean, default: false },
+    hideLead:     { type: Boolean, default: false },
 });
 
 const form = inject('addListingForm');
@@ -31,7 +32,7 @@ const inputErrorClass = 'border-red-400 dark:border-red-500 focus:border-red-500
 <template>
     <div class="space-y-5">
         <!-- LEAD: owner contact + source (full width, first) -->
-        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm p-6 space-y-5">
+        <div v-if="!hideLead" class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm p-6 space-y-5">
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                     <label for="contact-phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300">

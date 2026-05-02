@@ -8,32 +8,35 @@
     $authUser = (new \App\Http\Resources\AdminAuthUserResource(auth('admin')->user()))->resolve();
 
     $listingFormShape = [
-        'title'         => $listing->title,
-        'description'   => $listing->description,
-        'listing_type'  => $listing->type,
-        'price_monthly'  => $listing->price_monthly,
-        'barangay'      => $listing->barangay,
-        'beds'          => $listing->beds,
-        'baths'         => $listing->baths,
-        'sqm'           => $listing->sqm,
-        'latitude'      => $listing->latitude,
-        'longitude'     => $listing->longitude,
-        'source_site'   => $listing->source_site,
-        'source_url'    => $listing->source_url,
-        'contact_phone' => $listing->contact_phone,
-        'amenities'     => $listing->amenities->pluck('id')->all(),
-        'photos'        => $listing->images->map(fn ($img) => [
-            'existing_id' => $img->id,
-            'url'         => $img->url,
-            'sort_order'  => $img->sort_order,
+        'title'              => $listing['title'],
+        'description'        => $listing['description'],
+        'listing_type'       => $listing['type'],
+        'price_monthly'      => $listing['price_monthly'],
+        'barangay'           => $listing['barangay'],
+        'beds'               => $listing['beds'],
+        'baths'              => $listing['baths'],
+        'sqm'                => $listing['sqm'],
+        'latitude'           => $listing['latitude'],
+        'longitude'          => $listing['longitude'],
+        'source_site'        => $listing['source_site'],
+        'source_url'         => $listing['source_url'],
+        'contact_phone'      => $listing['contact_phone'],
+        'directions'         => $listing['directions'],
+        'contact_type'       => $listing['contact_type'],
+        'verification_notes' => $listing['verification_notes'],
+        'amenities'          => collect($listing['amenities'])->pluck('id')->all(),
+        'photos'             => collect($listing['images'])->map(fn ($img) => [
+            'existing_id' => $img['id'],
+            'url'         => $img['url'],
+            'sort_order'  => $img['sort_order'],
         ])->values()->all(),
-        'is_verified'   => (bool) $listing->is_verified,
-        'is_featured'   => (bool) $listing->is_featured,
+        'is_verified'        => true,
+        'is_featured'        => $listing['is_featured'],
     ];
 
     $oldData = old() ?: null;
     if ($oldData && ! empty($oldData['photos']) && is_array($oldData['photos'])) {
-        $existingUrlById = $listing->images->pluck('url', 'id')->all();
+        $existingUrlById = collect($listing['images'])->pluck('url', 'id')->all();
 
         $oldData['photos'] = collect($oldData['photos'])
             ->map(function ($photo) use ($existingUrlById) {
@@ -55,11 +58,14 @@
     };
 
     window.__INITIAL_EDIT_LISTING__ = {
-        listingUuid:         @json($listing->uuid),
+        listingUuid:         @json($listing['uuid']),
         listing:             @json($listingFormShape),
+        assignedToName:      @json($listing['assigned_to_name']),
+        visitedAt:           @json($listing['visited_at']),
         listingTypes:        @json($listingTypes),
         barangays:           @json($barangays),
         sourceSites:         @json($sourceSites),
+        contactTypes:        @json($contactTypes),
         amenities:           @json($amenities),
         deactivationReasons: @json($deactivationReasons),
 

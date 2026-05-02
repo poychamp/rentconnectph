@@ -67,9 +67,44 @@ const sections = [
                 matches: (path) => path === '/admin/visited-listings'
                     || /^\/admin\/listings\/[^\/]+\/verify-edit$/.test(path),
             },
-            { name: 'Verified Listings',    href: '/admin/verified-listings',       icon: 'shield-check',    requires: 'listings.manage' },
-            { name: 'Featured Listings',    href: '/admin/featured-listings',       icon: 'star',            requires: 'listings.manage' },
-            { name: 'Deactivated Listings', href: '/admin/deactivated-listings',    icon: 'archive',         requires: 'listings.manage' },
+            {
+                name: 'Verified Listings',
+                href: '/admin/verified-listings',
+                icon: 'shield-check',
+                requires: 'listings.manage',
+                matches: (path) => {
+                    if (path === '/admin/verified-listings') return true;
+                    // Edit sub-route — active when admin came from verified.
+                    if (/^\/admin\/listings\/[^\/]+\/edit$/.test(path)) {
+                        const from = new URLSearchParams(window.location.search).get('from');
+                        return from === 'verified';
+                    }
+                    return false;
+                },
+            },
+            {
+                name: 'Featured Listings',
+                href: '/admin/featured-listings',
+                icon: 'star',
+                requires: 'listings.manage',
+                matches: (path) => {
+                    if (path === '/admin/featured-listings') return true;
+                    // Edit sub-route — active when admin came from featured.
+                    if (/^\/admin\/listings\/[^\/]+\/edit$/.test(path)) {
+                        const from = new URLSearchParams(window.location.search).get('from');
+                        return from === 'featured';
+                    }
+                    return false;
+                },
+            },
+            {
+                name: 'Deactivated Listings',
+                href: '/admin/deactivated-listings',
+                icon: 'archive',
+                requires: 'listings.manage',
+                matches: (path) => path === '/admin/deactivated-listings'
+                    || /^\/admin\/listings\/[^\/]+\/restore$/.test(path),
+            },
             {
                 name: 'Rejected Listings',
                 href: '/admin/rejected-listings',

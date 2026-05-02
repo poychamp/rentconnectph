@@ -23,7 +23,6 @@ const listingUuid = initial.listingUuid ?? '';
 const csrfToken   = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
 
 const canConfirm = computed(() => !submitting.value);
-const visible    = computed(() => form?.from === 'verified');
 
 function openModal() {
     reason.value = '';
@@ -96,6 +95,8 @@ function confirm() {
     append('_method', 'PUT');
     append('reason',  reason.value);
     if (notes.value) append('notes', notes.value);
+    // Round-trip the origin so the controller can redirect back to the right list.
+    if (form?.from) append('from', form.from);
 
     document.body.appendChild(formEl);
     formEl.submit();
@@ -111,7 +112,6 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
 
 <template>
     <div
-        v-if="visible"
         class="mt-8 rounded-lg border border-red-200 dark:border-red-900/60 bg-red-50/40 dark:bg-red-950/20"
     >
         <div class="px-6 py-3 border-b border-red-200 dark:border-red-900/60 flex items-center gap-2">

@@ -143,6 +143,20 @@ class AdminListingDeactivateTest extends TestCase
         $this->assertDatabaseCount('listing_lifecycle_events', 0);
     }
 
+    public function test_it_redirects_to_featured_listings_when_from_is_featured(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+        $listing = $this->verifiedLiveListing();
+
+        $response = $this->put(
+            route('admin.listings.deactivate', ['listing' => $listing->uuid]),
+            $this->validPayload(['from' => 'featured'])
+        );
+
+        $response->assertRedirect(route('admin.featured-listings.index'));
+    }
+
     public function test_it_soft_deletes_listing_and_writes_lifecycle_event_and_redirects(): void
     {
         $admin = User::factory()->superAdmin()->create();
