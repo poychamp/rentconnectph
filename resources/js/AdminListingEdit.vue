@@ -115,7 +115,7 @@ function isFieldRequired(field, prequalStatus) {
 // server-side and shouldn't trip client-side validation either.
 const VERIFIED_SLICE_VALIDATABLE = [
     'title', 'listing_type', 'price_monthly', 'barangay',
-    'beds', 'baths', 'sqm',
+    'beds', 'baths',
     'latitude', 'longitude',
     'photos',
 ];
@@ -188,15 +188,6 @@ const VALIDATORS = {
         if (!Number.isFinite(n)) return null;
         if (n < 0)  return 'The baths field must be at least 0.';
         if (n > 20) return 'The baths field must not be greater than 20.';
-        return null;
-    },
-    sqm: (f) => {
-        const empty = f.sqm === null || f.sqm === '' || f.sqm === undefined;
-        if (empty && isFieldRequired('sqm', f.prequal_status)) return 'Floor area is required.';
-        if (empty) return null;
-        const n = Number(f.sqm);
-        if (!Number.isFinite(n)) return null;
-        if (n < 1) return 'Floor area must be at least 1 sqm.';
         return null;
     },
     latitude: (f) => {

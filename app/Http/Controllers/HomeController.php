@@ -9,7 +9,7 @@ class HomeController extends Controller
 {
     public function index()
     {
-        $verified = Listing::with('displayImage')
+        $featured = Listing::with('displayImage')
             ->withCount('images')
             ->featured()
             ->verified()
@@ -23,7 +23,7 @@ class HomeController extends Controller
             ->limit(6)
             ->get();
 
-        $home = (new HomeResource(['verified' => $verified, 'recently' => $recent]))->resolve();
+        $home = (new HomeResource(['featured' => $featured, 'recently' => $recent]))->resolve();
 
         return view('home', ['home' => $home]);
     }

@@ -1,7 +1,11 @@
 <script setup>
-defineProps({
+import { computed } from 'vue';
+
+const props = defineProps({
     listing: { type: Object, required: true },
 });
+
+const hasAmenities = computed(() => Array.isArray(props.listing?.amenities) && props.listing.amenities.length > 0);
 
 // Unknown icon names fall back to `default` (tag glyph).
 const iconPaths = {
@@ -22,7 +26,7 @@ const iconPaths = {
 </script>
 
 <template>
-    <section>
+    <section v-if="hasAmenities">
         <h2 class="text-xl md:text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
             Amenities
         </h2>

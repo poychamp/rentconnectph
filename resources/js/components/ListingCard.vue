@@ -41,15 +41,15 @@ const formattedPrice = computed(() => {
                 <span class="text-sm font-medium text-gray-500 dark:text-gray-400">/mo</span>
             </p>
             <div class="mt-3 flex items-center gap-4 text-xs text-gray-600 dark:text-gray-400">
-                <span class="inline-flex items-center gap-1">
+                <span v-if="listing.beds" class="inline-flex items-center gap-1">
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14a3 3 0 1 1 0-6 3 3 0 0 1 0 6Zm14-4h-9v4H4V8H2v10h2v-2h16v2h2V12a2 2 0 0 0-1-1.73Z"/></svg>
                     {{ listing.beds }} bed
                 </span>
-                <span class="inline-flex items-center gap-1">
+                <span v-if="listing.baths" class="inline-flex items-center gap-1">
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M5 12V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1H7v6H5Zm-2 1h18v3a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4v-3Zm15-6V5a3 3 0 0 0-1.5-2.6L15 4.4l1 1 1.6-1A1 1 0 0 1 18 5v2h-2v.99h2V7Z"/></svg>
                     {{ listing.baths }} bath
                 </span>
-                <span class="inline-flex items-center gap-1">
+                <span v-if="listing.sqm" class="inline-flex items-center gap-1">
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="1"/></svg>
                     {{ listing.sqm }} sqm
                 </span>

@@ -1,11 +1,18 @@
 <script setup>
-defineProps({
+import { computed } from 'vue';
+
+const props = defineProps({
     listing: { type: Object, required: true },
+});
+
+const hasDescription = computed(() => {
+    const d = props.listing?.description;
+    return typeof d === 'string' && d.trim() !== '';
 });
 </script>
 
 <template>
-    <section>
+    <section v-if="hasDescription">
         <h2 class="text-xl md:text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
             About this property
         </h2>

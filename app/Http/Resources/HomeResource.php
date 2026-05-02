@@ -11,7 +11,7 @@ class HomeResource extends JsonResource
     public function toArray($request): array
     {
         return [
-            'verified' => ListingCardResource::collection($this->resource['verified']),
+            'featured' => ListingCardResource::collection($this->resource['featured']),
             'recently' => ListingCardResource::collection($this->resource['recently']),
             'listingTypes' => collect(ListingType::toValues())
                 ->map(fn ($v) => ['value' => $v, 'label' => ListingType::from($v)->label])
