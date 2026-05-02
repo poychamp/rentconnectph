@@ -22,7 +22,7 @@
 
     <script>
         window.__ASSETS__ = {
-            hero: "{{ asset('img/cdo-hero.jpg') }}",
+            hero: "{{ asset('img/cdo-hero.webp') }}",
             mapboxToken: "{{ config('services.mapbox.token') }}",
         };
     </script>

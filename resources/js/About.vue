@@ -4,9 +4,7 @@ import Navbar from './components/Navbar.vue';
 import Footer from './components/Footer.vue';
 import BottomNav from './components/BottomNav.vue';
 
-const initial = window.__INITIAL_ABOUT__ ?? {
-    brokerImage: '/img/broker.jpg',
-};
+const initial = window.__INITIAL_ABOUT__;
 
 const broker = {
     name: 'Marco V. Reyes',

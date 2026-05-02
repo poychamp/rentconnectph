@@ -6,7 +6,7 @@
 @push('scripts')
 <script>
     window.__INITIAL_ABOUT__ = @json([
-        'brokerImage' => asset('img/broker.jpg'),
+        'brokerImage' => asset('img/broker.webp'),
     ]);
 </script>
 @endpush
