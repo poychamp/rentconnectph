@@ -230,45 +230,6 @@ class SearchTest extends TestCase
         $this->assertSame('pueblo_de_oro', $payload['filters']['area']);
     }
 
-    public function test_it_filters_by_budget_buckets(): void
-    {
-        $prices = [5000, 9999, 10000, 15000, 20000, 25000, 30000, 35000];
-        foreach ($prices as $p) {
-            Listing::factory()->withImages(1)->create([
-                'price_monthly' => $p,
-                'is_verified'   => true,
-                'verified_at'   => Carbon::now(),
-            ]);
-        }
-
-        // lt10k → strict < 10000
-        $response = $this->get(route('search', ['budget' => 'lt10k']));
-        $response->assertOk();
-        $prices1 = collect($response->viewData('search')['listings'])->pluck('price_monthly')->all();
-        sort($prices1);
-        $this->assertSame([5000, 9999], $prices1, 'lt10k must NOT include 10000 (strict <)');
-
-        // 10-20k → inclusive both bounds
-        $response = $this->get(route('search', ['budget' => '10-20k']));
-        $response->assertOk();
-        $prices2 = collect($response->viewData('search')['listings'])->pluck('price_monthly')->all();
-        sort($prices2);
-        $this->assertSame([10000, 15000, 20000], $prices2, '10-20k must include both 10000 and 20000');
-
-        // 20-30k → inclusive both bounds (overlaps with 10-20k at 20000)
-        $response = $this->get(route('search', ['budget' => '20-30k']));
-        $response->assertOk();
-        $prices3 = collect($response->viewData('search')['listings'])->pluck('price_monthly')->all();
-        sort($prices3);
-        $this->assertSame([20000, 25000, 30000], $prices3, '20-30k must include both 20000 and 30000');
-
-        // gt30k → strict > 30000
-        $response = $this->get(route('search', ['budget' => 'gt30k']));
-        $response->assertOk();
-        $prices4 = collect($response->viewData('search')['listings'])->pluck('price_monthly')->all();
-        $this->assertSame([35000], $prices4, 'gt30k must NOT include 30000 (strict >)');
-    }
-
     public function test_it_applies_filters_when_q_is_explicitly_empty_or_whitespace(): void
     {
         // Pins: explicit ?q= (empty) and ?q=%20%20%20 (whitespace-only) trim to ''
@@ -380,9 +341,10 @@ class SearchTest extends TestCase
         ]);
 
         $response = $this->get(route('search', [
-            'type'   => 'apartment',
-            'area'   => 'carmen',
-            'budget' => '10-20k',
+            'type'       => 'apartment',
+            'area'       => 'carmen',
+            'budget_min' => 10000,
+            'budget_max' => 20000,
         ]));
         $response->assertOk();
 
@@ -393,7 +355,8 @@ class SearchTest extends TestCase
 
         $this->assertSame(['apartment'], $payload['filters']['type']);
         $this->assertSame('carmen',      $payload['filters']['area']);
-        $this->assertSame('10-20k',      $payload['filters']['budget']);
+        $this->assertSame(10000,         $payload['filters']['budget_min']);
+        $this->assertSame(20000,         $payload['filters']['budget_max']);
     }
 
     public function test_it_silently_drops_invalid_filter_values(): void
@@ -404,9 +367,10 @@ class SearchTest extends TestCase
         ]);
 
         $response = $this->get(route('search', [
-            'type'   => 'mansion',
-            'area'   => 'fakebarangay',
-            'budget' => 'invalid',
+            'type'       => 'mansion',
+            'area'       => 'fakebarangay',
+            'budget_min' => 'junk',
+            'budget_max' => 'junk',
         ]));
 
         $response->assertOk(); // NOT 422
@@ -416,9 +380,9 @@ class SearchTest extends TestCase
         $this->assertCount(5, $payload['listings']);
 
         $this->assertSame(
-            ['q' => '', 'budget' => null, 'area' => null, 'type' => []],
+            ['q' => '', 'budget_min' => null, 'budget_max' => null, 'area' => null, 'type' => []],
             $payload['filters'],
-            'Invalid values must sanitize: q to empty string, budget/area to null, type to empty array'
+            'Invalid values must sanitize: q to empty string, bounds + area to null, type to empty array'
         );
     }
 
@@ -455,5 +419,192 @@ class SearchTest extends TestCase
         $this->assertSame(30, $payload['pagination']['to']);
 
         $this->assertSame(['apartment'], $payload['filters']['type']);
+    }
+
+    // =====================================================================
+    // FRD-036 — range-filter cases (?budget_min, ?budget_max)
+    // =====================================================================
+
+    private function seedBudgetFixture(): void
+    {
+        $prices = [5000, 10000, 15000, 20000, 25000];
+        foreach ($prices as $p) {
+            Listing::factory()->withImages(1)->create([
+                'price_monthly' => $p,
+                'is_verified'   => true,
+                'verified_at'   => Carbon::now(),
+            ]);
+        }
+    }
+
+    public function test_it_filters_by_budget_min_only(): void
+    {
+        $this->seedBudgetFixture();
+
+        $response = $this->get(route('search', ['budget_min' => 15000]));
+        $response->assertOk();
+
+        $payload = $response->viewData('search');
+        $prices = collect($payload['listings'])->pluck('price_monthly')->sort()->values()->all();
+
+        $this->assertSame([15000, 20000, 25000], $prices, 'budget_min uses inclusive >= comparison');
+        $this->assertSame(15000, $payload['filters']['budget_min']);
+        $this->assertNull($payload['filters']['budget_max']);
+    }
+
+    public function test_it_filters_by_budget_max_only(): void
+    {
+        $this->seedBudgetFixture();
+
+        $response = $this->get(route('search', ['budget_max' => 15000]));
+        $response->assertOk();
+
+        $payload = $response->viewData('search');
+        $prices = collect($payload['listings'])->pluck('price_monthly')->sort()->values()->all();
+
+        $this->assertSame([5000, 10000, 15000], $prices, 'budget_max uses inclusive <= comparison');
+        $this->assertNull($payload['filters']['budget_min']);
+        $this->assertSame(15000, $payload['filters']['budget_max']);
+    }
+
+    public function test_it_filters_by_both_budget_min_and_max(): void
+    {
+        $this->seedBudgetFixture();
+
+        $response = $this->get(route('search', [
+            'budget_min' => 10000,
+            'budget_max' => 20000,
+        ]));
+        $response->assertOk();
+
+        $payload = $response->viewData('search');
+        $prices = collect($payload['listings'])->pluck('price_monthly')->sort()->values()->all();
+
+        $this->assertSame([10000, 15000, 20000], $prices);
+        $this->assertSame(10000, $payload['filters']['budget_min']);
+        $this->assertSame(20000, $payload['filters']['budget_max']);
+    }
+
+    public function test_it_silently_drops_malformed_budget_bound_values(): void
+    {
+        $this->seedBudgetFixture();
+
+        // 'abc' = non-digit; '-500' = negative (ctype_digit rejects '-'). Both must drop.
+        $response = $this->get(route('search', [
+            'budget_min' => 'abc',
+            'budget_max' => '-500',
+        ]));
+        $response->assertOk();
+
+        $payload = $response->viewData('search');
+        $this->assertCount(5, $payload['listings'], 'Malformed bounds drop silently → no filter applied');
+        $this->assertNull($payload['filters']['budget_min']);
+        $this->assertNull($payload['filters']['budget_max']);
+    }
+
+    public function test_it_swaps_inverted_bounds_when_min_exceeds_max(): void
+    {
+        $this->seedBudgetFixture();
+
+        $response = $this->get(route('search', [
+            'budget_min' => 20000,
+            'budget_max' => 5000,
+        ]));
+        $response->assertOk();
+
+        $payload = $response->viewData('search');
+        $prices = collect($payload['listings'])->pluck('price_monthly')->sort()->values()->all();
+
+        // After swap → effective range [5000, 20000] inclusive.
+        $this->assertSame([5000, 10000, 15000, 20000], $prices);
+        $this->assertSame(5000,  $payload['filters']['budget_min'], 'filters surface the swapped values');
+        $this->assertSame(20000, $payload['filters']['budget_max']);
+    }
+
+    // =====================================================================
+    // FRD-036 — legacy 4-bucket ?budget= 301 redirect-translate
+    // =====================================================================
+
+    private function assertRedirectsToSearchWith301(array $expectedParams, $response): void
+    {
+        $response->assertStatus(301);
+        $location = $response->headers->get('Location');
+        $this->assertNotNull($location, 'Redirect must set a Location header');
+
+        $parsed = parse_url($location);
+        $this->assertSame('/search', $parsed['path'] ?? null, 'Redirect target must be /search');
+
+        $actual = [];
+        parse_str($parsed['query'] ?? '', $actual);
+        $this->assertEquals($expectedParams, $actual, 'Redirect query params must match (order-agnostic)');
+    }
+
+    public function test_it_redirects_legacy_budget_lt10k_to_budget_max_9999_with_301(): void
+    {
+        $response = $this->get('/search?budget=lt10k');
+        $this->assertRedirectsToSearchWith301(['budget_max' => '9999'], $response);
+    }
+
+    public function test_it_redirects_legacy_budget_10_20k_to_budget_min_max_with_301(): void
+    {
+        $response = $this->get('/search?budget=10-20k');
+        $this->assertRedirectsToSearchWith301([
+            'budget_min' => '10000',
+            'budget_max' => '20000',
+        ], $response);
+    }
+
+    public function test_it_redirects_legacy_budget_20_30k_to_budget_min_max_with_301(): void
+    {
+        $response = $this->get('/search?budget=20-30k');
+        $this->assertRedirectsToSearchWith301([
+            'budget_min' => '20000',
+            'budget_max' => '30000',
+        ], $response);
+    }
+
+    public function test_it_redirects_legacy_budget_gt30k_to_budget_min_30001_with_301(): void
+    {
+        $response = $this->get('/search?budget=gt30k');
+        $this->assertRedirectsToSearchWith301(['budget_min' => '30001'], $response);
+    }
+
+    public function test_it_preserves_other_query_params_on_legacy_budget_redirect(): void
+    {
+        $response = $this->get('/search?budget=10-20k&q=apartment&area=carmen&type=apartment,studio');
+        $this->assertRedirectsToSearchWith301([
+            'q'          => 'apartment',
+            'area'       => 'carmen',
+            'type'       => 'apartment,studio',
+            'budget_min' => '10000',
+            'budget_max' => '20000',
+        ], $response);
+    }
+
+    public function test_it_strips_legacy_budget_param_when_new_params_also_present(): void
+    {
+        // ?budget=lt10k AND ?budget_min=8000 — legacy gets stripped, new param preserved
+        // as-is. No enrichment from the legacy mapping (the user manually crafted intent).
+        $response = $this->get('/search?budget=lt10k&budget_min=8000');
+        $this->assertRedirectsToSearchWith301(['budget_min' => '8000'], $response);
+    }
+
+    public function test_it_does_not_redirect_when_legacy_budget_value_is_unknown(): void
+    {
+        Listing::factory()->count(3)->withImages(1)->create([
+            'is_verified' => true,
+            'verified_at' => Carbon::now(),
+        ]);
+
+        // Unknown enum value silently drops at validBudget (current) or matches no key
+        // in LEGACY_BUDGET_RANGES (post-impl). Either way: 200, no redirect.
+        $response = $this->get('/search?budget=foo');
+        $response->assertOk();
+        $response->assertStatus(200);
+
+        $payload = $response->viewData('search');
+        $this->assertCount(3, $payload['listings']);
+        $this->assertNull($payload['filters']['budget_min']);
+        $this->assertNull($payload['filters']['budget_max']);
     }
 }

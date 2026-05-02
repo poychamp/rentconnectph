@@ -1,22 +1,23 @@
 <script setup>
-import { onBeforeUnmount, ref, watch } from 'vue';
+import { onBeforeUnmount, provide, reactive, watch } from 'vue';
+import BudgetRangeSlider from './BudgetRangeSlider.vue';
 
 const props = defineProps({
     barangays: { type: Array, default: () => [] },
 });
 
-const query  = ref('');
-const budget = ref('');
-const area   = ref('');
-
 const heroImage = window.__ASSETS__?.hero;
 
-const budgets = [
-    { value: 'lt10k',  label: '< ₱10,000' },
-    { value: '10-20k', label: '₱10,000 – ₱20,000' },
-    { value: '20-30k', label: '₱20,000 – ₱30,000' },
-    { value: 'gt30k',  label: '> ₱30,000' },
-];
+// Local reactive state — same shape as Search.vue's `live` so BudgetRangeSlider
+// (which injects 'search-live') works identically on both surfaces.
+const live = reactive({
+    q:          '',
+    budget_min: null,
+    budget_max: null,
+    area:       '',
+});
+
+provide('search-live', live);
 
 const SEARCH_DEBOUNCE_MS = 1000;
 let debounceTimer = null;
@@ -30,10 +31,11 @@ function clearDebounce() {
 
 function navigate() {
     const params = new URLSearchParams();
-    const q = String(query.value || '').trim();
-    if (q)            params.set('q', q);
-    if (budget.value) params.set('budget', budget.value);
-    if (area.value)   params.set('area', area.value);
+    const q = String(live.q || '').trim();
+    if (q) params.set('q', q);
+    if (live.budget_min !== null && live.budget_min !== '') params.set('budget_min', String(live.budget_min));
+    if (live.budget_max !== null && live.budget_max !== '') params.set('budget_max', String(live.budget_max));
+    if (live.area) params.set('area', live.area);
     const qs = params.toString();
     window.location.assign(qs ? `/search?${qs}` : '/search');
 }
@@ -46,12 +48,27 @@ function scheduleSubmit() {
     }, SEARCH_DEBOUNCE_MS);
 }
 
+function submitNow(patch = {}) {
+    if (patch.q !== undefined)          live.q = patch.q;
+    if (patch.budget_min !== undefined) live.budget_min = patch.budget_min;
+    if (patch.budget_max !== undefined) live.budget_max = patch.budget_max;
+    if (patch.area !== undefined)       live.area = patch.area;
+    clearDebounce();
+    navigate();
+}
+
+provide('search-submit', submitNow);
+
+// Expose debounce-cancel downward so BudgetRangeSlider can pause the pending
+// q/area auto-submit while its popover is open.
+provide('search-cancel-debounce', () => clearDebounce());
+
 function submit() {
     clearDebounce();
     navigate();
 }
 
-watch([query, budget, area], scheduleSubmit);
+watch([() => live.q, () => live.budget_min, () => live.budget_max, () => live.area], scheduleSubmit);
 
 onBeforeUnmount(clearDebounce);
 </script>
@@ -86,18 +103,15 @@ onBeforeUnmount(clearDebounce);
 
             <div class="mt-8 bg-white text-gray-900 rounded-2xl p-3 md:p-2 md:pl-4 flex flex-col md:flex-row md:items-center gap-2 shadow-xl max-w-3xl">
                 <input
-                    v-model="query"
+                    v-model="live.q"
                     @keydown.enter="submit"
                     type="text"
                     placeholder="keywords, amenities (e.g. wifi), 1 bed, 2 baths, 30sqm"
                     class="flex-1 bg-transparent outline-none px-2 py-2 text-sm md:text-base placeholder:text-xs md:placeholder:text-sm"
                 />
                 <div class="flex gap-2 md:contents">
-                    <select v-model="budget" class="flex-1 md:flex-none md:w-40 bg-gray-50 md:bg-transparent rounded-lg px-3 py-2 text-sm border border-gray-200 md:border-0 outline-none">
-                        <option value="">Budget</option>
-                        <option v-for="b in budgets" :key="b.value" :value="b.value">{{ b.label }}</option>
-                    </select>
-                    <select v-model="area" class="flex-1 md:flex-none md:w-44 bg-gray-50 md:bg-transparent rounded-lg px-3 py-2 text-sm border border-gray-200 md:border-0 outline-none">
+                    <BudgetRangeSlider class="flex-1 md:flex-none" />
+                    <select v-model="live.area" class="flex-1 md:flex-none md:w-44 bg-gray-50 md:bg-transparent rounded-lg px-3 py-2 text-sm border border-gray-200 md:border-0 outline-none">
                         <option value="">CDO Areas</option>
                         <option v-for="a in barangays" :key="a.value" :value="a.value">{{ a.label }}</option>
                     </select>

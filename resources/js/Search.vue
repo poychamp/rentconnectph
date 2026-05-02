@@ -12,18 +12,19 @@ const initial = window.__INITIAL_SEARCH__ ?? {
     pagination: { current_page: 1, last_page: 1, per_page: 24, total: 0, from: null, to: null },
     listingTypes: [],
     barangays: [],
-    filters: { q: '', budget: '', area: '', type: [] },
+    filters: { q: '', budget_min: null, budget_max: null, area: '', type: [] },
 };
 
-const seeded = initial.filters ?? { q: '', budget: '', area: '', type: [] };
+const seeded = initial.filters ?? { q: '', budget_min: null, budget_max: null, area: '', type: [] };
 
 // Live reactive state — bound to SearchBar inputs (v-model) so submitFilters
 // always reads what the user currently has on screen, not the server-snapshot.
 const live = reactive({
-    q:      seeded.q ?? '',
-    budget: seeded.budget ?? '',
-    area:   seeded.area ?? '',
-    type:   Array.isArray(seeded.type) ? [...seeded.type] : [],
+    q:          seeded.q ?? '',
+    budget_min: seeded.budget_min ?? null,
+    budget_max: seeded.budget_max ?? null,
+    area:       seeded.area ?? '',
+    type:       Array.isArray(seeded.type) ? [...seeded.type] : [],
 });
 
 provide('search-live', live);
@@ -31,7 +32,8 @@ provide('search-live', live);
 const hasActiveFilters = computed(() => {
     return !!(
         (seeded.q && seeded.q.trim()) ||
-        seeded.budget ||
+        seeded.budget_min !== null ||
+        seeded.budget_max !== null ||
         seeded.area ||
         (Array.isArray(seeded.type) && seeded.type.length > 0)
     );
@@ -50,16 +52,18 @@ const headerSubtitle = computed(() => {
 });
 
 function submitFilters(patch = {}) {
-    if (patch.q !== undefined)      live.q = patch.q;
-    if (patch.budget !== undefined) live.budget = patch.budget;
-    if (patch.area !== undefined)   live.area = patch.area;
-    if (patch.type !== undefined)   live.type = patch.type;
+    if (patch.q !== undefined)          live.q = patch.q;
+    if (patch.budget_min !== undefined) live.budget_min = patch.budget_min;
+    if (patch.budget_max !== undefined) live.budget_max = patch.budget_max;
+    if (patch.area !== undefined)       live.area = patch.area;
+    if (patch.type !== undefined)       live.type = patch.type;
 
     const params = new URLSearchParams();
     const q = String(live.q || '').trim();
-    if (q)           params.set('q', q);
-    if (live.budget) params.set('budget', live.budget);
-    if (live.area)   params.set('area', live.area);
+    if (q) params.set('q', q);
+    if (live.budget_min !== null && live.budget_min !== '') params.set('budget_min', String(live.budget_min));
+    if (live.budget_max !== null && live.budget_max !== '') params.set('budget_max', String(live.budget_max));
+    if (live.area) params.set('area', live.area);
     if (Array.isArray(live.type) && live.type.length > 0) {
         params.set('type', live.type.join(','));
     }
@@ -127,6 +131,19 @@ onBeforeUnmount(() => {
                 :initial="seeded.type"
                 :listing-types="initial.listingTypes"
             />
+
+            <div v-if="hasActiveFilters" class="flex justify-end -mt-1 mb-4">
+                <a
+                    href="/search"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition cursor-pointer"
+                >
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6 6 18M6 6l12 12"/>
+                    </svg>
+                    Clear filters
+                </a>
+            </div>
+
             <SearchResults
                 :listings="initial.listings"
                 :pagination="initial.pagination"

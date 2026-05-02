@@ -6,19 +6,33 @@ use App\Enums\Barangay;
 use App\Enums\ListingType;
 use App\Http\Resources\SearchResource;
 use App\Models\Listing;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class SearchController extends Controller
 {
-    private const BUDGETS = ['lt10k', '10-20k', '20-30k', 'gt30k'];
+    private const LEGACY_BUDGET_RANGES = [
+        'lt10k'  => [null,  9999],
+        '10-20k' => [10000, 20000],
+        '20-30k' => [20000, 30000],
+        'gt30k'  => [30001, null],
+    ];
 
-    public function index(Request $request): View
+    public function index(Request $request): View|RedirectResponse
     {
-        $q      = trim((string) $request->query('q', ''));
-        $budget = $this->validBudget($request->query('budget'));
-        $area   = $this->validBarangay($request->query('area'));
-        $type   = $this->validListingTypes($request->query('type'));
+        if ($redirect = $this->maybeRedirectLegacyBudget($request)) {
+            return $redirect;
+        }
+
+        $q   = trim((string) $request->query('q', ''));
+        $min = $this->validBudgetBound($request->query('budget_min'));
+        $max = $this->validBudgetBound($request->query('budget_max'));
+        if ($min !== null && $max !== null && $min > $max) {
+            [$min, $max] = [$max, $min];
+        }
+        $area = $this->validBarangay($request->query('area'));
+        $type = $this->validListingTypes($request->query('type'));
 
         if ($q !== '') {
             $query = Listing::search($q)
@@ -27,7 +41,8 @@ class SearchController extends Controller
 
             if (!empty($type)) $query->whereIn('type', $type);
             if ($area)         $query->where('barangay', $area);
-            if ($budget)       $this->applyBudgetScout($query, $budget);
+            if ($min !== null) $query->where('price_monthly', '>=', $min);
+            if ($max !== null) $query->where('price_monthly', '<=', $max);
 
             $listings = $query->paginate(24);
         } else {
@@ -37,22 +52,56 @@ class SearchController extends Controller
                 ->orderByDesc('listed_at');
             if (!empty($type)) $query->whereIn('type', $type);
             if ($area)         $query->where('barangay', $area);
-            if ($budget)       $this->applyBudgetEloquent($query, $budget);
+            if ($min !== null) $query->where('price_monthly', '>=', $min);
+            if ($max !== null) $query->where('price_monthly', '<=', $max);
 
             $listings = $query->paginate(24);
         }
 
-        $listings->appends($request->only(['q', 'budget', 'area', 'type']));
+        $listings->appends($request->only(['q', 'budget_min', 'budget_max', 'area', 'type']));
 
         $payload = (new SearchResource($listings))->resolve();
-        $payload['filters'] = compact('q', 'budget', 'area', 'type');
+        $payload['filters'] = [
+            'q'          => $q,
+            'budget_min' => $min,
+            'budget_max' => $max,
+            'area'       => $area,
+            'type'       => $type,
+        ];
 
         return view('search', ['search' => $payload]);
     }
 
-    private function validBudget(?string $value): ?string
+    private function validBudgetBound(?string $value): ?int
     {
-        return in_array($value, self::BUDGETS, true) ? $value : null;
+        if ($value === null || trim($value) === '') {
+            return null;
+        }
+        if (!ctype_digit(trim($value))) {
+            return null;
+        }
+        return (int) $value;
+    }
+
+    private function maybeRedirectLegacyBudget(Request $request): ?RedirectResponse
+    {
+        $legacy = $request->query('budget');
+        if (!is_string($legacy)) return null;
+        if (!array_key_exists($legacy, self::LEGACY_BUDGET_RANGES)) return null;
+
+        $hasNew = $request->query('budget_min') !== null
+              || $request->query('budget_max') !== null;
+
+        [$min, $max] = self::LEGACY_BUDGET_RANGES[$legacy];
+
+        $next = $request->query();
+        unset($next['budget']);
+        if (!$hasNew) {
+            if ($min !== null) $next['budget_min'] = (string) $min;
+            if ($max !== null) $next['budget_max'] = (string) $max;
+        }
+
+        return redirect()->to(route('search', $next), 301);
     }
 
     private function validBarangay(?string $value): ?string
@@ -74,25 +123,5 @@ class SearchController extends Controller
             ->unique()
             ->values()
             ->all();
-    }
-
-    private function applyBudgetEloquent($query, string $budget): void
-    {
-        match ($budget) {
-            'lt10k'  => $query->where('price_monthly', '<', 10000),
-            '10-20k' => $query->whereBetween('price_monthly', [10000, 20000]),
-            '20-30k' => $query->whereBetween('price_monthly', [20000, 30000]),
-            'gt30k'  => $query->where('price_monthly', '>', 30000),
-        };
-    }
-
-    private function applyBudgetScout($query, string $budget): void
-    {
-        match ($budget) {
-            'lt10k'  => $query->where('price_monthly', '<', 10000),
-            '10-20k' => $query->where('price_monthly', '>=', 10000)->where('price_monthly', '<=', 20000),
-            '20-30k' => $query->where('price_monthly', '>=', 20000)->where('price_monthly', '<=', 30000),
-            'gt30k'  => $query->where('price_monthly', '>', 30000),
-        };
     }
 }
