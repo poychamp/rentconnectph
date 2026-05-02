@@ -12,8 +12,8 @@ const formattedPrice = computed(() => {
 });
 
 const verifiedDateLabel = computed(() => {
-    if (!props.listing.verified_at) return '';
-    const d = new Date(props.listing.verified_at);
+    if (!props.listing.listed_at) return '';
+    const d = new Date(props.listing.listed_at);
     return new Intl.DateTimeFormat('en-US', {
         year: 'numeric',
         month: 'long',

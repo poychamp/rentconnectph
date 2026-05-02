@@ -28,6 +28,7 @@ class ListingDetailResource extends JsonResource
             'longitude' => $this->longitude,
             'description' => $this->description,
             'verified_at' => $this->verified_at?->toIso8601String(),
+            'listed_at' => $this->listed_at?->toIso8601String(),
             'images' => $this->images->map(fn ($img) => [
                 'id' => $img->id,
                 'uuid' => $img->uuid,
