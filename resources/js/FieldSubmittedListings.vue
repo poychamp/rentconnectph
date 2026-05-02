@@ -3,6 +3,7 @@ import { ref, computed } from 'vue';
 import FieldSidebar from './components/field/FieldSidebar.vue';
 import FieldTopBar from './components/field/FieldTopBar.vue';
 import FieldSubmittedListingsTable from './components/field/FieldSubmittedListingsTable.vue';
+import FieldSubmittedListingsPagination from './components/field/FieldSubmittedListingsPagination.vue';
 
 const initial = window.__INITIAL_FIELD_SUBMITTED_LISTINGS__ ?? {};
 
@@ -37,12 +38,10 @@ function navigateToSearch() {
     window.location.assign(target);
 }
 
-// Pagination href preserves the current ?q= via URLSearchParams.
-function pageHref(page) {
-    if (!page) return null;
+function goToPage(page) {
     const params = new URLSearchParams(window.location.search);
-    params.set('page', page);
-    return '/field/submitted-listings?' + params.toString();
+    params.set('page', String(page));
+    window.location.search = params.toString();
 }
 </script>
 
@@ -71,9 +70,9 @@ function pageHref(page) {
                             v-model="q"
                             @input="scheduleSubmit"
                             @keydown.enter.prevent="navigateToSearch"
-                            type="text"
-                            placeholder="Search title, barangay, directions..."
-                            class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            type="search"
+                            placeholder="Search title, barangay, directions…"
+                            class="w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 pl-10 pr-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none"
                         />
                     </div>
                 </div>
@@ -104,46 +103,13 @@ function pageHref(page) {
                 <!-- Table + pagination -->
                 <template v-else>
                     <FieldSubmittedListingsTable :rows="rows" />
-
-                    <nav
-                        v-if="meta.last_page > 1"
-                        class="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-sm"
-                    >
-                        <p class="text-gray-500 dark:text-gray-400">
-                            Page {{ meta.current_page }} of {{ meta.last_page }}
-                            <span class="text-gray-400 dark:text-gray-600">·</span>
-                            {{ meta.total }} total
-                        </p>
-                        <div class="flex items-center gap-2">
-                            <a
-                                v-if="links.prev"
-                                :href="pageHref(meta.current_page - 1)"
-                                class="px-3 py-1.5 rounded-md border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200"
-                            >
-                                Previous
-                            </a>
-                            <span
-                                v-else
-                                class="px-3 py-1.5 rounded-md border border-gray-200 dark:border-gray-800 text-gray-300 dark:text-gray-600"
-                            >
-                                Previous
-                            </span>
-
-                            <a
-                                v-if="links.next"
-                                :href="pageHref(meta.current_page + 1)"
-                                class="px-3 py-1.5 rounded-md border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200"
-                            >
-                                Next
-                            </a>
-                            <span
-                                v-else
-                                class="px-3 py-1.5 rounded-md border border-gray-200 dark:border-gray-800 text-gray-300 dark:text-gray-600"
-                            >
-                                Next
-                            </span>
-                        </div>
-                    </nav>
+                    <FieldSubmittedListingsPagination
+                        :current-page="meta.current_page ?? 1"
+                        :total-pages="meta.last_page ?? 1"
+                        :total-rows="meta.total ?? 0"
+                        :per-page="meta.per_page ?? 10"
+                        @change="goToPage"
+                    />
                 </template>
             </main>
         </div>

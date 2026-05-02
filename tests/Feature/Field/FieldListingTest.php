@@ -67,7 +67,7 @@ class FieldListingTest extends TestCase
         $response = $this->get(route('field.listings.index'));
 
         $response->assertOk();
-        $listings = $response->viewData('listings');
+        $listings = $response->viewData('listings')['data'];
         $uuids = array_column($listings, 'uuid');
         sort($uuids);
         $expected = [$marcosA->uuid, $marcosB->uuid];
@@ -85,7 +85,7 @@ class FieldListingTest extends TestCase
 
         $response = $this->get(route('field.listings.index'));
 
-        $listings = $response->viewData('listings');
+        $listings = $response->viewData('listings')['data'];
         $this->assertCount(1, $listings);
         $this->assertSame($assigned->uuid, $listings[0]['uuid']);
     }
@@ -101,7 +101,7 @@ class FieldListingTest extends TestCase
 
         $response = $this->get(route('field.listings.index'));
 
-        $listings = $response->viewData('listings');
+        $listings = $response->viewData('listings')['data'];
         $this->assertSame($first->uuid,  $listings[0]['uuid']);
         $this->assertSame($second->uuid, $listings[1]['uuid']);
         $this->assertSame($third->uuid,  $listings[2]['uuid']);
@@ -122,7 +122,7 @@ class FieldListingTest extends TestCase
 
         $response = $this->get(route('field.listings.index'));
 
-        $listings = $response->viewData('listings');
+        $listings = $response->viewData('listings')['data'];
         $this->assertCount(1, $listings);
         $row = $listings[0];
 
@@ -156,7 +156,7 @@ class FieldListingTest extends TestCase
 
         $response = $this->get(route('field.listings.index'));
 
-        $listings = $response->viewData('listings');
+        $listings = $response->viewData('listings')['data'];
         $this->assertSame($assignedAt->toIso8601String(), $listings[0]['assigned_at']);
     }
 
@@ -171,7 +171,7 @@ class FieldListingTest extends TestCase
 
         $response = $this->get(route('field.listings.index'));
 
-        $listings = $response->viewData('listings');
+        $listings = $response->viewData('listings')['data'];
         $this->assertNull($listings[0]['assigned_at']);
     }
 
@@ -190,19 +190,19 @@ class FieldListingTest extends TestCase
 
         // q=gaisano → only the Gaisano listing
         $response = $this->get(route('field.listings.index', ['q' => 'gaisano']));
-        $listings = $response->viewData('listings');
+        $listings = $response->viewData('listings')['data'];
         $this->assertCount(1, $listings);
         $this->assertSame($gaisano->uuid, $listings[0]['uuid']);
 
         // q=carmen → only the Carmen listing
         $response = $this->get(route('field.listings.index', ['q' => 'carmen']));
-        $listings = $response->viewData('listings');
+        $listings = $response->viewData('listings')['data'];
         $this->assertCount(1, $listings);
         $this->assertSame($carmen->uuid, $listings[0]['uuid']);
 
         // empty q → all 3
         $response = $this->get(route('field.listings.index'));
-        $listings = $response->viewData('listings');
+        $listings = $response->viewData('listings')['data'];
         $this->assertCount(3, $listings);
     }
 

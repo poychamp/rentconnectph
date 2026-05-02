@@ -43,7 +43,7 @@ class ListingController extends Controller
                 ->where('assigned_to', $userId)
                 ->where('queue_status', QueueStatus::assigned()->value)
                 ->query(fn ($eloquent) => $eloquent->with('displayImage'))
-                ->get();
+                ->paginate(10);
 
             $isSearching = true;
         } else {
@@ -51,13 +51,15 @@ class ListingController extends Controller
                 ->forOfficer($userId)
                 ->orderBy('assigned_at')
                 ->orderBy('id')
-                ->get();
+                ->paginate(10);
 
             $isSearching = false;
         }
 
         return view('field.listings', [
-            'listings' => FieldListingResource::collection($rows)->resolve(),
+            'listings' => FieldListingResource::collection($rows)
+                ->response()
+                ->getData(true),
             'q' => $q,
             'isSearching' => $isSearching,
         ]);

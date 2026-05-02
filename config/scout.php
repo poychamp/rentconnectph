@@ -123,6 +123,8 @@ return [
                     'filterOnly(type)',
                     'filterOnly(barangay)',
                     'filterOnly(price_monthly)',
+                    'filterOnly(assigned_to)',
+                    'filterOnly(queue_status)',
                 ],
                 'customRanking' => [
                     'desc(listed_at)',

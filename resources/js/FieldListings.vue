@@ -1,8 +1,9 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import FieldSidebar from './components/field/FieldSidebar.vue';
 import FieldTopBar from './components/field/FieldTopBar.vue';
 import FieldListingsTable from './components/field/FieldListingsTable.vue';
+import FieldListingsPagination from './components/field/FieldListingsPagination.vue';
 
 const initial = window.__INITIAL_FIELD_LISTINGS__ ?? {};
 
@@ -13,9 +14,17 @@ const user = ref(initial.user ?? {
     permissions: [],
 });
 
-const listings    = ref(initial.listings ?? []);
-const q           = ref(initial.q ?? '');
-const isSearching = ref(!!initial.isSearching);
+const listingsPayload = ref(initial.listings ?? { data: [], meta: {}, links: {} });
+const listings        = computed(() => listingsPayload.value.data ?? []);
+const meta            = computed(() => listingsPayload.value.meta ?? {});
+const q               = ref(initial.q ?? '');
+const isSearching     = ref(!!initial.isSearching);
+
+function goToPage(page) {
+    const params = new URLSearchParams(window.location.search);
+    params.set('page', String(page));
+    window.location.search = params.toString();
+}
 
 // Search input — 1000ms grouped-debounce per CLAUDE.md UX pattern.
 // Re-navigates to /field/listings?q=... so the controller renders the
@@ -64,9 +73,9 @@ function navigateToSearch() {
                             v-model="q"
                             @input="scheduleSubmit"
                             @keydown.enter.prevent="navigateToSearch"
-                            type="text"
-                            placeholder="Search title, barangay, directions, phone..."
-                            class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            type="search"
+                            placeholder="Search title, barangay, directions, phone…"
+                            class="w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 pl-10 pr-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none"
                         />
                     </div>
                     <p
@@ -89,12 +98,20 @@ function navigateToSearch() {
                     </template>
                 </div>
 
-                <!-- Table -->
-                <FieldListingsTable
-                    v-else
-                    :listings="listings"
-                    :is-searching="isSearching"
-                />
+                <!-- Table + pagination -->
+                <template v-else>
+                    <FieldListingsTable
+                        :listings="listings"
+                        :is-searching="isSearching"
+                    />
+                    <FieldListingsPagination
+                        :current-page="meta.current_page ?? 1"
+                        :total-pages="meta.last_page ?? 1"
+                        :total-rows="meta.total ?? 0"
+                        :per-page="meta.per_page ?? 10"
+                        @change="goToPage"
+                    />
+                </template>
             </main>
         </div>
     </div>
