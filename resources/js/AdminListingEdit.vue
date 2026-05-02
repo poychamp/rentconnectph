@@ -347,7 +347,7 @@ onMounted(() => {
                     :read-only="true"
                 />
 
-                <AdminEditListingDangerZone />
+                <AdminEditListingDangerZone v-if="!isUnverifiedSlice" />
                 <AdminEditListingRejectZone />
             </main>
 
