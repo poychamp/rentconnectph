@@ -4,7 +4,10 @@ namespace App\Providers;
 
 use App\Enums\AppGuard;
 use App\Enums\AppRole;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -29,5 +32,9 @@ class AppServiceProvider extends ServiceProvider
         // already gate by `auth:admin` + per-permission middleware, so reaching the
         // gate check means the user has already cleared route-level authorization.
         Gate::define('uploadFiles', fn ($user) => $user !== null);
+
+        RateLimiter::for('inquiry-submit', function (Request $request) {
+            return Limit::perHour(5)->by($request->ip());
+        });
     }
 }

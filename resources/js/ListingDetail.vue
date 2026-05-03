@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { provide, ref, onMounted, onBeforeUnmount } from 'vue';
 import Navbar from './components/Navbar.vue';
 import Footer from './components/Footer.vue';
 import ListingDetailMobileHeader from './components/ListingDetailMobileHeader.vue';
@@ -8,9 +8,20 @@ import ListingDetailMeta from './components/ListingDetailMeta.vue';
 import ListingDetailDescription from './components/ListingDetailDescription.vue';
 import ListingDetailAmenities from './components/ListingDetailAmenities.vue';
 import ListingDetailLocation from './components/ListingDetailLocation.vue';
+import ListingDetailInquireModal from './components/ListingDetailInquireModal.vue';
 import BottomNav from './components/BottomNav.vue';
 
 const listing = ref(window.__INITIAL_LISTING__);
+
+const inquire = window.__INITIAL_INQUIRE__ ?? { oldInput: null, errors: null, openInquireModal: false };
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+
+const inquireModalOpen = ref(inquire.openInquireModal === true);
+provide('inquireModalOpen', inquireModalOpen);
+
+function openInquireModal() {
+    inquireModalOpen.value = true;
+}
 
 function goBack() {
     if (window.history.length > 1) {
@@ -113,19 +124,26 @@ onBeforeUnmount(() => {
             class="md:hidden fixed left-0 right-0 z-[39] px-4 py-3 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800"
             style="bottom: 56px;"
         >
-            <a
-                href="#"
-                @click.prevent
-                class="w-full inline-flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-xl px-5 py-3 text-sm transition"
+            <button
+                type="button"
+                @click="openInquireModal"
+                class="w-full inline-flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-xl px-5 py-3 text-sm transition cursor-pointer"
             >
                 Inquire Now
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round" /></svg>
-            </a>
+            </button>
         </div>
 
         <div class="hidden md:block">
             <Footer />
         </div>
         <BottomNav />
+
+        <ListingDetailInquireModal
+            :listing-uuid="listing.uuid"
+            :csrf-token="csrfToken"
+            :old-input="inquire.oldInput"
+            :errors="inquire.errors"
+        />
     </div>
 </template>

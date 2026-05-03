@@ -15,6 +15,7 @@ if (el) {
         'listing-detail': () => import('./ListingDetail.vue'),
         'search': () => import('./Search.vue'),
         'about': () => import('./About.vue'),
+        'inquiry-success': () => import('./InquirySuccess.vue'),
     };
 
     const loadRoot = roots[page] || roots.home;

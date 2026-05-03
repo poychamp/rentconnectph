@@ -1,10 +1,16 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, inject } from 'vue';
 
 const props = defineProps({
     listing: { type: Object, required: true },
     hideCta: { type: Boolean, default: false },
 });
+
+const inquireModalOpen = inject('inquireModalOpen', null);
+
+function openInquireModal() {
+    if (inquireModalOpen) inquireModalOpen.value = true;
+}
 
 const formattedPrice = computed(() => {
     const n = new Intl.NumberFormat('en-PH').format(props.listing.price_monthly);
@@ -61,15 +67,15 @@ const verifiedDateLabel = computed(() => {
             </span>
         </div>
 
-        <a
+        <button
             v-if="!hideCta"
-            href="#"
-            @click.prevent
-            class="mt-6 w-full inline-flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-xl px-5 py-3 text-sm transition"
+            type="button"
+            @click="openInquireModal"
+            class="mt-6 w-full inline-flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-xl px-5 py-3 text-sm transition cursor-pointer"
         >
             Inquire Now
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round" /></svg>
-        </a>
+        </button>
 
         <p v-if="verifiedDateLabel" class="mt-4 text-xs text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1">
             <svg class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 0 1 0 1.4l-7.5 7.5a1 1 0 0 1-1.4 0L3.3 9.7a1 1 0 1 1 1.4-1.4l3.8 3.8 6.8-6.8a1 1 0 0 1 1.4 0Z" clip-rule="evenodd"/></svg>

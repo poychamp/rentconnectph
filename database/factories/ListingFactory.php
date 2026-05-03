@@ -37,6 +37,12 @@ class ListingFactory extends Factory
         return $this->state(['is_featured' => true]);
     }
 
+    public function verified(): static
+    {
+        // Default state already sets is_verified=true; explicit alias for test readability.
+        return $this->state(['is_verified' => true]);
+    }
+
     public function unverified(): static
     {
         return $this->state([
