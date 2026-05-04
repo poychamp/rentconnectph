@@ -95,4 +95,9 @@ class Inquiry extends Model
     {
         return $this->belongsTo(User::class, 'rejected_by');
     }
+
+    public function lead(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Lead::class);
+    }
 }

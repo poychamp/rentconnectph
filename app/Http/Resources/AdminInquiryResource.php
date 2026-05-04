@@ -21,6 +21,10 @@ class AdminInquiryResource extends JsonResource
             'rejected_at'        => $this->rejected_at?->toIso8601String(),
             'handed_off_by_name' => $this->handedOffBy?->name,
             'rejected_by_name'   => $this->rejectedBy?->name,
+            'lead'               => $this->lead ? [
+                'uuid'       => $this->lead->uuid,
+                'created_at' => $this->lead->created_at?->toIso8601String(),
+            ] : null,
             'renter' => [
                 'name'         => $this->renter->name,
                 'phone'        => $this->renter->phone,

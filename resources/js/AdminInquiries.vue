@@ -12,16 +12,20 @@ const initial = window.__INITIAL_INQUIRIES__ ?? {
     inquiries: { data: [], meta: { current_page: 1, last_page: 1, total: 0, per_page: 10 }, links: {} },
     counts: { filtered: 0, all: 0 },
     filters: { q: '' },
+    errors: {},
+    oldInput: {},
 };
 
 const user = ref(initial.user ?? {
     name: 'Admin', initials: 'AD', role_label: 'Admin', permissions: [],
 });
 
-const rows    = ref(initial.inquiries.data);
-const meta    = ref(initial.inquiries.meta);
-const counts  = ref(initial.counts);
-const filters = ref(initial.filters);
+const rows     = ref(initial.inquiries.data);
+const meta     = ref(initial.inquiries.meta);
+const counts   = ref(initial.counts);
+const filters  = ref(initial.filters);
+const errors   = ref(initial.errors ?? {});
+const oldInput = ref(initial.oldInput ?? {});
 
 function goToPage(page) {
     const params = new URLSearchParams(window.location.search);
@@ -55,6 +59,8 @@ const emptyMessage = filters.value.q
 
                 <AdminInquiriesAllTable
                     :rows="rows"
+                    :errors="errors"
+                    :old-input="oldInput"
                     :empty-message="emptyMessage"
                 />
 

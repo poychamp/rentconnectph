@@ -262,7 +262,7 @@ class AdminInquiryViewTest extends TestCase
         $row = $response->viewData('inquiries')['data'][0];
 
         $this->assertEqualsCanonicalizing(
-            ['uuid', 'status', 'status_label', 'submitted_at', 'notes', 'handed_off_at', 'rejected_at', 'handed_off_by_name', 'rejected_by_name', 'renter', 'listing'],
+            ['uuid', 'status', 'status_label', 'submitted_at', 'notes', 'handed_off_at', 'rejected_at', 'handed_off_by_name', 'rejected_by_name', 'lead', 'renter', 'listing'],
             array_keys($row),
         );
 

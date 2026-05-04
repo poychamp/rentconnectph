@@ -3,6 +3,8 @@ import AdminInquiriesAllRow from './AdminInquiriesAllRow.vue';
 
 defineProps({
     rows: { type: Array, required: true },
+    errors: { type: Object, default: () => ({}) },
+    oldInput: { type: Object, default: () => ({}) },
     emptyMessage: { type: String, required: true },
 });
 </script>
@@ -18,6 +20,8 @@ defineProps({
             v-for="row in rows"
             :key="row.uuid"
             :inquiry="row"
+            :errors="errors"
+            :old-input="oldInput"
         />
     </div>
 </template>
