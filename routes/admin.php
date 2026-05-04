@@ -118,6 +118,9 @@ Route::middleware('auth:admin')->group(function () {
         Route::get('filtered-inquiries', [Admin\InquiryController::class, 'filteredIndex'])
             ->name('filtered-inquiries.index');
 
+        Route::get('inquiries', [Admin\InquiryController::class, 'index'])
+            ->name('inquiries.index');
+
         Route::put('inquiries/{inquiry:uuid}/reject', [Admin\InquiryController::class, 'reject'])
             ->name('inquiries.reject');
 

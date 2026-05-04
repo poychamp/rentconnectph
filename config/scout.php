@@ -130,6 +130,17 @@ return [
                     'desc(listed_at)',
                 ],
             ],
+            env('SCOUT_PREFIX', '') . 'inquiries' => [
+                'searchableAttributes' => [
+                    'renter_name',
+                    'renter_phone',
+                    'listing_title',
+                    'listing_contact_phone',
+                ],
+                'customRanking' => [
+                    'desc(updated_at)',
+                ],
+            ],
         ],
     ],
 

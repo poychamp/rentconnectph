@@ -4,12 +4,15 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\InquiryStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\AdminInquiryFilteredResource;
 use App\Http\Resources\AdminInquiryResource;
 use App\Models\HandoffLock;
 use App\Models\Inquiry;
+use App\Support\PhMobile;
 use Carbon\Carbon;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -26,8 +29,42 @@ class InquiryController extends Controller
             ->paginate(10);
 
         return view('admin.inquiries.filtered-index', [
+            'inquiries' => AdminInquiryFilteredResource::collection($rows)->response()->getData(true),
+            'counts'    => $this->counts(),
+        ]);
+    }
+
+    public function index(Request $request): View
+    {
+        $q = trim((string) $request->query('q', ''));
+
+        if ($q === '') {
+            // Browse: Eloquent paginate sorted by most-recently-touched first.
+            // updated_at (not created_at) so handoffs / rejects / note edits
+            // bubble back to the top — reference lookup is "what changed
+            // recently?" not "what came in recently?".
+            $rows = Inquiry::query()
+                ->with(['renter', 'listing', 'handedOffBy', 'rejectedBy'])
+                ->orderByDesc('updated_at')
+                ->orderByDesc('id')
+                ->paginate(10);
+        } else {
+            // Search: Scout against the JOINed renters + listings (see
+            // Inquiry::newScoutQuery + toSearchableArray dotted keys).
+            // Phone-shaped input gets normalized to E.164 so 0917… and +639…
+            // both match the canonical stored form. Non-phone input passes raw.
+            $searchInput = PhMobile::normalize($q) ?? $q;
+
+            $rows = Inquiry::search($searchInput)
+                ->query(fn ($qb) => $qb->with(['renter', 'listing', 'handedOffBy', 'rejectedBy']))
+                ->paginate(10)
+                ->appends($request->only(['q']));
+        }
+
+        return view('admin.inquiries.index', [
             'inquiries' => AdminInquiryResource::collection($rows)->response()->getData(true),
             'counts'    => $this->counts(),
+            'filters'   => ['q' => $q],
         ]);
     }
 

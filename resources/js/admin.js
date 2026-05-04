@@ -27,6 +27,7 @@ if (el) {
         'admin-featured-listings':  () => import('./AdminFeaturedListings.vue'),
         'admin-amenities':          () => import('./AdminAmenities.vue'),
         'admin-filtered-inquiries': () => import('./AdminFilteredInquiries.vue'),
+        'admin-inquiries':          () => import('./AdminInquiries.vue'),
         'admin-handoffs':           () => import('./AdminHandoffs.vue'),
         'admin-amenity-create':     () => import('./AdminAmenityCreate.vue'),
         'admin-amenity-edit':       () => import('./AdminAmenityEdit.vue'),

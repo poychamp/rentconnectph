@@ -7,20 +7,15 @@ use App\Enums\ContactType;
 use App\Enums\InquiryStatus;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class AdminInquiryResource extends JsonResource
+class AdminInquiryFilteredResource extends JsonResource
 {
     public function toArray($request): array
     {
         return [
-            'uuid'               => $this->uuid,
-            'status'             => $this->status,
-            'status_label'       => InquiryStatus::from($this->status)->label,
-            'submitted_at'       => $this->created_at?->toIso8601String(),
-            'notes'              => $this->notes,
-            'handed_off_at'      => $this->handed_off_at?->toIso8601String(),
-            'rejected_at'        => $this->rejected_at?->toIso8601String(),
-            'handed_off_by_name' => $this->handedOffBy?->name,
-            'rejected_by_name'   => $this->rejectedBy?->name,
+            'uuid'         => $this->uuid,
+            'status'       => $this->status,
+            'status_label' => InquiryStatus::from($this->status)->label,
+            'submitted_at' => $this->created_at?->toIso8601String(),
             'renter' => [
                 'name'         => $this->renter->name,
                 'phone'        => $this->renter->phone,

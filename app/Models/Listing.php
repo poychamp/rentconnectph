@@ -128,6 +128,11 @@ class Listing extends Model
         return $this->hasOne(HandoffLock::class);
     }
 
+    public function inquiries(): HasMany
+    {
+        return $this->hasMany(Inquiry::class);
+    }
+
     public function latestLifecycleEvent(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
         return $this->hasOne(ListingLifecycleEvent::class)->latestOfMany('created_at');
