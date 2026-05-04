@@ -8,8 +8,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\AdminLeadResource;
 use App\Models\Inquiry;
 use App\Models\Lead;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -75,5 +77,46 @@ class LeadController extends Controller
         ]);
 
         return back()->with('success', 'Lead created — ready to send to broker.');
+    }
+
+    public function send(Request $request, Lead $lead): RedirectResponse
+    {
+        $bag = 'send-' . $lead->uuid;
+
+        // State guard via ValidationException so it flashes into the same
+        // named bag the validation errors use — frontend reads ONE bag per
+        // row, displays everything inline. ValidationException's default
+        // render() does back()->withInput()->withErrors(), so notes are
+        // retained automatically. Per feedback_state_guard_via_validation_exception.md.
+        if ($lead->status !== LeadStatus::pending()->value) {
+            $message = match ($lead->status) {
+                LeadStatus::sent()->value      => 'This lead has already been sent.',
+                LeadStatus::finalized()->value => 'Cannot send a finalized lead.',
+                LeadStatus::lost()->value      => 'Cannot send a lost lead.',
+                default                        => 'This lead cannot be sent from its current state.',
+            };
+
+            throw ValidationException::withMessages([
+                '_state' => $message,
+            ])->errorBag($bag);
+        }
+
+        $validated = $request->validateWithBag(
+            $bag,
+            ['notes' => 'nullable|string|max:2000'],
+            ['notes.max' => 'Lead notes must be 2000 characters or fewer.'],
+        );
+
+        $notes = ($validated['notes'] ?? '') !== '' ? $validated['notes'] : null;
+
+        DB::transaction(function () use ($lead, $notes) {
+            $lead->update([
+                'status'  => LeadStatus::sent()->value,
+                'sent_at' => Carbon::now(),
+                'notes'   => $notes,
+            ]);
+        });
+
+        return back()->with('success', 'Lead marked as sent.');
     }
 }

@@ -1,9 +1,13 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, nextTick, onMounted, ref } from 'vue';
 
 const props = defineProps({
-    lead: { type: Object, required: true },
+    lead:     { type: Object, required: true },
+    errors:   { type: Object, default: () => ({}) },
+    oldInput: { type: Object, default: () => ({}) },
 });
+
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
 
 const createdAgo = computed(() => {
     if (!props.lead.created_at) return '';
@@ -61,14 +65,14 @@ const monthlyRentDisplay = computed(() => {
     }).format(props.lead.monthly_rent);
 });
 
-// State-aware action button stubs. NO @click, NO form, NO Teleport, NO axios
-// per feedback_view_page_button_stubs.md. Functional handlers (PUT /send,
-// /finalize, /lose) ship in follow-up FRDs.
+// State-aware DEAD-STUB action buttons (Mark Finalized + Mark Lost). NO
+// @click, NO form, NO Teleport per feedback_view_page_button_stubs.md.
+// Mark-as-Sent is extracted below — wired with form + Teleport modal +
+// named bag (FRD-047). Finalize + Lose handlers ship in follow-up FRDs.
 const actionButtons = computed(() => {
     if (props.lead.status === 'pending') {
         return [
-            { label: 'Mark as Sent', color: 'blue' },
-            { label: 'Mark Lost',    color: 'rose' },
+            { label: 'Mark Lost', color: 'rose' },
         ];
     }
     if (props.lead.status === 'sent') {
@@ -86,6 +90,92 @@ function actionBtnClass(color) {
         emerald: 'border-emerald-200 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20',
         rose:    'border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20',
     }[color];
+}
+
+// ---------------------------------------------------------------------
+// Mark as Sent — PUT /admin/leads/{uuid}/send (FRD-047).
+// State A: lead.status === 'pending' → button + form + Teleport modal.
+// Named bag: `send-{uuid}` per row.
+// Notes overwrite (NOT append) — payload value replaces existing column;
+// empty/missing payload normalizes to null and clears.
+// Auto-open-on-error: when this row's named bag has errors, populate from
+// oldInput.notes + open modal at mount.
+// Defensive UX: when NOT a failed-submit target, pre-fill textarea with
+// existing lead.notes so admin doesn't accidentally clear creation context.
+// ---------------------------------------------------------------------
+
+const CLIENT_VALIDATION_ENABLED_SEND = true;
+
+const sendUrl = computed(() => `/admin/leads/${props.lead.uuid}/send`);
+
+const sendBag        = `send-${props.lead.uuid}`;
+const sendServerErrs = (props.errors && props.errors[sendBag]) ? props.errors[sendBag] : null;
+
+const sendForm = ref({
+    notes: sendServerErrs
+        ? (props.oldInput?.notes ?? '')
+        : (props.lead.notes ?? ''),
+});
+
+const sendErrors = ref({});
+
+const sendNotesRef = ref(null);
+const sendFormEl   = ref(null);
+const showSendModal = ref(false);
+
+const SEND_VALIDATORS = {
+    notes: (val) => (val ?? '').length > 2000
+        ? 'Lead notes must be 2000 characters or fewer.'
+        : null,
+};
+
+function validateSendField(field) {
+    if (!CLIENT_VALIDATION_ENABLED_SEND) return;
+    const error = SEND_VALIDATORS[field]?.(sendForm.value[field]);
+    if (error) sendErrors.value[field] = error;
+    else delete sendErrors.value[field];
+}
+
+function clearSendFieldError(field) {
+    delete sendErrors.value[field];
+}
+
+function validateAllSend() {
+    if (!CLIENT_VALIDATION_ENABLED_SEND) return true;
+    const next = {};
+    for (const field of Object.keys(SEND_VALIDATORS)) {
+        const error = SEND_VALIDATORS[field](sendForm.value[field]);
+        if (error) next[field] = error;
+    }
+    sendErrors.value = next;
+    return Object.keys(next).length === 0;
+}
+
+function counterClassSend(field) {
+    return (sendForm.value[field] ?? '').length > 2000
+        ? 'text-red-500 dark:text-red-400'
+        : 'text-gray-500 dark:text-gray-400';
+}
+
+function counterTextSend(field) {
+    return `${(sendForm.value[field] ?? '').length} / 2000`;
+}
+
+function openSendModal() {
+    showSendModal.value = true;
+    nextTick(() => sendNotesRef.value?.focus());
+}
+
+function closeSendModal() {
+    showSendModal.value = false;
+}
+
+function submitSend() {
+    if (!validateAllSend()) {
+        nextTick(() => sendNotesRef.value?.focus());
+        return;
+    }
+    sendFormEl.value?.submit();
 }
 
 // Preview Message — generates an editable broker template from the lead's
@@ -187,6 +277,18 @@ async function copyMessage() {
         setTimeout(() => { if (copyState.value === 'error') copyState.value = 'idle'; }, 3000);
     }
 }
+
+// On mount: if this row was the target of a failed submit (state-guard or
+// validation), populate sendErrors from the named bag and auto-open the
+// modal so the admin sees the error + their retained input.
+onMounted(() => {
+    if (sendServerErrs) {
+        for (const [field, messages] of Object.entries(sendServerErrs)) {
+            sendErrors.value[field] = Array.isArray(messages) ? messages[0] : messages;
+        }
+        showSendModal.value = true;
+    }
+});
 </script>
 
 <template>
@@ -255,7 +357,7 @@ async function copyMessage() {
             </div>
         </div>
 
-        <!-- Lead-specific block: monthly rent + lead notes + inquiry notes -->
+        <!-- Lead-specific block: monthly rent + lead notes + inquiry notes + verification notes -->
         <div class="rounded-md border border-gray-200 dark:border-gray-700 p-3 mb-4">
             <div class="flex items-center justify-between gap-2 mb-2">
                 <span class="text-[10px] font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Lead context</span>
@@ -275,7 +377,7 @@ async function copyMessage() {
             </div>
         </div>
 
-        <!-- Footer: created-by + state-companion timestamps + action button stubs -->
+        <!-- Footer: created-by + state-companion timestamps + action buttons -->
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 pt-3 border-t border-gray-200 dark:border-gray-700">
             <div class="text-xs text-gray-500 dark:text-gray-400 space-y-0.5">
                 <p>
@@ -299,6 +401,17 @@ async function copyMessage() {
                     Preview Message
                 </button>
                 <button
+                    v-if="lead.status === 'pending'"
+                    type="button"
+                    @click="openSendModal"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md border border-blue-200 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition cursor-pointer"
+                >
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 2 11 13 M22 2l-7 20-4-9-9-4 20-7z" />
+                    </svg>
+                    Mark as Sent
+                </button>
+                <button
                     v-for="btn in actionButtons"
                     :key="btn.label"
                     type="button"
@@ -309,7 +422,21 @@ async function copyMessage() {
                 </button>
             </div>
 
+            <!-- Hidden form for Mark-as-Sent (programmatic submit via submitSend) -->
+            <form
+                v-if="lead.status === 'pending'"
+                ref="sendFormEl"
+                :action="sendUrl"
+                method="POST"
+                class="hidden"
+            >
+                <input type="hidden" name="_token" :value="csrfToken">
+                <input type="hidden" name="_method" value="PUT">
+                <input type="hidden" name="notes" :value="sendForm.notes">
+            </form>
+
             <Teleport to="body">
+                <!-- Preview Message modal -->
                 <div
                     v-if="showPreviewModal"
                     class="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -371,6 +498,86 @@ async function copyMessage() {
                                     Copy
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mark-as-Sent modal (FRD-047) -->
+                <div
+                    v-if="showSendModal"
+                    class="fixed inset-0 z-50 flex items-center justify-center p-4"
+                    role="dialog"
+                    aria-modal="true"
+                >
+                    <div class="absolute inset-0 bg-black/50" @click="closeSendModal"></div>
+                    <div class="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xl p-6">
+                        <div class="flex items-start gap-4">
+                            <div class="flex-shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">
+                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M22 2 11 13 M22 2l-7 20-4-9-9-4 20-7z" />
+                                </svg>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-base font-semibold text-gray-900 dark:text-white">
+                                    Mark as Sent?
+                                </h3>
+                                <ul class="mt-2 text-sm text-gray-500 dark:text-gray-400 space-y-1 list-disc list-inside">
+                                    <li>Sets the <strong>Sent on …</strong> timestamp on this lead.</li>
+                                    <li>Lead transitions to <strong>sent</strong> and can no longer be re-sent.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div
+                            v-if="sendErrors._state"
+                            class="mt-4 rounded-md border border-rose-200 dark:border-rose-900/40 bg-rose-50 dark:bg-rose-950/20 px-3 py-2 text-xs text-rose-700 dark:text-rose-300"
+                        >
+                            {{ sendErrors._state }}
+                        </div>
+
+                        <div class="mt-5">
+                            <label for="send-notes" class="block text-sm font-medium text-gray-900 dark:text-white">
+                                Lead notes (optional)
+                            </label>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                Replaces existing lead notes; clear to remove.
+                            </p>
+                            <textarea
+                                id="send-notes"
+                                ref="sendNotesRef"
+                                v-model="sendForm.notes"
+                                rows="4"
+                                placeholder='Where + when sent (e.g. "FB Messenger 2pm — Marco confirmed receipt")'
+                                @blur="validateSendField('notes')"
+                                @focus="clearSendFieldError('notes')"
+                                class="mt-1.5 block w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white px-3 py-2 resize-y focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            ></textarea>
+                            <div class="mt-1 flex items-center justify-between">
+                                <p v-if="sendErrors.notes" class="text-xs text-red-600 dark:text-red-400">
+                                    {{ sendErrors.notes }}
+                                </p>
+                                <p v-else class="text-xs text-gray-400 dark:text-gray-500">&nbsp;</p>
+                                <p :class="counterClassSend('notes')" class="text-xs font-mono">
+                                    {{ counterTextSend('notes') }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 flex items-center justify-end gap-2">
+                            <button
+                                type="button"
+                                @click="closeSendModal"
+                                class="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition cursor-pointer"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                @click="submitSend"
+                                class="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition cursor-pointer"
+                            >
+                                Confirm Sent
+                            </button>
                         </div>
                     </div>
                 </div>

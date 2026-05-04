@@ -138,6 +138,9 @@ Route::middleware('auth:admin')->group(function () {
 
         Route::get('leads', [Admin\LeadController::class, 'index'])
             ->name('leads.index');
+
+        Route::put('leads/{lead:uuid}/send', [Admin\LeadController::class, 'send'])
+            ->name('leads.send');
     });
 
     // Vapor's signed S3 URL endpoint — browser calls this to get a pre-signed URL,

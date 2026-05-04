@@ -5,6 +5,8 @@ import AdminLeadsRow from './AdminLeadsRow.vue';
 const props = defineProps({
     rows:         { type: Array, required: true },
     statusFilter: { type: [String, null], default: null },
+    errors:       { type: Object, default: () => ({}) },
+    oldInput:     { type: Object, default: () => ({}) },
 });
 
 const labels = { pending: 'pending', sent: 'sent', finalized: 'finalized', lost: 'lost' };
@@ -29,6 +31,8 @@ const emptyMessage = computed(() => {
             v-for="row in rows"
             :key="row.uuid"
             :lead="row"
+            :errors="errors"
+            :old-input="oldInput"
         />
     </div>
 </template>

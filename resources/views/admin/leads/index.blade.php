@@ -12,6 +12,8 @@
         user:    @json($authUser),
         leads:   @json($leads),
         filters: @json($filters),
+        errors:  @json($errors->getBags() ? collect($errors->getBags())->mapWithKeys(fn ($bag, $key) => [$key => $bag->getMessages()])->toArray() : null),
+        oldInput: @json(old() ?: null),
     };
 </script>
 @endpush
