@@ -2,8 +2,9 @@
 import { computed, inject, ref } from 'vue';
 
 const props = defineProps({
-    contactTypes: { type: Array, default: () => [] },
-    readOnly:     { type: Boolean, default: false },
+    contactTypes:              { type: Array, default: () => [] },
+    readOnly:                  { type: Boolean, default: false },
+    verificationNotesEditable: { type: Boolean, default: false },
 });
 
 const form = inject('addListingForm');
@@ -20,8 +21,13 @@ const inputErrorClass = 'border-red-400 dark:border-red-500 focus:border-red-500
 const directionsCharCount = computed(() => (form.directions ?? '').length);
 const verificationNotesCharCount = computed(() => (form.verification_notes ?? '').length);
 
+// verification_notes can be amended on the verified-edit slice (calls-team
+// surface) even when the rest of the call-context fields are readonly.
+const verificationNotesReadOnly = computed(() => props.readOnly && !props.verificationNotesEditable);
+
 function fieldClass(field) {
-    if (props.readOnly) {
+    const fieldReadOnly = field === 'verification_notes' ? verificationNotesReadOnly.value : props.readOnly;
+    if (fieldReadOnly) {
         return 'mt-1 w-full rounded-md border bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white cursor-not-allowed outline-none transition';
     }
     return [
@@ -39,7 +45,8 @@ function fieldClass(field) {
             <h2 class="text-sm font-semibold text-gray-900 dark:text-white">Call context</h2>
             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
                 What the calls team captured pre-visit, plus directions the field officer used.
-                <span v-if="readOnly">Read-only — captured upstream.</span>
+                <span v-if="readOnly && !verificationNotesEditable">Read-only — captured upstream.</span>
+                <span v-else-if="readOnly && verificationNotesEditable">Mostly read-only — verification notes can be amended after qualifying calls.</span>
                 <span v-else>Edit only if there's a typo.</span>
             </p>
         </div>
@@ -104,7 +111,7 @@ function fieldClass(field) {
         <div>
             <div class="flex items-baseline justify-between">
                 <label for="calls-verification-notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Notes for field officer
+                    Verification Notes
                 </label>
                 <span :class="[
                     'text-xs',
@@ -118,12 +125,12 @@ function fieldClass(field) {
                 v-model="form.verification_notes"
                 rows="4"
                 placeholder="What did the owner say? Any flags noted during the visit?"
-                :readonly="readOnly"
+                :readonly="verificationNotesReadOnly"
                 @focus="clearFieldError('verification_notes')"
                 @blur="validateField('verification_notes')"
                 :class="fieldClass('verification_notes')"
             ></textarea>
-            <p v-if="!readOnly && errorFor('verification_notes')" class="mt-1 text-xs text-red-600 dark:text-red-400">
+            <p v-if="!verificationNotesReadOnly && errorFor('verification_notes')" class="mt-1 text-xs text-red-600 dark:text-red-400">
                 {{ errorFor('verification_notes') }}
             </p>
         </div>

@@ -679,6 +679,7 @@ class ListingController extends Controller
             'photos.*.name'        => ['nullable', 'string'],
             'photos.*.size'        => ['nullable', 'integer'],
             'is_featured'          => ['nullable', 'boolean'],
+            'verification_notes'   => ['nullable', 'string', 'max:2000'],
         ], [
             'title.required'        => 'Title is required.',
             'title.max'             => 'Title is too long (max 200 characters).',
@@ -697,6 +698,7 @@ class ListingController extends Controller
             'latitude.between'      => 'Latitude must be between -90 and 90.',
             'longitude.required'    => 'Longitude is required.',
             'longitude.between'     => 'Longitude must be between -180 and 180.',
+            'verification_notes.max' => 'Verification notes are too long (max 2000 characters).',
         ]);
 
         // Validation passed — but Laravel's wildcard validator reorders nested
@@ -724,17 +726,18 @@ class ListingController extends Controller
 
         DB::transaction(function () use ($request, $listing, $validated, $photos, $removedImageIds) {
             $listing->update([
-                'title'         => $validated['title'],
-                'description'   => $validated['description'] ?? null,
-                'type'          => $validated['listing_type'],
-                'price_monthly' => $validated['price_monthly'],
-                'barangay'      => $validated['barangay'],
-                'beds'          => $validated['beds'] ?? null,
-                'baths'         => $validated['baths'] ?? null,
-                'sqm'           => $validated['sqm'] ?? null,
-                'latitude'      => $validated['latitude'],
-                'longitude'     => $validated['longitude'],
-                'is_featured'   => $validated['is_featured'] ?? false,
+                'title'              => $validated['title'],
+                'description'        => $validated['description'] ?? null,
+                'type'               => $validated['listing_type'],
+                'price_monthly'      => $validated['price_monthly'],
+                'barangay'           => $validated['barangay'],
+                'beds'               => $validated['beds'] ?? null,
+                'baths'              => $validated['baths'] ?? null,
+                'sqm'                => $validated['sqm'] ?? null,
+                'latitude'           => $validated['latitude'],
+                'longitude'          => $validated['longitude'],
+                'is_featured'        => $validated['is_featured'] ?? false,
+                'verification_notes' => $validated['verification_notes'] ?? null,
             ]);
 
             if (! empty($removedImageIds)) {

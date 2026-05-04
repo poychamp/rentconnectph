@@ -6,6 +6,7 @@ use Spatie\Enum\Enum;
 
 /**
  * @method static self new()
+ * @method static self handedOff()
  * @method static self dead()
  */
 class InquiryStatus extends Enum
@@ -13,16 +14,18 @@ class InquiryStatus extends Enum
     protected static function values(): array
     {
         return [
-            'new'  => 'new',
-            'dead' => 'dead',
+            'new'        => 'new',
+            'handedOff'  => 'handed_off',
+            'dead'       => 'dead',
         ];
     }
 
     protected static function labels(): array
     {
         return [
-            'new'  => 'New',
-            'dead' => 'Dead',
+            'new'        => 'New',
+            'handedOff'  => 'Handed Off',
+            'dead'       => 'Dead',
         ];
     }
 }

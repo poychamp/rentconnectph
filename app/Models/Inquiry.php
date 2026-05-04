@@ -17,6 +17,12 @@ class Inquiry extends Model
         'renter_id',
         'listing_id',
         'status',
+        'handed_off_at',
+        'handed_off_by',
+    ];
+
+    protected $casts = [
+        'handed_off_at' => 'datetime',
     ];
 
     public function renter(): BelongsTo
@@ -27,5 +33,10 @@ class Inquiry extends Model
     public function listing(): BelongsTo
     {
         return $this->belongsTo(Listing::class);
+    }
+
+    public function handedOffBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'handed_off_by');
     }
 }

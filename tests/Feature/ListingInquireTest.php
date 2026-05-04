@@ -50,7 +50,7 @@ class ListingInquireTest extends TestCase
         $renter = Renter::first();
         $this->assertSame('+639171234567', $renter->phone);
         $this->assertSame('Maria Cruz', $renter->name);
-        $this->assertFalse($renter->is_qualified);
+        $this->assertNull($renter->is_qualified);
 
         $inquiry = Inquiry::first();
         $this->assertSame($renter->id, $inquiry->renter_id);
@@ -303,7 +303,7 @@ class ListingInquireTest extends TestCase
             'is_qualified' => true,
         ]));
 
-        $this->assertFalse(Renter::sole()->is_qualified);
+        $this->assertNull(Renter::sole()->is_qualified);
     }
 
     // ---------------------------------------------------------------------

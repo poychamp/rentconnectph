@@ -389,7 +389,6 @@ class AdminListingUpdateTest extends TestCase
             'source_url'         => 'https://rent.ph/orig',
             'contact_type'       => 'owner',
             'directions'         => 'Original directions.',
-            'verification_notes' => 'Original notes.',
             'assigned_to'        => null,
             'assigned_at'        => null,
             'visited_at'         => Carbon::parse('2026-04-01 00:00:00'),
@@ -407,7 +406,6 @@ class AdminListingUpdateTest extends TestCase
             'source_url'           => 'https://attacker.test/x',
             'contact_type'         => 'broker',
             'directions'           => 'Hijacked directions.',
-            'verification_notes'   => 'Hijacked notes.',
             'assigned_to'          => 99999,
             'assigned_at'          => Carbon::parse('2030-12-31'),
             'visited_at'           => Carbon::parse('2030-12-31'),
@@ -426,7 +424,6 @@ class AdminListingUpdateTest extends TestCase
         $this->assertSame('https://rent.ph/orig', $listing->source_url);
         $this->assertSame('owner', $listing->contact_type);
         $this->assertSame('Original directions.', $listing->directions);
-        $this->assertSame('Original notes.', $listing->verification_notes);
         $this->assertNull($listing->assigned_to);
         $this->assertNull($listing->assigned_at);
         $this->assertSame('2026-04-01', $listing->visited_at->format('Y-m-d'));
@@ -434,6 +431,57 @@ class AdminListingUpdateTest extends TestCase
         $this->assertNull($listing->prequal_status);
         $this->assertFalse((bool) $listing->is_field_priority);
         $this->assertNull($listing->field_priority_order);
+    }
+
+    // =========================================================================
+    // verification_notes — admin-editable on verified update (calls-team
+    // surface — they amend notes after qualifying calls)
+    // =========================================================================
+
+    public function test_it_persists_verification_notes_when_provided(): void
+    {
+        $this->asAdmin();
+        $listing = $this->makeListing(2, [
+            'verification_notes' => 'Original notes.',
+        ]);
+
+        $this->put(route('admin.listings.update', $listing->uuid), $this->validPayload($listing, [
+            'verification_notes' => 'Confirmed owner direct after call. Tenant moving in mid-month.',
+        ]));
+
+        $this->assertSame(
+            'Confirmed owner direct after call. Tenant moving in mid-month.',
+            $listing->fresh()->verification_notes,
+        );
+    }
+
+    public function test_it_clears_verification_notes_when_submitted_empty(): void
+    {
+        $this->asAdmin();
+        $listing = $this->makeListing(2, [
+            'verification_notes' => 'Stale notes to clear.',
+        ]);
+
+        $this->put(route('admin.listings.update', $listing->uuid), $this->validPayload($listing, [
+            'verification_notes' => '',
+        ]));
+
+        $this->assertNull($listing->fresh()->verification_notes);
+    }
+
+    public function test_it_validates_verification_notes_max_length(): void
+    {
+        $this->asAdmin();
+        $listing = $this->makeListing(2);
+
+        $response = $this->from(route('admin.listings.edit', $listing->uuid))
+            ->put(route('admin.listings.update', $listing->uuid), $this->validPayload($listing, [
+                'verification_notes' => str_repeat('a', 2001),
+            ]));
+
+        $response->assertSessionHasErrors([
+            'verification_notes' => 'Verification notes are too long (max 2000 characters).',
+        ]);
     }
 
     // =========================================================================

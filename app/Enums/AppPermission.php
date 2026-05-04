@@ -9,6 +9,7 @@ use Spatie\Enum\Enum;
  * @method static self listingsManage()
  * @method static self listingsFieldWork()
  * @method static self amenitiesManage()
+ * @method static self inquiriesManage()
  * @method static self usersManage()
  * @method static self systemAdmin()
  */
@@ -21,6 +22,7 @@ class AppPermission extends Enum
             'listingsManage'    => 'listings.manage',
             'listingsFieldWork' => 'listings.field-work',
             'amenitiesManage'   => 'amenities.manage',
+            'inquiriesManage'   => 'inquiries.manage',
             'usersManage'       => 'users.manage',
             'systemAdmin'       => 'system.admin',
         ];
@@ -33,6 +35,7 @@ class AppPermission extends Enum
             'listingsManage'    => 'Manage Listings',
             'listingsFieldWork' => 'Field Work',
             'amenitiesManage'   => 'Manage Amenities',
+            'inquiriesManage'   => 'Manage Inquiries',
             'usersManage'       => 'Manage Users',
             'systemAdmin'       => 'System Admin',
         ];

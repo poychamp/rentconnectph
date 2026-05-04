@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('uuid', 36)->index();
             $table->string('name', 120);
             $table->string('phone', 32)->index();
-            $table->boolean('is_qualified')->default(false);
+            $table->boolean('is_qualified')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

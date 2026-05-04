@@ -345,6 +345,7 @@ onMounted(() => {
                     class="mt-6"
                     :contact-types="formData.contactTypes"
                     :read-only="true"
+                    :verification-notes-editable="true"
                 />
 
                 <AdminEditListingDangerZone v-if="!isUnverifiedSlice" />

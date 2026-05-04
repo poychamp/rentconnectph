@@ -111,6 +111,23 @@ Route::middleware('auth:admin')->group(function () {
             ->name('deleted-amenities.index');
     });
 
+    // Calls-team inquiries queue — gated by `inquiries.manage`. Super-admin only
+    // via Gate::before bypass; permission exists in DB but no explicit role grant
+    // (calls-team role lands later).
+    Route::middleware('can:' . AppPermission::inquiriesManage()->value)->group(function () {
+        Route::get('filtered-inquiries', [Admin\InquiryController::class, 'filteredIndex'])
+            ->name('filtered-inquiries.index');
+
+        Route::put('inquiries/{inquiry:uuid}/reject', [Admin\InquiryController::class, 'reject'])
+            ->name('inquiries.reject');
+
+        Route::put('inquiries/{inquiry:uuid}/handoff', [Admin\InquiryController::class, 'handoff'])
+            ->name('inquiries.handoff');
+
+        Route::get('handoffs', [Admin\HandoffController::class, 'index'])
+            ->name('handoffs.index');
+    });
+
     // Vapor's signed S3 URL endpoint — browser calls this to get a pre-signed URL,
     // then PUTs the file directly to S3. Gated to admins so non-admins can't generate URLs.
     Route::post('vapor/signed-storage-url', [\Laravel\Vapor\Http\Controllers\SignedStorageUrlController::class, 'store'])
