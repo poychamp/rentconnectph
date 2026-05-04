@@ -1,9 +1,18 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 
 const props = defineProps({
     row: { type: Object, required: true },
 });
+
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+
+const showReleaseModal = ref(false);
+const releaseFormEl    = ref(null);
+
+function openReleaseModal()  { showReleaseModal.value = true; }
+function closeReleaseModal() { showReleaseModal.value = false; }
+function confirmRelease()    { releaseFormEl.value?.submit(); }
 
 const lockedAgeMs = computed(() => {
     if (!props.row.created_at) return 0;
@@ -81,17 +90,76 @@ function toLocal(phone) {
 
         <td class="px-4 py-3">
             <div class="flex items-center justify-center">
-                <button
-                    type="button"
-                    class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
-                    title="Release lock"
+                <form
+                    ref="releaseFormEl"
+                    :action="`/admin/handoffs/${row.id}`"
+                    method="POST"
+                    class="inline"
                 >
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="5" y="11" width="14" height="10" rx="1" />
-                        <path d="M8 11V7a4 4 0 0 1 7-2.5" />
-                    </svg>
-                    Release
-                </button>
+                    <input type="hidden" name="_token" :value="csrfToken">
+                    <input type="hidden" name="_method" value="DELETE">
+                    <button
+                        type="button"
+                        @click="openReleaseModal"
+                        class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
+                        title="Release lock"
+                    >
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="5" y="11" width="14" height="10" rx="1" />
+                            <path d="M8 11V7a4 4 0 0 1 7-2.5" />
+                        </svg>
+                        Release
+                    </button>
+                </form>
+
+                <Teleport to="body">
+                    <div
+                        v-if="showReleaseModal"
+                        class="fixed inset-0 z-50 flex items-center justify-center p-4"
+                        role="dialog"
+                        aria-modal="true"
+                    >
+                        <div class="absolute inset-0 bg-black/50" @click="closeReleaseModal"></div>
+
+                        <div class="relative w-full max-w-md rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xl p-6">
+                            <div class="flex items-start gap-4">
+                                <div class="flex-shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400">
+                                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="5" y="11" width="14" height="10" rx="1" />
+                                        <path d="M8 11V7a4 4 0 0 1 7-2.5" />
+                                    </svg>
+                                </div>
+                                <div class="flex-1">
+                                    <h3 class="text-base font-semibold text-gray-900 dark:text-white">
+                                        Release lock on '{{ row.listing.title }}'?
+                                    </h3>
+                                    <ul class="mt-2 text-sm text-gray-500 dark:text-gray-400 space-y-1 list-disc list-inside">
+                                        <li>The lock row is removed.</li>
+                                        <li>The handed-off inquiry stays as historical record.</li>
+                                        <li>New inquiries on this listing will reappear in the filtered queue.</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 flex items-center justify-end gap-2">
+                                <button
+                                    type="button"
+                                    @click="closeReleaseModal"
+                                    class="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition cursor-pointer"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="confirmRelease"
+                                    class="px-4 py-2 rounded-md bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold transition cursor-pointer"
+                                >
+                                    Release Lock
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </Teleport>
             </div>
         </td>
     </tr>

@@ -126,6 +126,9 @@ Route::middleware('auth:admin')->group(function () {
 
         Route::get('handoffs', [Admin\HandoffController::class, 'index'])
             ->name('handoffs.index');
+
+        Route::delete('handoffs/{handoffLock}', [Admin\HandoffController::class, 'destroy'])
+            ->name('handoffs.destroy');
     });
 
     // Vapor's signed S3 URL endpoint — browser calls this to get a pre-signed URL,
