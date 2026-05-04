@@ -1,11 +1,81 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, nextTick, onMounted, ref } from 'vue';
 
 const props = defineProps({
-    inquiry: { type: Object, required: true },
+    inquiry:  { type: Object, required: true },
+    errors:   { type: Object, default: () => ({}) },
+    oldInput: { type: Object, default: () => ({}) },
 });
 
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+
+// Per-row error bag (named-bag pattern; one bag per inquiry uuid). If this
+// row was the target of the failed submit, this object will hold the
+// server-side errors keyed by field.
+const myBag = `handoff-${props.inquiry.uuid}`;
+const myServerErrors = (props.errors && props.errors[myBag]) ? props.errors[myBag] : null;
+
+// Handoff form state. Pre-fill priority:
+//   - If this row had errors on a prior submit → use oldInput (retain user input)
+//   - Else, renter notes pre-fills from resource (returning-renter context),
+//     inquiry notes empty (per-event, fresh).
+const handoffForm = ref({
+    notes:        myServerErrors ? (props.oldInput?.notes ?? '') : '',
+    renter_notes: myServerErrors ? (props.oldInput?.renter_notes ?? '') : (props.inquiry.renter.notes ?? ''),
+});
+
+const handoffErrors = ref({});
+
+const handoffNotesRef       = ref(null);
+const handoffRenterNotesRef = ref(null);
+
+// Client-side validation re-enabled after server-side error display +
+// field-value retention smoke. Full bundle: VALIDATORS map mirrors server
+// rules, @blur fires validateField, @focus fires clearFieldError, submit
+// calls validateAll which focuses the first invalid field on failure.
+// Server (validateWithBag) stays as the final defense.
+const CLIENT_VALIDATION_ENABLED = true;
+
+const VALIDATORS = {
+    notes: (val) => (val ?? '').length > 2000
+        ? 'Inquiry notes must be 2000 characters or fewer.'
+        : null,
+    renter_notes: (val) => (val ?? '').length > 2000
+        ? 'Renter notes must be 2000 characters or fewer.'
+        : null,
+};
+
+function validateField(field) {
+    if (!CLIENT_VALIDATION_ENABLED) return;
+    const error = VALIDATORS[field]?.(handoffForm.value[field]);
+    if (error) handoffErrors.value[field] = error;
+    else delete handoffErrors.value[field];
+}
+
+function clearFieldError(field) {
+    delete handoffErrors.value[field];
+}
+
+function validateAll() {
+    if (!CLIENT_VALIDATION_ENABLED) return true;
+    const next = {};
+    for (const field of Object.keys(VALIDATORS)) {
+        const error = VALIDATORS[field](handoffForm.value[field]);
+        if (error) next[field] = error;
+    }
+    handoffErrors.value = next;
+    return Object.keys(next).length === 0;
+}
+
+function counterClass(field) {
+    return (handoffForm.value[field] ?? '').length > 2000
+        ? 'text-red-500 dark:text-red-400'
+        : 'text-gray-500 dark:text-gray-400';
+}
+
+function counterText(field) {
+    return `${(handoffForm.value[field] ?? '').length} / 2000`;
+}
 
 const submittedAgo = computed(() => {
     if (!props.inquiry.submitted_at) return '';
@@ -48,7 +118,31 @@ function submitReject()      { rejectFormEl.value?.submit(); }
 
 function openHandoffModal()  { showHandoffModal.value = true; }
 function closeHandoffModal() { showHandoffModal.value = false; }
-function submitHandoff()     { handoffFormEl.value?.submit(); }
+
+// On mount: if this row was the target of the failed submit, populate
+// handoffErrors from the named bag and auto-open the modal so the user
+// sees their retained input + the server's complaint.
+onMounted(() => {
+    if (!myServerErrors) return;
+    for (const [field, messages] of Object.entries(myServerErrors)) {
+        handoffErrors.value[field] = Array.isArray(messages) ? messages[0] : messages;
+    }
+    showHandoffModal.value = true;
+});
+
+function submitHandoff() {
+    if (!validateAll()) {
+        nextTick(() => {
+            if (handoffErrors.value.renter_notes) {
+                handoffRenterNotesRef.value?.focus();
+            } else if (handoffErrors.value.notes) {
+                handoffNotesRef.value?.focus();
+            }
+        });
+        return;
+    }
+    handoffFormEl.value?.submit();
+}
 </script>
 
 <template>
@@ -110,6 +204,15 @@ function submitHandoff()     { handoffFormEl.value?.submit(); }
                 <p v-if="toLocal(inquiry.renter.phone)" class="font-mono text-xs text-orange-500/70 dark:text-orange-400/70">
                     {{ inquiry.renter.phone }}
                 </p>
+
+                <div v-if="inquiry.renter.notes" class="mt-3 pt-3 border-t border-orange-200 dark:border-orange-900/30">
+                    <p class="text-[10px] font-semibold uppercase tracking-wider text-orange-700 dark:text-orange-400 mb-1">
+                        Renter notes
+                    </p>
+                    <p class="text-xs text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line">
+                        {{ inquiry.renter.notes }}
+                    </p>
+                </div>
             </div>
 
             <!-- Owner contact — what to hand over once qualified -->
@@ -163,6 +266,8 @@ function submitHandoff()     { handoffFormEl.value?.submit(); }
             <form ref="handoffFormEl" :action="handoffUrl" method="POST" class="inline">
                 <input type="hidden" name="_token" :value="csrfToken">
                 <input type="hidden" name="_method" value="PUT">
+                <input type="hidden" name="notes" :value="handoffForm.notes">
+                <input type="hidden" name="renter_notes" :value="handoffForm.renter_notes">
                 <button
                     type="button"
                     @click="openHandoffModal"
@@ -229,7 +334,7 @@ function submitHandoff()     { handoffFormEl.value?.submit(); }
                 >
                     <div class="absolute inset-0 bg-black/50" @click="closeHandoffModal"></div>
 
-                    <div class="relative w-full max-w-md rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xl p-6">
+                    <div class="relative w-full max-w-xl rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xl p-6 max-h-[90vh] overflow-y-auto">
                         <div class="flex items-start gap-4">
                             <div class="flex-shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
                                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -243,7 +348,66 @@ function submitHandoff()     { handoffFormEl.value?.submit(); }
                                 <ul class="mt-2 text-sm text-gray-500 dark:text-gray-400 space-y-1 list-disc list-inside">
                                     <li>Renter will be marked qualified.</li>
                                     <li>Listing will be locked from new inquiries.</li>
+                                    <li>Notes below are saved with the handoff.</li>
                                 </ul>
+                            </div>
+                        </div>
+
+                        <!-- Renter notes (durable across inquiries) -->
+                        <div class="mt-5">
+                            <label for="handoff-renter-notes" class="block text-sm font-medium text-gray-900 dark:text-white">
+                                About the renter (durable)
+                            </label>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                Job, family situation, move-in window, accessibility needs, etc. Pre-filled from prior handoffs.
+                            </p>
+                            <textarea
+                                id="handoff-renter-notes"
+                                ref="handoffRenterNotesRef"
+                                v-model="handoffForm.renter_notes"
+                                rows="4"
+                                placeholder="What should the next caller know about this renter?"
+                                @blur="validateField('renter_notes')"
+                                @focus="clearFieldError('renter_notes')"
+                                class="mt-1.5 block w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white px-3 py-2 resize-y focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                            ></textarea>
+                            <div class="mt-1 flex items-center justify-between">
+                                <p v-if="handoffErrors.renter_notes" class="text-xs text-red-600 dark:text-red-400">
+                                    {{ handoffErrors.renter_notes }}
+                                </p>
+                                <p v-else class="text-xs text-gray-400 dark:text-gray-500">&nbsp;</p>
+                                <p :class="counterClass('renter_notes')" class="text-xs font-mono">
+                                    {{ counterText('renter_notes') }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Inquiry notes (per-event) -->
+                        <div class="mt-4">
+                            <label for="handoff-notes" class="block text-sm font-medium text-gray-900 dark:text-white">
+                                About this handoff
+                            </label>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                What was agreed during the qualifying call? Special arrangements, viewing schedule, owner expectations, etc.
+                            </p>
+                            <textarea
+                                id="handoff-notes"
+                                ref="handoffNotesRef"
+                                v-model="handoffForm.notes"
+                                rows="4"
+                                placeholder="What was agreed during the qualifying call?"
+                                @blur="validateField('notes')"
+                                @focus="clearFieldError('notes')"
+                                class="mt-1.5 block w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white px-3 py-2 resize-y focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                            ></textarea>
+                            <div class="mt-1 flex items-center justify-between">
+                                <p v-if="handoffErrors.notes" class="text-xs text-red-600 dark:text-red-400">
+                                    {{ handoffErrors.notes }}
+                                </p>
+                                <p v-else class="text-xs text-gray-400 dark:text-gray-500">&nbsp;</p>
+                                <p :class="counterClass('notes')" class="text-xs font-mono">
+                                    {{ counterText('notes') }}
+                                </p>
                             </div>
                         </div>
 

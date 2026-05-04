@@ -17,6 +17,7 @@ class Inquiry extends Model
         'renter_id',
         'listing_id',
         'status',
+        'notes',
         'handed_off_at',
         'handed_off_by',
     ];

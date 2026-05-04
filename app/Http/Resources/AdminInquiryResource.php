@@ -21,6 +21,7 @@ class AdminInquiryResource extends JsonResource
                 'phone'                => $this->renter->phone,
                 'is_qualified'         => (bool) $this->renter->qualified,
                 'prior_rejected_count' => (int) ($this->renter->dead_inquiries_count ?? 0),
+                'notes'                => $this->renter->notes,
             ],
             'listing' => [
                 'uuid'               => $this->listing->uuid,

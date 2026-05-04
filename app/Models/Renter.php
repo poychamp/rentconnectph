@@ -19,6 +19,7 @@ class Renter extends Model
         'name',
         'phone',
         'is_qualified',
+        'notes',
     ];
 
     protected $casts = [

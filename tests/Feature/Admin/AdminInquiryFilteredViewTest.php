@@ -165,7 +165,7 @@ class AdminInquiryFilteredViewTest extends TestCase
             array_keys($row),
         );
         $this->assertEqualsCanonicalizing(
-            ['name', 'phone', 'is_qualified', 'prior_rejected_count'],
+            ['name', 'phone', 'is_qualified', 'prior_rejected_count', 'notes'],
             array_keys($row['renter']),
         );
         $this->assertEqualsCanonicalizing(

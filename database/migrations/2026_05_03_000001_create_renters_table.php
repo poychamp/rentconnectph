@@ -14,6 +14,7 @@ return new class extends Migration
             $table->string('name', 120);
             $table->string('phone', 32)->index();
             $table->boolean('is_qualified')->nullable();
+            $table->text('notes')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

@@ -48,8 +48,23 @@ class InquiryController extends Controller
         $listing = $inquiry->listing;
         abort_if(! $listing, 404, 'Listing no longer available.');
 
+        $validated = request()->validateWithBag(
+            'handoff-' . $inquiry->uuid,
+            [
+                'notes'        => 'nullable|string|max:2000',
+                'renter_notes' => 'nullable|string|max:2000',
+            ],
+            [
+                'notes.max'        => 'Inquiry notes must be 2000 characters or fewer.',
+                'renter_notes.max' => 'Renter notes must be 2000 characters or fewer.',
+            ],
+        );
+
+        $inquiryNotes = ($validated['notes']        ?? '') !== '' ? $validated['notes']        : null;
+        $renterNotes  = ($validated['renter_notes'] ?? '') !== '' ? $validated['renter_notes'] : null;
+
         try {
-            DB::transaction(function () use ($inquiry, $listing) {
+            DB::transaction(function () use ($inquiry, $listing, $inquiryNotes, $renterNotes) {
                 HandoffLock::create([
                     'inquiry_id' => $inquiry->id,
                     'listing_id' => $listing->id,
@@ -60,6 +75,11 @@ class InquiryController extends Controller
                     'status'        => InquiryStatus::handedOff()->value,
                     'handed_off_at' => Carbon::now(),
                     'handed_off_by' => auth('admin')->id(),
+                    'notes'         => $inquiryNotes,
+                ]);
+
+                $inquiry->renter->update([
+                    'notes' => $renterNotes,
                 ]);
             });
         } catch (QueryException $e) {
@@ -74,7 +94,7 @@ class InquiryController extends Controller
         }
 
         return redirect()->route('admin.filtered-inquiries.index')
-            ->with('flash', ['type' => 'success', 'message' => 'Handoff recorded — renter qualified, listing locked.']);
+            ->with('success', 'Handoff recorded — renter qualified, listing locked.');
     }
 
     private function counts(): array

@@ -10,6 +10,8 @@ const initial = window.__INITIAL_FILTERED_INQUIRIES__ ?? {
     user: null,
     inquiries: { data: [], meta: { current_page: 1, last_page: 1, total: 0, per_page: 10 }, links: {} },
     counts: { filtered: 0, all: 0 },
+    errors: {},
+    oldInput: {},
 };
 
 const user = ref(initial.user ?? {
@@ -22,6 +24,8 @@ const user = ref(initial.user ?? {
 const rows = ref(initial.inquiries.data);
 const meta = ref(initial.inquiries.meta);
 const counts = ref(initial.counts);
+const errors = ref(initial.errors ?? {});
+const oldInput = ref(initial.oldInput ?? {});
 
 function goToPage(page) {
     const params = new URLSearchParams(window.location.search);
@@ -49,6 +53,8 @@ function goToPage(page) {
 
                 <AdminInquiriesTable
                     :rows="rows"
+                    :errors="errors"
+                    :old-input="oldInput"
                     empty-message="No new inquiries yet — renters will appear here when they submit."
                 />
 

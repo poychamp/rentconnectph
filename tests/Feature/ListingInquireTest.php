@@ -306,6 +306,47 @@ class ListingInquireTest extends TestCase
         $this->assertNull(Renter::sole()->is_qualified);
     }
 
+    public function test_it_silently_ignores_notes_in_request_payload(): void
+    {
+        $listing = Listing::factory()->verified()->create();
+
+        $this->post(route('inquiries.store'), $this->validPayload($listing, [
+            'notes'        => 'attacker inquiry notes payload',
+            'renter_notes' => 'attacker renter notes payload',
+        ]));
+
+        $this->assertNull(
+            Inquiry::sole()->notes,
+            'Public inquiry submission must NOT write inquiry.notes — that column is admin-only (set during handoff).',
+        );
+        $this->assertNull(
+            Renter::sole()->notes,
+            'Public inquiry submission must NOT write renter.notes — that column is admin-only (set during handoff).',
+        );
+    }
+
+    public function test_it_preserves_existing_renter_notes_on_repeat_inquiry(): void
+    {
+        $listing = Listing::factory()->verified()->create();
+
+        $existingRenter = Renter::factory()->create([
+            'phone' => '+639175551234',
+            'notes' => 'Graveyard shift; late check-in OK with prior owner.',
+        ]);
+
+        $this->post(route('inquiries.store'), $this->validPayload($listing, [
+            'name'  => 'Different Name',
+            'phone' => '09175551234', // same E.164 normalization → firstOrCreate hits existingRenter
+        ]));
+
+        $existingRenter->refresh();
+        $this->assertSame(
+            'Graveyard shift; late check-in OK with prior owner.',
+            $existingRenter->notes,
+            'Existing renter notes from prior handoff must not be touched by a fresh public inquiry.',
+        );
+    }
+
     // ---------------------------------------------------------------------
     // Throttling + CSRF
     // ---------------------------------------------------------------------

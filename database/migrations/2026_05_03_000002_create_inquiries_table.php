@@ -14,6 +14,7 @@ return new class extends Migration
             $table->foreignId('renter_id')->constrained()->cascadeOnDelete();
             $table->foreignId('listing_id')->constrained()->cascadeOnDelete();
             $table->string('status', 32)->default('new')->index();
+            $table->text('notes')->nullable();
             $table->timestamp('handed_off_at')->nullable();
             // handed_off_by uses nullOnDelete (CLAUDE.md audit-log carve-out) —
             // actor survives a hard-deleted admin so handoff history stays
