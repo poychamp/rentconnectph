@@ -62,12 +62,12 @@ class AdminInquiryHandoffTest extends TestCase
         );
     }
 
-    public function test_it_aborts_with_422_when_inquiry_is_dead(): void
+    public function test_it_aborts_with_422_when_inquiry_is_rejected(): void
     {
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
-        $inquiry = Inquiry::factory()->dead()->create();
+        $inquiry = Inquiry::factory()->rejected()->create();
 
         $response = $this->put(route('admin.inquiries.handoff', $inquiry));
         $response->assertStatus(422);
@@ -140,20 +140,56 @@ class AdminInquiryHandoffTest extends TestCase
         $this->assertSame($admin->id, $inquiry->handed_off_by);
     }
 
-    public function test_it_makes_renter_qualified_via_derived_accessor(): void
+    public function test_it_writes_is_qualified_true_on_renter(): void
     {
+        // PRD-043 / path C: drop the derived accessor in favor of explicit
+        // column writes. Handoff writes is_qualified=true alongside the
+        // status flip + lock create. Trinary semantic: null (new) →
+        // true (qualified) → false (disqualified by reject).
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
-        $renter = Renter::factory()->create();
+        $renter  = Renter::factory()->create(['is_qualified' => null]);
         $inquiry = Inquiry::factory()->for($renter)->create();
 
-        $this->assertFalse($renter->qualified, 'Fresh renter should not be qualified before handoff.');
+        $this->assertNull(
+            $renter->is_qualified,
+            'Fresh renter starts is_qualified=null (no signal yet).',
+        );
 
         $this->put(route('admin.inquiries.handoff', $inquiry));
 
         $renter->refresh();
-        $this->assertTrue($renter->qualified, 'Renter::qualified accessor should derive true after handoff.');
+        $this->assertTrue(
+            $renter->is_qualified,
+            'Handoff must write is_qualified=true on the renter (explicit column write).',
+        );
+    }
+
+    public function test_it_re_qualifies_previously_disqualified_renter_on_handoff(): void
+    {
+        // Handoff is unconditional re: prior is_qualified state. A renter
+        // previously disqualified (e.g. earlier reject + disqualify) gets
+        // flipped back to qualified=true on handoff — admin explicitly
+        // chose to hand off, that's the new signal.
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        $renter  = Renter::factory()->create(['is_qualified' => false]);
+        $inquiry = Inquiry::factory()->for($renter)->create();
+
+        $this->assertFalse(
+            $renter->is_qualified,
+            'Renter starts disqualified.',
+        );
+
+        $this->put(route('admin.inquiries.handoff', $inquiry));
+
+        $renter->refresh();
+        $this->assertTrue(
+            $renter->is_qualified,
+            'Handoff must override previously-disqualified renter to is_qualified=true.',
+        );
     }
 
     public function test_it_redirects_to_filtered_inquiries_index_with_success_flash(): void

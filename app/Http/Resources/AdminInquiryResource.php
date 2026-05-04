@@ -17,11 +17,10 @@ class AdminInquiryResource extends JsonResource
             'status_label' => InquiryStatus::from($this->status)->label,
             'submitted_at' => $this->created_at?->toIso8601String(),
             'renter' => [
-                'name'                 => $this->renter->name,
-                'phone'                => $this->renter->phone,
-                'is_qualified'         => (bool) $this->renter->qualified,
-                'prior_rejected_count' => (int) ($this->renter->dead_inquiries_count ?? 0),
-                'notes'                => $this->renter->notes,
+                'name'         => $this->renter->name,
+                'phone'        => $this->renter->phone,
+                'is_qualified' => $this->renter->is_qualified,
+                'notes'        => $this->renter->notes,
             ],
             'listing' => [
                 'uuid'               => $this->listing->uuid,

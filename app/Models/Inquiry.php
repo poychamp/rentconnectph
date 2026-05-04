@@ -18,11 +18,14 @@ class Inquiry extends Model
         'listing_id',
         'status',
         'notes',
+        'rejected_at',
+        'rejected_by',
         'handed_off_at',
         'handed_off_by',
     ];
 
     protected $casts = [
+        'rejected_at'   => 'datetime',
         'handed_off_at' => 'datetime',
     ];
 
@@ -39,5 +42,10 @@ class Inquiry extends Model
     public function handedOffBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'handed_off_by');
+    }
+
+    public function rejectedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'rejected_by');
     }
 }

@@ -20,7 +20,7 @@ class InquiryController extends Controller
         $rows = Inquiry::query()
             ->where('status', InquiryStatus::new()->value)
             ->whereHas('listing', fn ($q) => $q->whereDoesntHave('activeHandoff'))
-            ->with(['renter' => fn ($q) => $q->withCount('deadInquiries'), 'listing'])
+            ->with(['renter', 'listing'])
             ->orderBy('created_at')
             ->orderBy('id')
             ->paginate(10);
@@ -35,10 +35,40 @@ class InquiryController extends Controller
     {
         abort_unless($inquiry->status === InquiryStatus::new()->value, 422);
 
-        $inquiry->update(['status' => InquiryStatus::dead()->value]);
+        $validated = request()->validateWithBag(
+            'reject-' . $inquiry->uuid,
+            [
+                'notes'           => 'nullable|string|max:2000',
+                'renter_notes'    => 'nullable|string|max:2000',
+                'is_disqualified' => 'sometimes|boolean',
+            ],
+            [
+                'notes.max'        => 'Inquiry notes must be 2000 characters or fewer.',
+                'renter_notes.max' => 'Renter notes must be 2000 characters or fewer.',
+            ],
+        );
+
+        $inquiryNotes = ($validated['notes']        ?? '') !== '' ? $validated['notes']        : null;
+        $renterNotes  = ($validated['renter_notes'] ?? '') !== '' ? $validated['renter_notes'] : null;
+
+        $renterUpdate = ['notes' => $renterNotes];
+        if (! empty($validated['is_disqualified'])) {
+            $renterUpdate['is_qualified'] = false;
+        }
+
+        DB::transaction(function () use ($inquiry, $inquiryNotes, $renterUpdate) {
+            $inquiry->update([
+                'status'      => InquiryStatus::rejected()->value,
+                'notes'       => $inquiryNotes,
+                'rejected_at' => Carbon::now(),
+                'rejected_by' => auth('admin')->id(),
+            ]);
+
+            $inquiry->renter->update($renterUpdate);
+        });
 
         return redirect()->route('admin.filtered-inquiries.index')
-            ->with('flash', ['type' => 'info', 'message' => 'Inquiry marked as dead.']);
+            ->with('info', 'Inquiry marked as rejected.');
     }
 
     public function handoff(Inquiry $inquiry): RedirectResponse
@@ -79,7 +109,8 @@ class InquiryController extends Controller
                 ]);
 
                 $inquiry->renter->update([
-                    'notes' => $renterNotes,
+                    'notes'        => $renterNotes,
+                    'is_qualified' => true,
                 ]);
             });
         } catch (QueryException $e) {

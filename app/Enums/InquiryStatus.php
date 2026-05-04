@@ -7,7 +7,7 @@ use Spatie\Enum\Enum;
 /**
  * @method static self new()
  * @method static self handedOff()
- * @method static self dead()
+ * @method static self rejected()
  */
 class InquiryStatus extends Enum
 {
@@ -16,7 +16,7 @@ class InquiryStatus extends Enum
         return [
             'new'        => 'new',
             'handedOff'  => 'handed_off',
-            'dead'       => 'dead',
+            'rejected'   => 'rejected',
         ];
     }
 
@@ -25,7 +25,7 @@ class InquiryStatus extends Enum
         return [
             'new'        => 'New',
             'handedOff'  => 'Handed Off',
-            'dead'       => 'Dead',
+            'rejected'   => 'Rejected',
         ];
     }
 }

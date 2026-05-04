@@ -289,7 +289,7 @@ class ListingInquireTest extends TestCase
         $listing = Listing::factory()->verified()->create();
 
         $this->post(route('inquiries.store'), $this->validPayload($listing, [
-            'status' => InquiryStatus::dead()->value,
+            'status' => InquiryStatus::rejected()->value,
         ]));
 
         $this->assertSame(InquiryStatus::new()->value, Inquiry::sole()->status);

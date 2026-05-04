@@ -23,9 +23,13 @@ class InquiryFactory extends Factory
         ];
     }
 
-    public function dead(): static
+    public function rejected(?User $actor = null): static
     {
-        return $this->state(['status' => InquiryStatus::dead()->value]);
+        return $this->state(fn () => [
+            'status'      => InquiryStatus::rejected()->value,
+            'rejected_at' => Carbon::now(),
+            'rejected_by' => $actor?->id ?? User::factory()->superAdmin(),
+        ]);
     }
 
     public function handedOff(?User $actor = null): static

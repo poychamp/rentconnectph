@@ -29,11 +29,12 @@ const handoffErrors = ref({});
 const handoffNotesRef       = ref(null);
 const handoffRenterNotesRef = ref(null);
 
-// Client-side validation re-enabled after server-side error display +
-// field-value retention smoke. Full bundle: VALIDATORS map mirrors server
-// rules, @blur fires validateField, @focus fires clearFieldError, submit
-// calls validateAll which focuses the first invalid field on failure.
-// Server (validateWithBag) stays as the final defense.
+// Client-side validation re-enabled. Full bundle for both handoff and
+// reject modals: VALIDATORS map mirrors server rules, @blur fires
+// validateField (or validateRejectField), @focus fires clearFieldError,
+// submit calls validateAll (or validateAllReject) which focuses the first
+// invalid field on failure. Server (validateWithBag per-row named bag)
+// stays as the final defense.
 const CLIENT_VALIDATION_ENABLED = true;
 
 const VALIDATORS = {
@@ -77,6 +78,55 @@ function counterText(field) {
     return `${(handoffForm.value[field] ?? '').length} / 2000`;
 }
 
+// Reject form mirrors handoff — own named bag, own form/errors refs, own
+// validator helpers. Duplicated rather than abstracted per
+// `feedback_separate_files_over_shared_abstractions.md`.
+const rejectBag = `reject-${props.inquiry.uuid}`;
+const rejectServerErrors = (props.errors && props.errors[rejectBag]) ? props.errors[rejectBag] : null;
+
+const rejectForm = ref({
+    notes:           rejectServerErrors ? (props.oldInput?.notes ?? '') : '',
+    renter_notes:    rejectServerErrors ? (props.oldInput?.renter_notes ?? '') : (props.inquiry.renter.notes ?? ''),
+    is_disqualified: rejectServerErrors ? (String(props.oldInput?.is_disqualified ?? '') === '1') : true,
+});
+
+const rejectErrors = ref({});
+
+const rejectNotesRef       = ref(null);
+const rejectRenterNotesRef = ref(null);
+
+function validateRejectField(field) {
+    if (!CLIENT_VALIDATION_ENABLED) return;
+    const error = VALIDATORS[field]?.(rejectForm.value[field]);
+    if (error) rejectErrors.value[field] = error;
+    else delete rejectErrors.value[field];
+}
+
+function clearRejectFieldError(field) {
+    delete rejectErrors.value[field];
+}
+
+function validateAllReject() {
+    if (!CLIENT_VALIDATION_ENABLED) return true;
+    const next = {};
+    for (const field of Object.keys(VALIDATORS)) {
+        const error = VALIDATORS[field](rejectForm.value[field]);
+        if (error) next[field] = error;
+    }
+    rejectErrors.value = next;
+    return Object.keys(next).length === 0;
+}
+
+function counterClassReject(field) {
+    return (rejectForm.value[field] ?? '').length > 2000
+        ? 'text-red-500 dark:text-red-400'
+        : 'text-gray-500 dark:text-gray-400';
+}
+
+function counterTextReject(field) {
+    return `${(rejectForm.value[field] ?? '').length} / 2000`;
+}
+
 const submittedAgo = computed(() => {
     if (!props.inquiry.submitted_at) return '';
     const then = new Date(props.inquiry.submitted_at);
@@ -114,20 +164,41 @@ const handoffFormEl    = ref(null);
 
 function openRejectModal()   { showRejectModal.value = true; }
 function closeRejectModal()  { showRejectModal.value = false; }
-function submitReject()      { rejectFormEl.value?.submit(); }
+
+function submitReject() {
+    if (!validateAllReject()) {
+        nextTick(() => {
+            if (rejectErrors.value.renter_notes) {
+                rejectRenterNotesRef.value?.focus();
+            } else if (rejectErrors.value.notes) {
+                rejectNotesRef.value?.focus();
+            }
+        });
+        return;
+    }
+    rejectFormEl.value?.submit();
+}
 
 function openHandoffModal()  { showHandoffModal.value = true; }
 function closeHandoffModal() { showHandoffModal.value = false; }
 
-// On mount: if this row was the target of the failed submit, populate
-// handoffErrors from the named bag and auto-open the modal so the user
-// sees their retained input + the server's complaint.
+// On mount: if this row was the target of a failed submit (handoff OR
+// reject), populate that bundle's errors from the named bag and auto-open
+// the corresponding modal so the user sees their retained input + the
+// server's complaint.
 onMounted(() => {
-    if (!myServerErrors) return;
-    for (const [field, messages] of Object.entries(myServerErrors)) {
-        handoffErrors.value[field] = Array.isArray(messages) ? messages[0] : messages;
+    if (myServerErrors) {
+        for (const [field, messages] of Object.entries(myServerErrors)) {
+            handoffErrors.value[field] = Array.isArray(messages) ? messages[0] : messages;
+        }
+        showHandoffModal.value = true;
     }
-    showHandoffModal.value = true;
+    if (rejectServerErrors) {
+        for (const [field, messages] of Object.entries(rejectServerErrors)) {
+            rejectErrors.value[field] = Array.isArray(messages) ? messages[0] : messages;
+        }
+        showRejectModal.value = true;
+    }
 });
 
 function submitHandoff() {
@@ -184,18 +255,18 @@ function submitHandoff() {
                         {{ inquiry.renter.name }}
                     </span>
                     <span
-                        v-if="inquiry.renter.is_qualified"
+                        v-if="inquiry.renter.is_qualified === true"
                         class="inline-block text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 font-semibold uppercase tracking-wider"
                         title="Renter has been qualified before — given owner contact via handoff"
                     >
                         Returning
                     </span>
                     <span
-                        v-if="inquiry.renter.prior_rejected_count > 0"
-                        class="inline-block text-[10px] px-1.5 py-0.5 rounded-full bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 font-semibold uppercase tracking-wider"
-                        :title="`Previously rejected ${inquiry.renter.prior_rejected_count} time${inquiry.renter.prior_rejected_count > 1 ? 's' : ''}`"
+                        v-else-if="inquiry.renter.is_qualified === false"
+                        class="inline-block text-[10px] px-1.5 py-0.5 rounded-full bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 font-semibold uppercase tracking-wider"
+                        title="Renter was explicitly disqualified on a prior reject"
                     >
-                        Rejected{{ inquiry.renter.prior_rejected_count > 1 ? ` ×${inquiry.renter.prior_rejected_count}` : '' }}
+                        Disqualified
                     </span>
                 </div>
                 <p class="font-mono text-sm text-orange-600 dark:text-orange-400">
@@ -255,6 +326,9 @@ function submitHandoff() {
             <form ref="rejectFormEl" :action="rejectUrl" method="POST" class="inline">
                 <input type="hidden" name="_token" :value="csrfToken">
                 <input type="hidden" name="_method" value="PUT">
+                <input type="hidden" name="notes" :value="rejectForm.notes">
+                <input type="hidden" name="renter_notes" :value="rejectForm.renter_notes">
+                <input type="hidden" name="is_disqualified" :value="rejectForm.is_disqualified ? '1' : '0'">
                 <button
                     type="button"
                     @click="openRejectModal"
@@ -286,7 +360,7 @@ function submitHandoff() {
                 >
                     <div class="absolute inset-0 bg-black/50" @click="closeRejectModal"></div>
 
-                    <div class="relative w-full max-w-md rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xl p-6">
+                    <div class="relative w-full max-w-xl rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xl p-6 max-h-[90vh] overflow-y-auto">
                         <div class="flex items-start gap-4">
                             <div class="flex-shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400">
                                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -299,8 +373,85 @@ function submitHandoff() {
                                 <h3 class="text-base font-semibold text-gray-900 dark:text-white">
                                     Reject inquiry from {{ inquiry.renter.name }}?
                                 </h3>
-                                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                                    The inquiry will be marked as dead and removed from the queue. The renter's prior-rejected count goes up by one.
+                                <ul class="mt-2 text-sm text-gray-500 dark:text-gray-400 space-y-1 list-disc list-inside">
+                                    <li>The inquiry will be marked as rejected and removed from the queue.</li>
+                                    <li>The renter's prior-rejected count goes up by one.</li>
+                                    <li>Notes below are saved with the rejection.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Disqualify checkbox -->
+                        <div class="mt-5 rounded-md border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/30 p-3">
+                            <label class="inline-flex items-start gap-2 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    v-model="rejectForm.is_disqualified"
+                                    class="mt-0.5 h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-rose-600 focus:ring-rose-500 cursor-pointer"
+                                >
+                                <span class="text-sm">
+                                    <span class="font-medium text-gray-900 dark:text-white">Disqualify this renter</span>
+                                    <span class="block text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                        Marks the renter as disqualified — they won't show as Returning on future inquiries. Leave unchecked to preserve a previously-qualified renter.
+                                    </span>
+                                </span>
+                            </label>
+                        </div>
+
+                        <!-- Renter notes (durable across inquiries) -->
+                        <div class="mt-4">
+                            <label for="reject-renter-notes" class="block text-sm font-medium text-gray-900 dark:text-white">
+                                About the renter (durable)
+                            </label>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                Job, family situation, move-in window, accessibility needs, etc. Pre-filled from prior handoffs.
+                            </p>
+                            <textarea
+                                id="reject-renter-notes"
+                                ref="rejectRenterNotesRef"
+                                v-model="rejectForm.renter_notes"
+                                rows="4"
+                                placeholder="What should the next caller know about this renter?"
+                                @blur="validateRejectField('renter_notes')"
+                                @focus="clearRejectFieldError('renter_notes')"
+                                class="mt-1.5 block w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white px-3 py-2 resize-y focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                            ></textarea>
+                            <div class="mt-1 flex items-center justify-between">
+                                <p v-if="rejectErrors.renter_notes" class="text-xs text-red-600 dark:text-red-400">
+                                    {{ rejectErrors.renter_notes }}
+                                </p>
+                                <p v-else class="text-xs text-gray-400 dark:text-gray-500">&nbsp;</p>
+                                <p :class="counterClassReject('renter_notes')" class="text-xs font-mono">
+                                    {{ counterTextReject('renter_notes') }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Inquiry notes (per-event rejection reason) -->
+                        <div class="mt-4">
+                            <label for="reject-notes" class="block text-sm font-medium text-gray-900 dark:text-white">
+                                About this rejection
+                            </label>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                Why is this inquiry being rejected? Ghosted callbacks, budget mismatch, unreachable phone, etc.
+                            </p>
+                            <textarea
+                                id="reject-notes"
+                                ref="rejectNotesRef"
+                                v-model="rejectForm.notes"
+                                rows="4"
+                                placeholder="What's the reason for rejecting this inquiry?"
+                                @blur="validateRejectField('notes')"
+                                @focus="clearRejectFieldError('notes')"
+                                class="mt-1.5 block w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white px-3 py-2 resize-y focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                            ></textarea>
+                            <div class="mt-1 flex items-center justify-between">
+                                <p v-if="rejectErrors.notes" class="text-xs text-red-600 dark:text-red-400">
+                                    {{ rejectErrors.notes }}
+                                </p>
+                                <p v-else class="text-xs text-gray-400 dark:text-gray-500">&nbsp;</p>
+                                <p :class="counterClassReject('notes')" class="text-xs font-mono">
+                                    {{ counterTextReject('notes') }}
                                 </p>
                             </div>
                         </div>

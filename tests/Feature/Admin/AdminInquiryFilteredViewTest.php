@@ -63,8 +63,8 @@ class AdminInquiryFilteredViewTest extends TestCase
         $this->actingAs($admin, 'admin');
 
         Inquiry::factory()->create();
-        Inquiry::factory()->dead()->create();
-        Inquiry::factory()->dead()->create();
+        Inquiry::factory()->rejected()->create();
+        Inquiry::factory()->rejected()->create();
 
         $response = $this->get(route('admin.filtered-inquiries.index'));
         $response->assertOk();
@@ -165,7 +165,7 @@ class AdminInquiryFilteredViewTest extends TestCase
             array_keys($row),
         );
         $this->assertEqualsCanonicalizing(
-            ['name', 'phone', 'is_qualified', 'prior_rejected_count', 'notes'],
+            ['name', 'phone', 'is_qualified', 'notes'],
             array_keys($row['renter']),
         );
         $this->assertEqualsCanonicalizing(
@@ -199,7 +199,7 @@ class AdminInquiryFilteredViewTest extends TestCase
         $this->actingAs($admin, 'admin');
 
         Inquiry::factory()->count(3)->create();
-        Inquiry::factory()->dead()->count(2)->create();
+        Inquiry::factory()->rejected()->count(2)->create();
 
         $response = $this->get(route('admin.filtered-inquiries.index'));
         $response->assertOk();
