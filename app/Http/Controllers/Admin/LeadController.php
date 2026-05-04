@@ -5,14 +5,39 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\InquiryStatus;
 use App\Enums\LeadStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\AdminLeadResource;
 use App\Models\Inquiry;
 use App\Models\Lead;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
 
 class LeadController extends Controller
 {
+    public function index(Request $request): View
+    {
+        $status = $request->query('status');
+
+        $query = Lead::query()
+            ->with(['inquiry.renter', 'inquiry.listing', 'createdBy']);
+
+        if ($status !== null && in_array($status, LeadStatus::toValues(), true)) {
+            $query->where('status', $status);
+        }
+
+        $rows = $query
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->paginate(10)
+            ->appends($request->only(['status']));
+
+        return view('admin.leads.index', [
+            'leads'   => AdminLeadResource::collection($rows)->response()->getData(true),
+            'filters' => ['status' => $status],
+        ]);
+    }
+
     public function store(Request $request, Inquiry $inquiry): RedirectResponse
     {
         $bag = 'lead-' . $inquiry->uuid;

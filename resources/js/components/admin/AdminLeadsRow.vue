@@ -1,0 +1,380 @@
+<script setup>
+import { computed, ref } from 'vue';
+
+const props = defineProps({
+    lead: { type: Object, required: true },
+});
+
+const createdAgo = computed(() => {
+    if (!props.lead.created_at) return '';
+    const then = new Date(props.lead.created_at);
+    const diffMs = Date.now() - then.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return 'just now';
+    if (diffMin < 60) return `${diffMin}m ago`;
+    const diffHr = Math.floor(diffMin / 60);
+    if (diffHr < 24) return `${diffHr}h ago`;
+    const diffDay = Math.floor(diffHr / 24);
+    if (diffDay < 7) return `${diffDay}d ago`;
+    return then.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' });
+});
+
+const createdAbsolute = computed(() => {
+    if (!props.lead.created_at) return '';
+    return new Date(props.lead.created_at).toLocaleString('en-PH', {
+        year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
+    });
+});
+
+const statusBadgeClass = computed(() => {
+    const colors = {
+        pending:   'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300',
+        sent:      'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300',
+        finalized: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300',
+        lost:      'bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300',
+    };
+    return colors[props.lead.status] ?? 'bg-gray-100 dark:bg-gray-800/40 text-gray-700 dark:text-gray-300';
+});
+
+const renterBadge = computed(() => {
+    if (props.lead.renter.is_qualified === true)  return { label: 'Returning',    color: 'emerald' };
+    if (props.lead.renter.is_qualified === false) return { label: 'Disqualified', color: 'rose' };
+    return null;
+});
+
+function toLocal(phone) {
+    if (!phone || !phone.startsWith('+63')) return null;
+    return '0' + phone.slice(3);
+}
+
+function fmtAbsolute(iso) {
+    if (!iso) return '';
+    return new Date(iso).toLocaleString('en-PH', {
+        year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
+    });
+}
+
+const monthlyRentDisplay = computed(() => {
+    if (props.lead.monthly_rent == null) return '—';
+    return new Intl.NumberFormat('en-PH', {
+        style: 'currency', currency: 'PHP', maximumFractionDigits: 0,
+    }).format(props.lead.monthly_rent);
+});
+
+// State-aware action button stubs. NO @click, NO form, NO Teleport, NO axios
+// per feedback_view_page_button_stubs.md. Functional handlers (PUT /send,
+// /finalize, /lose) ship in follow-up FRDs.
+const actionButtons = computed(() => {
+    if (props.lead.status === 'pending') {
+        return [
+            { label: 'Mark as Sent', color: 'blue' },
+            { label: 'Mark Lost',    color: 'rose' },
+        ];
+    }
+    if (props.lead.status === 'sent') {
+        return [
+            { label: 'Mark Finalized', color: 'emerald' },
+            { label: 'Mark Lost',      color: 'rose' },
+        ];
+    }
+    return [];
+});
+
+function actionBtnClass(color) {
+    return {
+        blue:    'border-blue-200 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20',
+        emerald: 'border-emerald-200 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20',
+        rose:    'border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20',
+    }[color];
+}
+
+// Preview Message — generates an editable broker template from the lead's
+// data. Pure frontend; no backend POST. navigator.clipboard with
+// document.execCommand fallback for insecure-context dev (rentconnectph.test)
+// per CLAUDE.md "Browser secure-context restrictions".
+const showPreviewModal = ref(false);
+const previewText      = ref('');
+const copyState        = ref('idle');  // idle | success | error
+
+function buildTemplate() {
+    const l = props.lead;
+    const url = window.location.origin + l.listing_detail_url;
+    const lines = ['New lead from RentConnectPH:', ''];
+
+    lines.push('LISTING');
+    lines.push(l.listing.title);
+    if (l.monthly_rent != null) {
+        lines.push(`₱${Number(l.monthly_rent).toLocaleString('en-PH')}/month`);
+    }
+    lines.push(url);
+    lines.push('');
+
+    lines.push('OWNER CONTACT (call first)');
+    if (l.listing.contact_phone) {
+        const localOwner = toLocal(l.listing.contact_phone);
+        lines.push(`Phone: ${localOwner ?? l.listing.contact_phone}`);
+    }
+    if (l.listing.contact_type_label) {
+        lines.push(`Role: ${l.listing.contact_type_label}`);
+    }
+    if (l.listing.verification_notes) {
+        lines.push(`Verification: ${l.listing.verification_notes}`);
+    }
+    lines.push('');
+
+    lines.push('RENTER');
+    lines.push(`Name: ${l.renter.name}`);
+    const localRenter = toLocal(l.renter.phone);
+    lines.push(`Phone: ${localRenter ?? l.renter.phone}`);
+    if (l.renter.notes) {
+        lines.push(`Renter notes: ${l.renter.notes}`);
+    }
+    if (l.inquiry.notes) {
+        lines.push(`Inquiry context: ${l.inquiry.notes}`);
+    }
+
+    if (l.notes) {
+        lines.push('');
+        lines.push('LEAD CONTEXT');
+        lines.push(l.notes);
+    }
+
+    return lines.join('\n');
+}
+
+function openPreviewModal() {
+    previewText.value = buildTemplate();
+    copyState.value   = 'idle';
+    showPreviewModal.value = true;
+}
+
+function closePreviewModal() {
+    showPreviewModal.value = false;
+}
+
+async function copyMessage() {
+    const text = previewText.value;
+
+    if (navigator.clipboard?.writeText) {
+        try {
+            await navigator.clipboard.writeText(text);
+            copyState.value = 'success';
+            setTimeout(() => { if (copyState.value === 'success') copyState.value = 'idle'; }, 2000);
+            return;
+        } catch (e) {
+            // fall through to execCommand fallback (insecure-context dev)
+        }
+    }
+
+    try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        if (ok) {
+            copyState.value = 'success';
+            setTimeout(() => { if (copyState.value === 'success') copyState.value = 'idle'; }, 2000);
+        } else {
+            copyState.value = 'error';
+            setTimeout(() => { if (copyState.value === 'error') copyState.value = 'idle'; }, 3000);
+        }
+    } catch (e) {
+        copyState.value = 'error';
+        setTimeout(() => { if (copyState.value === 'error') copyState.value = 'idle'; }, 3000);
+    }
+}
+</script>
+
+<template>
+    <article class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5 hover:shadow-sm transition-shadow">
+        <!-- Header: listing + status badge + created-ago -->
+        <div class="flex items-start justify-between gap-4 mb-4">
+            <div class="min-w-0 flex-1">
+                <a
+                    :href="lead.listing_detail_url"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="text-base font-semibold text-gray-900 dark:text-white hover:text-orange-600 dark:hover:text-orange-400 transition truncate inline-flex items-center gap-1.5"
+                >
+                    {{ lead.listing.title }}
+                    <svg class="w-3.5 h-3.5 opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14 21 3" />
+                    </svg>
+                </a>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ lead.listing.barangay_label }}</p>
+            </div>
+            <div class="shrink-0 flex items-center gap-2">
+                <span :class="statusBadgeClass" class="text-[11px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider">
+                    {{ lead.status_label }}
+                </span>
+                <span :title="createdAbsolute" class="text-xs text-gray-500 dark:text-gray-400">{{ createdAgo }}</span>
+            </div>
+        </div>
+
+        <!-- 2-col body: renter card + owner-contact card -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+            <!-- Renter card (orange) -->
+            <div class="rounded-md bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-900/40 p-3">
+                <div class="flex items-center justify-between gap-2 mb-1">
+                    <span class="text-[10px] font-semibold uppercase tracking-wider text-orange-700 dark:text-orange-400">Call this renter</span>
+                    <span
+                        v-if="renterBadge"
+                        :class="renterBadge.color === 'emerald'
+                            ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300'
+                            : 'bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300'"
+                        class="text-[10px] px-1.5 py-0.5 rounded-full font-semibold"
+                    >
+                        {{ renterBadge.label }}
+                    </span>
+                </div>
+                <div class="text-sm font-medium text-gray-900 dark:text-white">{{ lead.renter.name }}</div>
+                <div class="font-mono text-xs text-gray-700 dark:text-gray-300">{{ toLocal(lead.renter.phone) ?? lead.renter.phone }}</div>
+                <div v-if="toLocal(lead.renter.phone)" class="font-mono text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">{{ lead.renter.phone }}</div>
+                <div v-if="lead.renter.notes" class="text-xs mt-2 pt-2 border-t border-orange-200 dark:border-orange-900/40">
+                    <p class="text-[10px] font-semibold uppercase tracking-wider text-orange-700 dark:text-orange-400 mb-0.5">Renter notes</p>
+                    <p class="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{{ lead.renter.notes }}</p>
+                </div>
+                <div v-if="lead.inquiry.notes" class="text-xs mt-2 pt-2 border-t border-orange-200 dark:border-orange-900/40">
+                    <p class="text-[10px] font-semibold uppercase tracking-wider text-orange-700 dark:text-orange-400 mb-0.5">Inquiry notes</p>
+                    <p class="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{{ lead.inquiry.notes }}</p>
+                </div>
+            </div>
+
+            <!-- Owner-contact card (gray) -->
+            <div class="rounded-md bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700 p-3">
+                <span class="text-[10px] font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Owner contact</span>
+                <div class="font-mono text-sm text-gray-900 dark:text-white mt-1">{{ toLocal(lead.listing.contact_phone) ?? lead.listing.contact_phone ?? '—' }}</div>
+                <div v-if="lead.listing.contact_type_label" class="text-xs text-gray-600 dark:text-gray-300 mt-0.5">{{ lead.listing.contact_type_label }}</div>
+                <p v-if="lead.listing.verification_notes" class="text-xs text-gray-700 dark:text-gray-300 mt-2 pt-2 border-t border-gray-200 dark:border-gray-700 whitespace-pre-wrap">
+                    {{ lead.listing.verification_notes }}
+                </p>
+            </div>
+        </div>
+
+        <!-- Lead-specific block: monthly rent + lead notes + inquiry notes -->
+        <div class="rounded-md border border-gray-200 dark:border-gray-700 p-3 mb-4">
+            <div class="flex items-center justify-between gap-2 mb-2">
+                <span class="text-[10px] font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">Lead context</span>
+                <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ monthlyRentDisplay }}<span class="text-xs font-normal text-gray-500 dark:text-gray-400 ml-1">/ month</span></span>
+            </div>
+            <div v-if="lead.notes" class="text-xs">
+                <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-0.5">Lead notes</p>
+                <p class="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{{ lead.notes }}</p>
+            </div>
+            <div v-if="lead.inquiry.notes" class="text-xs mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-0.5">Inquiry notes</p>
+                <p class="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{{ lead.inquiry.notes }}</p>
+            </div>
+            <div v-if="lead.listing.verification_notes" class="text-xs mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                <p class="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-0.5">Verification notes</p>
+                <p class="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{{ lead.listing.verification_notes }}</p>
+            </div>
+        </div>
+
+        <!-- Footer: created-by + state-companion timestamps + action button stubs -->
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+            <div class="text-xs text-gray-500 dark:text-gray-400 space-y-0.5">
+                <p>
+                    Marked by
+                    <span class="font-medium text-gray-700 dark:text-gray-300">{{ lead.created_by_name ?? 'Deleted admin' }}</span>
+                    on {{ fmtAbsolute(lead.created_at) }}
+                </p>
+                <p v-if="lead.sent_at">Sent on <span class="font-medium text-gray-700 dark:text-gray-300">{{ fmtAbsolute(lead.sent_at) }}</span></p>
+                <p v-if="lead.finalized_at">Finalized on <span class="font-medium text-gray-700 dark:text-gray-300">{{ fmtAbsolute(lead.finalized_at) }}</span></p>
+                <p v-if="lead.lost_at">Lost on <span class="font-medium text-gray-700 dark:text-gray-300">{{ fmtAbsolute(lead.lost_at) }}</span></p>
+            </div>
+            <div class="flex items-center gap-2 shrink-0 flex-wrap">
+                <button
+                    type="button"
+                    @click="openPreviewModal"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition cursor-pointer"
+                >
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8 M16 17H8 M10 9H8" />
+                    </svg>
+                    Preview Message
+                </button>
+                <button
+                    v-for="btn in actionButtons"
+                    :key="btn.label"
+                    type="button"
+                    :class="actionBtnClass(btn.color)"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md border transition cursor-pointer"
+                >
+                    {{ btn.label }}
+                </button>
+            </div>
+
+            <Teleport to="body">
+                <div
+                    v-if="showPreviewModal"
+                    class="fixed inset-0 z-50 flex items-center justify-center p-4"
+                    role="dialog"
+                    aria-modal="true"
+                >
+                    <div class="absolute inset-0 bg-black/50" @click="closePreviewModal"></div>
+                    <div class="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xl p-6">
+                        <div class="flex items-start justify-between gap-4 mb-3">
+                            <div class="min-w-0">
+                                <h3 class="text-base font-semibold text-gray-900 dark:text-white">Message to broker</h3>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                    Edit before copying. Draft only — send via your usual channel (SMS, FB Messenger, etc.).
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                @click="closePreviewModal"
+                                class="shrink-0 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition cursor-pointer"
+                                aria-label="Close"
+                            >
+                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M18 6 6 18 M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        <textarea
+                            v-model="previewText"
+                            rows="14"
+                            class="w-full font-mono text-xs rounded-md border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 p-3 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-y"
+                        ></textarea>
+                        <div class="mt-4 flex items-center justify-between gap-2 flex-wrap">
+                            <p
+                                v-if="copyState === 'success'"
+                                class="text-xs text-emerald-600 dark:text-emerald-400 font-medium"
+                            >
+                                Copied to clipboard.
+                            </p>
+                            <p
+                                v-else-if="copyState === 'error'"
+                                class="text-xs text-rose-600 dark:text-rose-400 font-medium"
+                            >
+                                Couldn't copy automatically. Select the text and use Ctrl/⌘+C.
+                            </p>
+                            <span v-else class="text-xs text-transparent select-none">.</span>
+                            <div class="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    @click="closePreviewModal"
+                                    class="px-3 py-1.5 rounded-md border border-gray-300 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition cursor-pointer"
+                                >
+                                    Close
+                                </button>
+                                <button
+                                    type="button"
+                                    @click="copyMessage"
+                                    class="px-3 py-1.5 rounded-md bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold transition cursor-pointer"
+                                >
+                                    Copy
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </Teleport>
+        </div>
+    </article>
+</template>
