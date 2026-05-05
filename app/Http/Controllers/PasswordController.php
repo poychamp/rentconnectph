@@ -22,6 +22,14 @@ class PasswordController extends Controller
         return view('password.request');
     }
 
+    public function reset(string $token, Request $request): View
+    {
+        return view('password.reset', [
+            'token' => $token,
+            'email' => $request->query('email', ''),
+        ]);
+    }
+
     public function email(Request $request): RedirectResponse
     {
         $request->validate([

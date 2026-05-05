@@ -22,7 +22,9 @@ Route::middleware('bfcache')->group(function () {
         ->middleware('guest.admin')
         ->name('password.request');
 
-    Route::get('/reset-password/{token}', fn () => abort(404))->name('password.reset');
+    Route::get('/reset-password/{token}', [PasswordController::class, 'reset'])
+        ->middleware('guest.admin')
+        ->name('password.reset');
 });
 
 Route::post('/contact', [ContactController::class, 'send'])

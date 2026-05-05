@@ -19,6 +19,7 @@ if (el) {
         'contact': () => import('./Contact.vue'),
         'contact-sent': () => import('./ContactSent.vue'),
         'forgot-password': () => import('./ForgotPassword.vue'),
+        'reset-password': () => import('./ResetPassword.vue'),
     };
 
     const loadRoot = roots[page] || roots.home;

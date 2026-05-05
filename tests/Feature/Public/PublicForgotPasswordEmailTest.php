@@ -64,4 +64,22 @@ class PublicForgotPasswordEmailTest extends TestCase
         $this->post('/forgot-password', ['email' => 'spam6@example.com'])
             ->assertStatus(429);
     }
+
+    public function test_it_redirects_authed_admins_away_from_email_route(): void
+    {
+        $admin = User::factory()->create();
+
+        $this->actingAs($admin, 'admin')
+            ->post('/forgot-password', ['email' => 'admin@example.com'])
+            ->assertRedirect(route('admin.dashboard'));
+    }
+
+    public function test_it_redirects_authed_field_officers_away_from_email_route(): void
+    {
+        $field = User::factory()->field()->create();
+
+        $this->actingAs($field, 'admin')
+            ->post('/forgot-password', ['email' => 'admin@example.com'])
+            ->assertRedirect(route('field.dashboard'));
+    }
 }
