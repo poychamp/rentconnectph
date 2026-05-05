@@ -13,6 +13,7 @@ if (el) {
 
     const roots = {
         'auth-login':               () => import('./AuthLogin.vue'),
+        'auth-profile':             () => import('./AuthProfile.vue'),
         'admin-dashboard':          () => import('./AdminDashboard.vue'),
         'add-listing':              () => import('./AdminListingCreate.vue'),
         'admin-edit-listing':       () => import('./AdminListingEdit.vue'),

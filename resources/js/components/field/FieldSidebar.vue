@@ -194,9 +194,13 @@ const iconPaths = {
 
         <!-- Footer (user) -->
         <div class="border-t border-gray-200 dark:border-gray-800 px-3 py-3 flex items-center gap-3">
-            <div class="w-9 h-9 rounded-full bg-orange-500 text-white text-sm font-semibold flex items-center justify-center shrink-0">
+            <a
+                href="/auth/profile"
+                title="Edit profile"
+                class="w-9 h-9 rounded-full bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold flex items-center justify-center shrink-0 transition"
+            >
                 {{ user.initials }}
-            </div>
+            </a>
             <div class="flex-1 min-w-0">
                 <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ user.name }}</p>
                 <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ user.role_label }}</p>
