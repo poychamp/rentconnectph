@@ -18,6 +18,7 @@ if (el) {
         'inquiry-success': () => import('./InquirySuccess.vue'),
         'contact': () => import('./Contact.vue'),
         'contact-sent': () => import('./ContactSent.vue'),
+        'forgot-password': () => import('./ForgotPassword.vue'),
     };
 
     const loadRoot = roots[page] || roots.home;

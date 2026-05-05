@@ -102,7 +102,7 @@ function onSubmit() {
                         </button>
                     </div>
                     <div class="mt-1.5 flex justify-end">
-                        <a href="#" class="text-xs text-orange-500 hover:text-orange-600">Forgot password?</a>
+                        <a href="/forgot-password" class="text-xs text-orange-500 hover:text-orange-600">Forgot password?</a>
                     </div>
                 </div>
 
