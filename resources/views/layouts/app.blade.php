@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="description" content="@yield('description', 'RentConnectPH connects renters with verified property owners across Cagayan de Oro. Browse apartments, condos, houses, and bedspaces with transparent pricing.')">
+    <meta name="theme-color" content="#f97316">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
     <title>@yield('title', 'RentConnectPH')</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
