@@ -167,4 +167,51 @@ class LeadController extends Controller
 
         return back()->with('success', 'Lead marked as lost.');
     }
+
+    public function finalize(Request $request, Lead $lead): RedirectResponse
+    {
+        $bag = 'finalize-' . $lead->uuid;
+
+        // State guard via ValidationException so it flashes into the same
+        // named bag the validation errors use — frontend reads ONE bag per
+        // row, displays everything inline. ValidationException's default
+        // render() does back()->withInput()->withErrors(), so notes are
+        // retained automatically. Per feedback_state_guard_via_validation_exception.md.
+        //
+        // Single source state: sent only. Mirrors PRD-047 /send shape (one
+        // legal source, three illegal). Three state-guard message branches.
+        if ($lead->status !== LeadStatus::sent()->value) {
+            $message = match ($lead->status) {
+                LeadStatus::pending()->value   => 'Cannot finalize a pending lead.',
+                LeadStatus::finalized()->value => 'This lead has already been finalized.',
+                LeadStatus::lost()->value      => 'Cannot finalize a lost lead.',
+                default                        => 'This lead cannot be finalized from its current state.',
+            };
+
+            throw ValidationException::withMessages([
+                '_state' => $message,
+            ])->errorBag($bag);
+        }
+
+        $validated = $request->validateWithBag(
+            $bag,
+            ['notes' => 'nullable|string|max:2000'],
+            ['notes.max' => 'Lead notes must be 2000 characters or fewer.'],
+        );
+
+        $notes = ($validated['notes'] ?? '') !== '' ? $validated['notes'] : null;
+
+        // sent_at is intentionally NOT in the update payload — preserved
+        // when flipping sent→finalized. Pinned via AdminLeadFinalizeTest #13.
+        // Mirrors AdminLeadLoseTest #13's invariant for sent→lost (FRD-048).
+        DB::transaction(function () use ($lead, $notes) {
+            $lead->update([
+                'status'       => LeadStatus::finalized()->value,
+                'finalized_at' => Carbon::now(),
+                'notes'        => $notes,
+            ]);
+        });
+
+        return back()->with('success', 'Lead marked as finalized.');
+    }
 }

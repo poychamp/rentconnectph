@@ -65,28 +65,6 @@ const monthlyRentDisplay = computed(() => {
     }).format(props.lead.monthly_rent);
 });
 
-// State-aware DEAD-STUB action buttons. After PRD-048 (Lose), the only
-// remaining stub is Mark Finalized on `sent` rows. Mark-as-Sent (FRD-047)
-// + Mark Lost (FRD-048) are extracted into their own conditional render
-// blocks below — wired with form + Teleport modal + named bag. PRD-049
-// (Finalize) will eliminate the last stub; this v-for can be deleted then.
-const actionButtons = computed(() => {
-    if (props.lead.status === 'sent') {
-        return [
-            { label: 'Mark Finalized', color: 'emerald' },
-        ];
-    }
-    return [];
-});
-
-function actionBtnClass(color) {
-    return {
-        blue:    'border-blue-200 dark:border-blue-900/50 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20',
-        emerald: 'border-emerald-200 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20',
-        rose:    'border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20',
-    }[color];
-}
-
 // ---------------------------------------------------------------------
 // Mark as Sent — PUT /admin/leads/{uuid}/send (FRD-047).
 // State A: lead.status === 'pending' → button + form + Teleport modal.
@@ -261,6 +239,94 @@ function submitLose() {
     loseFormEl.value?.submit();
 }
 
+// ---------------------------------------------------------------------
+// Mark Finalized — PUT /admin/leads/{uuid}/finalize (FRD-049).
+// State A: lead.status === 'sent' → button + form + Teleport modal.
+// Named bag: `finalize-{uuid}` per row.
+// Notes overwrite (locked from PRD-047) — payload replaces existing
+// column; empty/missing payload normalizes to null and clears.
+// sent_at is PRESERVED on sent→finalized flip (controller's update
+// payload only touches status/finalized_at/notes). Pinned via test #13.
+// Auto-open-on-error: when this row's named bag has errors, populate
+// from oldInput.notes + open modal at mount.
+// Defensive UX: when NOT a failed-submit target, pre-fill textarea with
+// existing lead.notes (third consumer of pattern — codification candidate).
+// ---------------------------------------------------------------------
+
+const CLIENT_VALIDATION_ENABLED_FINALIZE = true;
+
+const finalizeUrl = computed(() => `/admin/leads/${props.lead.uuid}/finalize`);
+
+const finalizeBag        = `finalize-${props.lead.uuid}`;
+const finalizeServerErrs = (props.errors && props.errors[finalizeBag]) ? props.errors[finalizeBag] : null;
+
+const finalizeForm = ref({
+    notes: finalizeServerErrs
+        ? (props.oldInput?.notes ?? '')
+        : (props.lead.notes ?? ''),
+});
+
+const finalizeErrors = ref({});
+
+const finalizeNotesRef = ref(null);
+const finalizeFormEl   = ref(null);
+const showFinalizeModal = ref(false);
+
+const FINALIZE_VALIDATORS = {
+    notes: (val) => (val ?? '').length > 2000
+        ? 'Lead notes must be 2000 characters or fewer.'
+        : null,
+};
+
+function validateFinalizeField(field) {
+    if (!CLIENT_VALIDATION_ENABLED_FINALIZE) return;
+    const error = FINALIZE_VALIDATORS[field]?.(finalizeForm.value[field]);
+    if (error) finalizeErrors.value[field] = error;
+    else delete finalizeErrors.value[field];
+}
+
+function clearFinalizeFieldError(field) {
+    delete finalizeErrors.value[field];
+}
+
+function validateAllFinalize() {
+    if (!CLIENT_VALIDATION_ENABLED_FINALIZE) return true;
+    const next = {};
+    for (const field of Object.keys(FINALIZE_VALIDATORS)) {
+        const error = FINALIZE_VALIDATORS[field](finalizeForm.value[field]);
+        if (error) next[field] = error;
+    }
+    finalizeErrors.value = next;
+    return Object.keys(next).length === 0;
+}
+
+function counterClassFinalize(field) {
+    return (finalizeForm.value[field] ?? '').length > 2000
+        ? 'text-red-500 dark:text-red-400'
+        : 'text-gray-500 dark:text-gray-400';
+}
+
+function counterTextFinalize(field) {
+    return `${(finalizeForm.value[field] ?? '').length} / 2000`;
+}
+
+function openFinalizeModal() {
+    showFinalizeModal.value = true;
+    nextTick(() => finalizeNotesRef.value?.focus());
+}
+
+function closeFinalizeModal() {
+    showFinalizeModal.value = false;
+}
+
+function submitFinalize() {
+    if (!validateAllFinalize()) {
+        nextTick(() => finalizeNotesRef.value?.focus());
+        return;
+    }
+    finalizeFormEl.value?.submit();
+}
+
 // Preview Message — generates an editable broker template from the lead's
 // data. Pure frontend; no backend POST. navigator.clipboard with
 // document.execCommand fallback for insecure-context dev (rentconnectph.test)
@@ -364,8 +430,8 @@ async function copyMessage() {
 // On mount: if this row was the target of a failed submit (state-guard or
 // validation), populate the matching local error state from the named bag
 // and auto-open the modal so the admin sees the error + their retained
-// input. Both send + lose flows handled here as sibling blocks — do NOT
-// add a second onMounted call.
+// input. Send + Lose + Finalize flows handled here as sibling blocks — do
+// NOT add another onMounted call.
 onMounted(() => {
     if (sendServerErrs) {
         for (const [field, messages] of Object.entries(sendServerErrs)) {
@@ -379,6 +445,13 @@ onMounted(() => {
             loseErrors.value[field] = Array.isArray(messages) ? messages[0] : messages;
         }
         showLoseModal.value = true;
+    }
+
+    if (finalizeServerErrs) {
+        for (const [field, messages] of Object.entries(finalizeServerErrs)) {
+            finalizeErrors.value[field] = Array.isArray(messages) ? messages[0] : messages;
+        }
+        showFinalizeModal.value = true;
     }
 });
 </script>
@@ -504,13 +577,16 @@ onMounted(() => {
                     Mark as Sent
                 </button>
                 <button
-                    v-for="btn in actionButtons"
-                    :key="btn.label"
+                    v-if="lead.status === 'sent'"
                     type="button"
-                    :class="actionBtnClass(btn.color)"
-                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md border transition cursor-pointer"
+                    @click="openFinalizeModal"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md border border-emerald-200 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition cursor-pointer"
                 >
-                    {{ btn.label }}
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                        <polyline points="22 4 12 14.01 9 11.01" />
+                    </svg>
+                    Mark Finalized
                 </button>
                 <button
                     v-if="lead.status === 'pending' || lead.status === 'sent'"
@@ -537,6 +613,19 @@ onMounted(() => {
                 <input type="hidden" name="_token" :value="csrfToken">
                 <input type="hidden" name="_method" value="PUT">
                 <input type="hidden" name="notes" :value="sendForm.notes">
+            </form>
+
+            <!-- Hidden form for Mark Finalized (programmatic submit via submitFinalize) -->
+            <form
+                v-if="lead.status === 'sent'"
+                ref="finalizeFormEl"
+                :action="finalizeUrl"
+                method="POST"
+                class="hidden"
+            >
+                <input type="hidden" name="_token" :value="csrfToken">
+                <input type="hidden" name="_method" value="PUT">
+                <input type="hidden" name="notes" :value="finalizeForm.notes">
             </form>
 
             <!-- Hidden form for Mark Lost (programmatic submit via submitLose) -->
@@ -694,6 +783,87 @@ onMounted(() => {
                                 class="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition cursor-pointer"
                             >
                                 Confirm Sent
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mark Finalized modal (FRD-049) -->
+                <div
+                    v-if="showFinalizeModal"
+                    class="fixed inset-0 z-50 flex items-center justify-center p-4"
+                    role="dialog"
+                    aria-modal="true"
+                >
+                    <div class="absolute inset-0 bg-black/50" @click="closeFinalizeModal"></div>
+                    <div class="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xl p-6">
+                        <div class="flex items-start gap-4">
+                            <div class="flex-shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
+                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                    <polyline points="22 4 12 14.01 9 11.01" />
+                                </svg>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-base font-semibold text-gray-900 dark:text-white">
+                                    Mark as Finalized?
+                                </h3>
+                                <ul class="mt-2 text-sm text-gray-500 dark:text-gray-400 space-y-1 list-disc list-inside">
+                                    <li>Sets the <strong>Finalized on …</strong> timestamp on this lead.</li>
+                                    <li>Lead transitions to <strong>finalized</strong> (terminal — deal closed, won).</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div
+                            v-if="finalizeErrors._state"
+                            class="mt-4 rounded-md border border-rose-200 dark:border-rose-900/40 bg-rose-50 dark:bg-rose-950/20 px-3 py-2 text-xs text-rose-700 dark:text-rose-300"
+                        >
+                            {{ finalizeErrors._state }}
+                        </div>
+
+                        <div class="mt-5">
+                            <label for="finalize-notes" class="block text-sm font-medium text-gray-900 dark:text-white">
+                                Lead notes (optional)
+                            </label>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                Replaces existing lead notes; clear to remove.
+                            </p>
+                            <textarea
+                                id="finalize-notes"
+                                ref="finalizeNotesRef"
+                                v-model="finalizeForm.notes"
+                                rows="4"
+                                placeholder='Closure context (e.g. "Lease signed Tue 4pm — final rent ₱22,000, 12-month term")'
+                                @blur="validateFinalizeField('notes')"
+                                @focus="clearFinalizeFieldError('notes')"
+                                class="mt-1.5 block w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white px-3 py-2 resize-y focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                            ></textarea>
+                            <div class="mt-1 flex items-center justify-between">
+                                <p v-if="finalizeErrors.notes" class="text-xs text-red-600 dark:text-red-400">
+                                    {{ finalizeErrors.notes }}
+                                </p>
+                                <p v-else class="text-xs text-gray-400 dark:text-gray-500">&nbsp;</p>
+                                <p :class="counterClassFinalize('notes')" class="text-xs font-mono">
+                                    {{ counterTextFinalize('notes') }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 flex items-center justify-end gap-2">
+                            <button
+                                type="button"
+                                @click="closeFinalizeModal"
+                                class="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition cursor-pointer"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                @click="submitFinalize"
+                                class="px-4 py-2 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition cursor-pointer"
+                            >
+                                Confirm Finalized
                             </button>
                         </div>
                     </div>
