@@ -65,20 +65,15 @@ const monthlyRentDisplay = computed(() => {
     }).format(props.lead.monthly_rent);
 });
 
-// State-aware DEAD-STUB action buttons (Mark Finalized + Mark Lost). NO
-// @click, NO form, NO Teleport per feedback_view_page_button_stubs.md.
-// Mark-as-Sent is extracted below — wired with form + Teleport modal +
-// named bag (FRD-047). Finalize + Lose handlers ship in follow-up FRDs.
+// State-aware DEAD-STUB action buttons. After PRD-048 (Lose), the only
+// remaining stub is Mark Finalized on `sent` rows. Mark-as-Sent (FRD-047)
+// + Mark Lost (FRD-048) are extracted into their own conditional render
+// blocks below — wired with form + Teleport modal + named bag. PRD-049
+// (Finalize) will eliminate the last stub; this v-for can be deleted then.
 const actionButtons = computed(() => {
-    if (props.lead.status === 'pending') {
-        return [
-            { label: 'Mark Lost', color: 'rose' },
-        ];
-    }
     if (props.lead.status === 'sent') {
         return [
             { label: 'Mark Finalized', color: 'emerald' },
-            { label: 'Mark Lost',      color: 'rose' },
         ];
     }
     return [];
@@ -176,6 +171,94 @@ function submitSend() {
         return;
     }
     sendFormEl.value?.submit();
+}
+
+// ---------------------------------------------------------------------
+// Mark Lost — PUT /admin/leads/{uuid}/lose (FRD-048).
+// State A: lead.status === 'pending' || 'sent' → button + form + modal.
+// Named bag: `lose-{uuid}` per row.
+// Notes overwrite (locked from PRD-047) — payload replaces existing
+// column; empty/missing payload normalizes to null and clears.
+// sent_at is PRESERVED on sent→lost flip (controller's update payload
+// only touches status/lost_at/notes).
+// Auto-open-on-error: when this row's named bag has errors, populate
+// from oldInput.notes + open modal at mount.
+// Defensive UX: when NOT a failed-submit target, pre-fill textarea with
+// existing lead.notes so admin doesn't accidentally clear context.
+// ---------------------------------------------------------------------
+
+const CLIENT_VALIDATION_ENABLED_LOSE = true;
+
+const loseUrl = computed(() => `/admin/leads/${props.lead.uuid}/lose`);
+
+const loseBag        = `lose-${props.lead.uuid}`;
+const loseServerErrs = (props.errors && props.errors[loseBag]) ? props.errors[loseBag] : null;
+
+const loseForm = ref({
+    notes: loseServerErrs
+        ? (props.oldInput?.notes ?? '')
+        : (props.lead.notes ?? ''),
+});
+
+const loseErrors = ref({});
+
+const loseNotesRef = ref(null);
+const loseFormEl   = ref(null);
+const showLoseModal = ref(false);
+
+const LOSE_VALIDATORS = {
+    notes: (val) => (val ?? '').length > 2000
+        ? 'Lead notes must be 2000 characters or fewer.'
+        : null,
+};
+
+function validateLoseField(field) {
+    if (!CLIENT_VALIDATION_ENABLED_LOSE) return;
+    const error = LOSE_VALIDATORS[field]?.(loseForm.value[field]);
+    if (error) loseErrors.value[field] = error;
+    else delete loseErrors.value[field];
+}
+
+function clearLoseFieldError(field) {
+    delete loseErrors.value[field];
+}
+
+function validateAllLose() {
+    if (!CLIENT_VALIDATION_ENABLED_LOSE) return true;
+    const next = {};
+    for (const field of Object.keys(LOSE_VALIDATORS)) {
+        const error = LOSE_VALIDATORS[field](loseForm.value[field]);
+        if (error) next[field] = error;
+    }
+    loseErrors.value = next;
+    return Object.keys(next).length === 0;
+}
+
+function counterClassLose(field) {
+    return (loseForm.value[field] ?? '').length > 2000
+        ? 'text-red-500 dark:text-red-400'
+        : 'text-gray-500 dark:text-gray-400';
+}
+
+function counterTextLose(field) {
+    return `${(loseForm.value[field] ?? '').length} / 2000`;
+}
+
+function openLoseModal() {
+    showLoseModal.value = true;
+    nextTick(() => loseNotesRef.value?.focus());
+}
+
+function closeLoseModal() {
+    showLoseModal.value = false;
+}
+
+function submitLose() {
+    if (!validateAllLose()) {
+        nextTick(() => loseNotesRef.value?.focus());
+        return;
+    }
+    loseFormEl.value?.submit();
 }
 
 // Preview Message — generates an editable broker template from the lead's
@@ -279,14 +362,23 @@ async function copyMessage() {
 }
 
 // On mount: if this row was the target of a failed submit (state-guard or
-// validation), populate sendErrors from the named bag and auto-open the
-// modal so the admin sees the error + their retained input.
+// validation), populate the matching local error state from the named bag
+// and auto-open the modal so the admin sees the error + their retained
+// input. Both send + lose flows handled here as sibling blocks — do NOT
+// add a second onMounted call.
 onMounted(() => {
     if (sendServerErrs) {
         for (const [field, messages] of Object.entries(sendServerErrs)) {
             sendErrors.value[field] = Array.isArray(messages) ? messages[0] : messages;
         }
         showSendModal.value = true;
+    }
+
+    if (loseServerErrs) {
+        for (const [field, messages] of Object.entries(loseServerErrs)) {
+            loseErrors.value[field] = Array.isArray(messages) ? messages[0] : messages;
+        }
+        showLoseModal.value = true;
     }
 });
 </script>
@@ -420,6 +512,18 @@ onMounted(() => {
                 >
                     {{ btn.label }}
                 </button>
+                <button
+                    v-if="lead.status === 'pending' || lead.status === 'sent'"
+                    type="button"
+                    @click="openLoseModal"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md border border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition cursor-pointer"
+                >
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M15 9l-6 6 M9 9l6 6" />
+                    </svg>
+                    Mark Lost
+                </button>
             </div>
 
             <!-- Hidden form for Mark-as-Sent (programmatic submit via submitSend) -->
@@ -433,6 +537,19 @@ onMounted(() => {
                 <input type="hidden" name="_token" :value="csrfToken">
                 <input type="hidden" name="_method" value="PUT">
                 <input type="hidden" name="notes" :value="sendForm.notes">
+            </form>
+
+            <!-- Hidden form for Mark Lost (programmatic submit via submitLose) -->
+            <form
+                v-if="lead.status === 'pending' || lead.status === 'sent'"
+                ref="loseFormEl"
+                :action="loseUrl"
+                method="POST"
+                class="hidden"
+            >
+                <input type="hidden" name="_token" :value="csrfToken">
+                <input type="hidden" name="_method" value="PUT">
+                <input type="hidden" name="notes" :value="loseForm.notes">
             </form>
 
             <Teleport to="body">
@@ -577,6 +694,87 @@ onMounted(() => {
                                 class="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition cursor-pointer"
                             >
                                 Confirm Sent
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mark Lost modal (FRD-048) -->
+                <div
+                    v-if="showLoseModal"
+                    class="fixed inset-0 z-50 flex items-center justify-center p-4"
+                    role="dialog"
+                    aria-modal="true"
+                >
+                    <div class="absolute inset-0 bg-black/50" @click="closeLoseModal"></div>
+                    <div class="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xl p-6">
+                        <div class="flex items-start gap-4">
+                            <div class="flex-shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400">
+                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <path d="M15 9l-6 6 M9 9l6 6" />
+                                </svg>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-base font-semibold text-gray-900 dark:text-white">
+                                    Mark as Lost?
+                                </h3>
+                                <ul class="mt-2 text-sm text-gray-500 dark:text-gray-400 space-y-1 list-disc list-inside">
+                                    <li>Sets the <strong>Lost on …</strong> timestamp on this lead.</li>
+                                    <li>Lead transitions to <strong>lost</strong> (terminal — cannot be re-opened).</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div
+                            v-if="loseErrors._state"
+                            class="mt-4 rounded-md border border-rose-200 dark:border-rose-900/40 bg-rose-50 dark:bg-rose-950/20 px-3 py-2 text-xs text-rose-700 dark:text-rose-300"
+                        >
+                            {{ loseErrors._state }}
+                        </div>
+
+                        <div class="mt-5">
+                            <label for="lose-notes" class="block text-sm font-medium text-gray-900 dark:text-white">
+                                Lead notes (optional)
+                            </label>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                Replaces existing lead notes; clear to remove.
+                            </p>
+                            <textarea
+                                id="lose-notes"
+                                ref="loseNotesRef"
+                                v-model="loseForm.notes"
+                                rows="4"
+                                placeholder='Why this deal died (e.g. "renter ghosted Marco after 3 attempts", "owner withdrew property")'
+                                @blur="validateLoseField('notes')"
+                                @focus="clearLoseFieldError('notes')"
+                                class="mt-1.5 block w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white px-3 py-2 resize-y focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                            ></textarea>
+                            <div class="mt-1 flex items-center justify-between">
+                                <p v-if="loseErrors.notes" class="text-xs text-red-600 dark:text-red-400">
+                                    {{ loseErrors.notes }}
+                                </p>
+                                <p v-else class="text-xs text-gray-400 dark:text-gray-500">&nbsp;</p>
+                                <p :class="counterClassLose('notes')" class="text-xs font-mono">
+                                    {{ counterTextLose('notes') }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 flex items-center justify-end gap-2">
+                            <button
+                                type="button"
+                                @click="closeLoseModal"
+                                class="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition cursor-pointer"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                @click="submitLose"
+                                class="px-4 py-2 rounded-md bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold transition cursor-pointer"
+                            >
+                                Confirm Lost
                             </button>
                         </div>
                     </div>

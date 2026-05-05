@@ -119,4 +119,52 @@ class LeadController extends Controller
 
         return back()->with('success', 'Lead marked as sent.');
     }
+
+    public function lose(Request $request, Lead $lead): RedirectResponse
+    {
+        $bag = 'lose-' . $lead->uuid;
+
+        // State guard via ValidationException so it flashes into the same
+        // named bag the validation errors use — frontend reads ONE bag per
+        // row, displays everything inline. ValidationException's default
+        // render() does back()->withInput()->withErrors(), so notes are
+        // retained automatically. Per feedback_state_guard_via_validation_exception.md.
+        //
+        // Two source states are valid: pending OR sent. Guard branches on
+        // "neither" — distinct messages per illegal source state.
+        if (
+            $lead->status !== LeadStatus::pending()->value
+            && $lead->status !== LeadStatus::sent()->value
+        ) {
+            $message = match ($lead->status) {
+                LeadStatus::finalized()->value => 'Cannot mark a finalized lead as lost.',
+                LeadStatus::lost()->value      => 'This lead has already been lost.',
+                default                        => 'This lead cannot be marked as lost from its current state.',
+            };
+
+            throw ValidationException::withMessages([
+                '_state' => $message,
+            ])->errorBag($bag);
+        }
+
+        $validated = $request->validateWithBag(
+            $bag,
+            ['notes' => 'nullable|string|max:2000'],
+            ['notes.max' => 'Lead notes must be 2000 characters or fewer.'],
+        );
+
+        $notes = ($validated['notes'] ?? '') !== '' ? $validated['notes'] : null;
+
+        // sent_at is intentionally NOT in the update payload — preserved
+        // when flipping sent→lost. Pinned via AdminLeadLoseTest #13.
+        DB::transaction(function () use ($lead, $notes) {
+            $lead->update([
+                'status'  => LeadStatus::lost()->value,
+                'lost_at' => Carbon::now(),
+                'notes'   => $notes,
+            ]);
+        });
+
+        return back()->with('success', 'Lead marked as lost.');
+    }
 }
