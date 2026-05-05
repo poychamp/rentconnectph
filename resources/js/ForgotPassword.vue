@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { nextTick, ref } from 'vue';
 import Navbar from './components/Navbar.vue';
 import Footer from './components/Footer.vue';
 import BottomNav from './components/BottomNav.vue';
@@ -9,15 +9,62 @@ const serverErrors = initial.errors ?? {};
 const oldInput     = initial.oldInput ?? {};
 const flashSuccess = initial.success ?? null;
 
+const CLIENT_VALIDATION_ENABLED = true;
+
+const AMBIGUOUS_MESSAGE = "If an account with that email exists, we've sent a reset link.";
+
 const form = ref({
     email: oldInput.email ?? '',
 });
 
+const clientErrors = ref({});
+
 function errorFor(field) {
-    return serverErrors[field]?.[0] ?? null;
+    return serverErrors[field]?.[0] ?? clientErrors.value[field] ?? null;
 }
 
+const VALIDATORS = {
+    email: (v) => {
+        const t = (v ?? '').trim();
+        if (!t) return AMBIGUOUS_MESSAGE + '.';
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t)) return AMBIGUOUS_MESSAGE + '..';
+        return null;
+    },
+};
+
+function validateField(field) {
+    if (!CLIENT_VALIDATION_ENABLED) return;
+    const err = VALIDATORS[field]?.(form.value[field]);
+    if (err) clientErrors.value[field] = err;
+    else delete clientErrors.value[field];
+}
+
+function clearFieldError(field) {
+    delete clientErrors.value[field];
+}
+
+function validateAll() {
+    if (!CLIENT_VALIDATION_ENABLED) return true;
+    const next = {};
+    for (const f of Object.keys(VALIDATORS)) {
+        const err = VALIDATORS[f](form.value[f]);
+        if (err) next[f] = err;
+    }
+    clientErrors.value = next;
+    return Object.keys(next).length === 0;
+}
+
+const formEl   = ref(null);
+const emailRef = ref(null);
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+
+function submit() {
+    if (!validateAll()) {
+        nextTick(() => emailRef.value?.focus());
+        return;
+    }
+    formEl.value?.submit();
+}
 </script>
 
 <template>
@@ -48,17 +95,23 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? 
 
                 <form
                     v-if="!flashSuccess"
+                    ref="formEl"
                     method="POST"
                     action="/forgot-password"
+                    @submit.prevent="submit"
+                    novalidate
                 >
                     <input type="hidden" name="_token" :value="csrfToken">
+                    <button type="submit" class="hidden" tabindex="-1" aria-hidden="true"></button>
 
                     <div class="space-y-4">
                         <div>
                             <label for="email" class="block text-sm font-medium mb-1">Email</label>
                             <input
-                                id="email" name="email" type="text"
+                                id="email" ref="emailRef" name="email" type="text"
                                 v-model="form.email"
+                                @blur="validateField('email')"
+                                @focus="clearFieldError('email')"
                                 inputmode="email"
                                 autocomplete="email"
                                 class="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500"
@@ -67,7 +120,8 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? 
                         </div>
 
                         <button
-                            type="submit"
+                            type="button"
+                            @click="submit"
                             class="w-full px-6 py-3 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition cursor-pointer"
                         >
                             Send reset link

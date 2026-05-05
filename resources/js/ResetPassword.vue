@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { nextTick, ref } from 'vue';
 import Navbar from './components/Navbar.vue';
 import Footer from './components/Footer.vue';
 import BottomNav from './components/BottomNav.vue';
@@ -10,11 +10,68 @@ const serverErrors = initial.errors ?? {};
 const TOKEN = initial.token ?? '';
 const EMAIL = initial.email ?? '';
 
+const CLIENT_VALIDATION_ENABLED = true;
+
+const form = ref({
+    password:              '',
+    password_confirmation: '',
+});
+
+const clientErrors = ref({});
+
 function errorFor(field) {
-    return serverErrors[field]?.[0] ?? null;
+    return serverErrors[field]?.[0] ?? clientErrors.value[field] ?? null;
 }
 
-const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+const VALIDATORS = {
+    password: (v) => {
+        const t = v ?? '';
+        if (!t) return 'Please choose a password.';
+        if (t.length < 8) return 'Password must be at least 8 characters.';
+        return null;
+    },
+    password_confirmation: (v) => {
+        if ((v ?? '') !== form.value.password) {
+            return 'Password confirmation does not match.';
+        }
+        return null;
+    },
+};
+
+function validateField(field) {
+    if (!CLIENT_VALIDATION_ENABLED) return;
+    const err = VALIDATORS[field]?.(form.value[field]);
+    if (err) clientErrors.value[field] = err;
+    else delete clientErrors.value[field];
+}
+
+function clearFieldError(field) {
+    delete clientErrors.value[field];
+}
+
+function validateAll() {
+    if (!CLIENT_VALIDATION_ENABLED) return true;
+    const next = {};
+    for (const f of Object.keys(VALIDATORS)) {
+        const err = VALIDATORS[f](form.value[f]);
+        if (err) next[f] = err;
+    }
+    clientErrors.value = next;
+    return Object.keys(next).length === 0;
+}
+
+const formEl      = ref(null);
+const passwordRef = ref(null);
+const csrfToken   = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+
+function submit() {
+    if (!validateAll()) {
+        const firstInvalid = Object.keys(VALIDATORS).find(f => clientErrors.value[f]);
+        if (firstInvalid === 'password') nextTick(() => passwordRef.value?.focus());
+        return;
+    }
+    formEl.value?.submit();
+}
 </script>
 
 <template>
@@ -38,18 +95,22 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? 
                 </div>
 
                 <p
-                    v-if="errorFor('email')"
+                    v-if="errorFor('email') || errorFor('token')"
                     class="mb-6 p-4 rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-700 dark:text-red-300"
                 >
-                    {{ errorFor('email') }}
+                    {{ errorFor('email') || errorFor('token') }}
                 </p>
 
                 <form
+                    ref="formEl"
                     method="POST"
                     action="/reset-password"
+                    @submit.prevent="submit"
+                    novalidate
                 >
                     <input type="hidden" name="_token" :value="csrfToken">
                     <input type="hidden" name="token" :value="TOKEN">
+                    <button type="submit" class="hidden" tabindex="-1" aria-hidden="true"></button>
 
                     <div class="space-y-4">
                         <div>
@@ -65,7 +126,10 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? 
                         <div>
                             <label for="password" class="block text-sm font-medium mb-1">New password</label>
                             <input
-                                id="password" name="password" type="password"
+                                id="password" ref="passwordRef" name="password" type="password"
+                                v-model="form.password"
+                                @blur="validateField('password')"
+                                @focus="clearFieldError('password')"
                                 autocomplete="new-password"
                                 class="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500"
                             >
@@ -77,13 +141,18 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? 
                             <label for="password_confirmation" class="block text-sm font-medium mb-1">Confirm new password</label>
                             <input
                                 id="password_confirmation" name="password_confirmation" type="password"
+                                v-model="form.password_confirmation"
+                                @blur="validateField('password_confirmation')"
+                                @focus="clearFieldError('password_confirmation')"
                                 autocomplete="new-password"
                                 class="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500"
                             >
+                            <p v-if="errorFor('password_confirmation')" class="mt-1 text-xs text-red-600 dark:text-red-400">{{ errorFor('password_confirmation') }}</p>
                         </div>
 
                         <button
-                            type="submit"
+                            type="button"
+                            @click="submit"
                             class="w-full px-6 py-3 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition cursor-pointer"
                         >
                             Reset password

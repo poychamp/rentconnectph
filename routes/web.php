@@ -35,6 +35,10 @@ Route::post('/forgot-password', [PasswordController::class, 'email'])
     ->middleware(['guest.admin', 'throttle:5,1'])
     ->name('password.email');
 
+Route::post('/reset-password', [PasswordController::class, 'update'])
+    ->middleware(['guest.admin', 'throttle:5,1'])
+    ->name('password.update');
+
 Route::post('/inquiries', [InquiryController::class, 'store'])
     ->middleware('throttle:inquiry-submit')
     ->name('inquiries.store');
