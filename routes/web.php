@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AboutController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InquiryController;
 use App\Http\Controllers\ListingController;
@@ -13,7 +14,13 @@ Route::middleware('bfcache')->group(function () {
     Route::get('/search', [SearchController::class, 'index'])->name('search');
     Route::get('/about', [AboutController::class, 'show'])->name('about');
     Route::get('/inquiries-success', [InquiryController::class, 'success'])->name('inquiries.success');
+    Route::get('/contact', [ContactController::class, 'show'])->name('contact.show');
+    Route::get('/contact-sent', [ContactController::class, 'sent'])->name('contact.sent');
 });
+
+Route::post('/contact', [ContactController::class, 'send'])
+    ->middleware('throttle:5,1')
+    ->name('contact.send');
 
 Route::post('/inquiries', [InquiryController::class, 'store'])
     ->middleware('throttle:inquiry-submit')

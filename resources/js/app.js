@@ -16,6 +16,8 @@ if (el) {
         'search': () => import('./Search.vue'),
         'about': () => import('./About.vue'),
         'inquiry-success': () => import('./InquirySuccess.vue'),
+        'contact': () => import('./Contact.vue'),
+        'contact-sent': () => import('./ContactSent.vue'),
     };
 
     const loadRoot = roots[page] || roots.home;
