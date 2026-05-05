@@ -21,11 +21,17 @@ Route::middleware('bfcache')->group(function () {
     Route::get('/forgot-password', [PasswordController::class, 'request'])
         ->middleware('guest.admin')
         ->name('password.request');
+
+    Route::get('/reset-password/{token}', fn () => abort(404))->name('password.reset');
 });
 
 Route::post('/contact', [ContactController::class, 'send'])
     ->middleware('throttle:5,1')
     ->name('contact.send');
+
+Route::post('/forgot-password', [PasswordController::class, 'email'])
+    ->middleware(['guest.admin', 'throttle:5,1'])
+    ->name('password.email');
 
 Route::post('/inquiries', [InquiryController::class, 'store'])
     ->middleware('throttle:inquiry-submit')
