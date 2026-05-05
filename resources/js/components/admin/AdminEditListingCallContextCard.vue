@@ -120,7 +120,7 @@ const isCalledYes = computed(() => form.prequal_status === 'called_yes');
         <div>
             <div class="flex items-baseline justify-between">
                 <label for="verification-notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Notes for field officer
+                    Verification Notes
                 </label>
                 <span :class="[
                     'text-xs',
