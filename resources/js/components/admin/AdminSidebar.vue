@@ -21,6 +21,11 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? 
 // is fixed for the lifetime of this component.
 const currentPath = window.location.pathname;
 
+// Action-needed counters from admin.blade.php's window.__ADMIN_SIDEBAR__.
+// Each menu item with a matching `badge: '<key>'` renders a count pill when
+// the value is > 0.
+const badges = window.__ADMIN_SIDEBAR__?.badges ?? {};
+
 function isActive(item) {
     if (typeof item.matches === 'function') return item.matches(currentPath);
     if (!item.href || item.href === '#') return false;
@@ -56,6 +61,7 @@ const sections = [
                 href: '/admin/unverified-listings',
                 icon: 'shield-question',
                 requires: 'listings.manage',
+                badge: 'unverifiedListings',
                 matches: (path) => path === '/admin/unverified-listings'
                     || /^\/admin\/listings\/[^\/]+\/unverified-edit$/.test(path),
             },
@@ -64,6 +70,7 @@ const sections = [
                 href: '/admin/visited-listings',
                 icon: 'eye',
                 requires: 'listings.manage',
+                badge: 'visitedListings',
                 matches: (path) => path === '/admin/visited-listings'
                     || /^\/admin\/listings\/[^\/]+\/verify-edit$/.test(path),
             },
@@ -123,6 +130,7 @@ const sections = [
                 href: '/admin/filtered-inquiries',
                 icon: 'mail',
                 requires: 'inquiries.manage',
+                badge: 'filteredInquiries',
                 matches: (path) => path.startsWith('/admin/filtered-inquiries')
                     || path.startsWith('/admin/inquiries'),
             },
@@ -131,6 +139,7 @@ const sections = [
                 href: '/admin/handoffs',
                 icon: 'lock',
                 requires: 'inquiries.manage',
+                badge: 'handoffs',
                 matches: (path) => path.startsWith('/admin/handoffs'),
             },
             {
@@ -138,6 +147,7 @@ const sections = [
                 href: '/admin/leads',
                 icon: 'handshake',
                 requires: 'inquiries.manage',
+                badge: 'pendingLeads',
                 matches: (path) => path.startsWith('/admin/leads'),
             },
         ],
@@ -235,7 +245,18 @@ const iconPaths = {
                             >
                                 <path :d="iconPaths[item.icon]" />
                             </svg>
-                            <span class="truncate">{{ item.name }}</span>
+                            <span class="truncate flex-1">{{ item.name }}</span>
+                            <span
+                                v-if="item.badge && badges[item.badge] > 0"
+                                :class="[
+                                    'shrink-0 inline-flex items-center justify-center min-w-[1.25rem] px-1.5 py-0.5 rounded-full text-[10px] font-semibold',
+                                    isActive(item)
+                                        ? 'bg-white/20 text-white'
+                                        : 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300',
+                                ]"
+                            >
+                                {{ badges[item.badge] }}
+                            </span>
                         </a>
                     </li>
                 </ul>

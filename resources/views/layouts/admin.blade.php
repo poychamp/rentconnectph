@@ -20,6 +20,33 @@
 
     @vite(['resources/css/admin.css', 'resources/js/admin.js'])
 
+    @php
+        // Sidebar action-needed counters. Each block is permission-gated so
+        // unauthorized pages (e.g. /admin/login) don't run COUNT queries.
+        // Each query mirrors its index controller exactly so badge totals
+        // match what the admin sees on click-through.
+        $adminUser = auth('admin')->user();
+        $adminSidebarBadges = [];
+
+        if ($adminUser?->can('listings.manage')) {
+            $adminSidebarBadges['unverifiedListings'] = \App\Models\Listing::where('is_verified', false)
+                ->whereIn('queue_status', ['unassigned', 'assigned'])
+                ->count();
+            $adminSidebarBadges['visitedListings'] = \App\Models\Listing::awaitingVerification()->count();
+        }
+
+        if ($adminUser?->can('inquiries.manage')) {
+            $adminSidebarBadges['filteredInquiries'] = \App\Models\Inquiry::query()
+                ->where('status', \App\Enums\InquiryStatus::new()->value)
+                ->whereHas('listing', fn ($q) => $q->whereDoesntHave('activeHandoff'))
+                ->count();
+            $adminSidebarBadges['handoffs'] = \App\Models\HandoffLock::count();
+            // "New leads" = pending only — admin hasn't sent to broker yet.
+            $adminSidebarBadges['pendingLeads'] = \App\Models\Lead::where('status', \App\Enums\LeadStatus::pending()->value)
+                ->count();
+        }
+    @endphp
+
     <script>
         window.__ASSETS__ = {
             mapboxToken: "{{ config('services.mapbox.token') }}",
@@ -31,6 +58,12 @@
             success: @json(session('success')),
             error:   @json(session('error')),
             info:    @json(session('info')),
+        };
+
+        // Sidebar action-needed counters. AdminSidebar.vue reads this and
+        // renders a badge next to items whose `badge: '<key>'` matches.
+        window.__ADMIN_SIDEBAR__ = {
+            badges: @json($adminSidebarBadges),
         };
     </script>
 
