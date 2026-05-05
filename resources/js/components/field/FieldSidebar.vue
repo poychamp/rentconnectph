@@ -21,6 +21,11 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? 
 // is fixed for the lifetime of this component.
 const currentPath = window.location.pathname;
 
+// Action-needed counters from field.blade.php's window.__FIELD_SIDEBAR__.
+// Each menu item with a matching `badge: '<key>'` renders a count pill when
+// the value is > 0.
+const badges = window.__FIELD_SIDEBAR__?.badges ?? {};
+
 function isActive(item) {
     if (typeof item.matches === 'function') return item.matches(currentPath);
     if (!item.href || item.href === '#') return false;
@@ -49,6 +54,7 @@ const sections = [
                 href: '/field/listings',
                 icon: 'list',
                 requires: 'listings.field-work',
+                badge: 'queuedListings',
                 matches: (path) => {
                     if (path === '/field/listings') return true;
                     if (/^\/field\/listings\/[^\/]+$/.test(path)) return true;
@@ -168,7 +174,18 @@ const iconPaths = {
                             >
                                 <path :d="iconPaths[item.icon]" />
                             </svg>
-                            <span class="truncate">{{ item.name }}</span>
+                            <span class="truncate flex-1">{{ item.name }}</span>
+                            <span
+                                v-if="item.badge && badges[item.badge] > 0"
+                                :class="[
+                                    'shrink-0 inline-flex items-center justify-center min-w-[1.25rem] px-1.5 py-0.5 rounded-full text-[10px] font-semibold',
+                                    isActive(item)
+                                        ? 'bg-white/20 text-white'
+                                        : 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300',
+                                ]"
+                            >
+                                {{ badges[item.badge] }}
+                            </span>
                         </a>
                     </li>
                 </ul>

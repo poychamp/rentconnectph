@@ -20,6 +20,19 @@
 
     @vite(['resources/css/admin.css', 'resources/js/admin.js'])
 
+    @php
+        // Sidebar action-needed counters. Permission-gated so unauthorized
+        // pages (e.g. /admin/login during field-side bounces) don't run the
+        // COUNT query. Mirrors Listing::scopeForOfficer used by the index
+        // controller, so badge total = page row count for this officer.
+        $fieldUser = auth('admin')->user();
+        $fieldSidebarBadges = [];
+
+        if ($fieldUser?->can(\App\Enums\AppPermission::listingsFieldWork()->value)) {
+            $fieldSidebarBadges['queuedListings'] = \App\Models\Listing::forOfficer($fieldUser->id)->count();
+        }
+    @endphp
+
     <script>
         window.__ASSETS__ = {
             mapboxToken: "{{ config('services.mapbox.token') }}",
@@ -31,6 +44,12 @@
             success: @json(session('success')),
             error:   @json(session('error')),
             info:    @json(session('info')),
+        };
+
+        // Sidebar action-needed counters. FieldSidebar.vue reads this and
+        // renders a badge next to items whose `badge: '<key>'` matches.
+        window.__FIELD_SIDEBAR__ = {
+            badges: @json($fieldSidebarBadges),
         };
     </script>
 
