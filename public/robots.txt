@@ -1,6 +1,0 @@
-User-agent: *
-Disallow: /auth/login
-Disallow: /forgot-password
-Disallow: /reset-password/
-
-Sitemap: https://rentconnectph.com/sitemap.xml
