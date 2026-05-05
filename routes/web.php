@@ -7,6 +7,7 @@ use App\Http\Controllers\InquiryController;
 use App\Http\Controllers\ListingController;
 use App\Http\Controllers\PasswordController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\SitemapController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('bfcache')->group(function () {
@@ -42,3 +43,5 @@ Route::post('/reset-password', [PasswordController::class, 'update'])
 Route::post('/inquiries', [InquiryController::class, 'store'])
     ->middleware('throttle:inquiry-submit')
     ->name('inquiries.store');
+
+Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
