@@ -137,10 +137,17 @@ watch(showModal, (open) => {
                         ref="formEl"
                         method="POST"
                         action="/inquiries"
+                        @submit.prevent="submit"
                         novalidate
                     >
                         <input type="hidden" name="_token" :value="csrfToken">
                         <input type="hidden" name="listing_uuid" :value="listingUuid">
+
+                        <!-- Hidden submit button enables Enter-to-submit. The
+                             visible button lives outside the form (modal footer)
+                             so Enter wouldn't otherwise fire the form's submit
+                             event. @submit.prevent on the form catches both. -->
+                        <button type="submit" class="hidden" tabindex="-1" aria-hidden="true"></button>
 
                         <div class="space-y-4">
                             <div>
