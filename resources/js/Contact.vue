@@ -1,4 +1,5 @@
 <script setup>
+import { nextTick, ref } from 'vue';
 import Navbar from './components/Navbar.vue';
 import Footer from './components/Footer.vue';
 import BottomNav from './components/BottomNav.vue';
@@ -6,11 +7,97 @@ import BottomNav from './components/BottomNav.vue';
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
 
 const initial = window.__INITIAL_CONTACT__ ?? { errors: null, oldInput: null };
-const errors  = initial.errors ?? {};
 const old     = initial.oldInput ?? {};
 
+const CLIENT_VALIDATION_ENABLED = true;
+
+// Form state — initialized from oldInput so failed-submit retries retain values.
+const form = ref({
+    name:    old.name    ?? '',
+    email:   old.email   ?? '',
+    message: old.message ?? '',
+});
+
+// Unified error ref. Server errors from __INITIAL_CONTACT__ are merged in at
+// init so there's one source of truth from then on. clearFieldError wipes
+// either kind on focus.
+const fieldErrors = ref({});
+if (initial.errors) {
+    for (const [field, messages] of Object.entries(initial.errors)) {
+        fieldErrors.value[field] = Array.isArray(messages) ? messages[0] : messages;
+    }
+}
+
+const VALIDATORS = {
+    name: (v) => {
+        const t = (v ?? '').trim();
+        if (!t) return 'Name is required.';
+        if (t.length > 120) return 'Name must be 120 characters or fewer.';
+        return null;
+    },
+    email: (v) => {
+        const t = (v ?? '').trim();
+        if (!t) return 'Email is required.';
+        if (t.length > 255) return 'Email must be 255 characters or fewer.';
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t)) return 'Please enter a valid email address.';
+        return null;
+    },
+    message: (v) => {
+        const t = (v ?? '').trim();
+        if (!t) return 'Message is required.';
+        if (t.length > 5000) return 'Message must be 5000 characters or fewer.';
+        return null;
+    },
+};
+
 function errorFor(field) {
-    return errors[field]?.[0] ?? null;
+    return fieldErrors.value[field] ?? null;
+}
+
+function validateField(field) {
+    if (!CLIENT_VALIDATION_ENABLED) return;
+    const err = VALIDATORS[field]?.(form.value[field]);
+    if (err) fieldErrors.value[field] = err;
+    else delete fieldErrors.value[field];
+}
+
+function clearFieldError(field) {
+    delete fieldErrors.value[field];
+}
+
+function validateAll() {
+    if (!CLIENT_VALIDATION_ENABLED) return true;
+    const next = {};
+    for (const f of Object.keys(VALIDATORS)) {
+        const err = VALIDATORS[f](form.value[f]);
+        if (err) next[f] = err;
+    }
+    fieldErrors.value = next;
+    return Object.keys(next).length === 0;
+}
+
+const formEl     = ref(null);
+const nameRef    = ref(null);
+const emailRef   = ref(null);
+const messageRef = ref(null);
+
+const fieldRefs = { name: nameRef, email: emailRef, message: messageRef };
+
+function focusFirstInvalid() {
+    for (const f of Object.keys(VALIDATORS)) {
+        if (fieldErrors.value[f]) {
+            nextTick(() => fieldRefs[f].value?.focus());
+            return;
+        }
+    }
+}
+
+function onSubmit() {
+    if (!validateAll()) {
+        focusFirstInvalid();
+        return;
+    }
+    formEl.value?.submit();
 }
 </script>
 
@@ -33,7 +120,13 @@ function errorFor(field) {
                     </p>
                 </div>
 
-                <form method="POST" action="/contact">
+                <form
+                    ref="formEl"
+                    method="POST"
+                    action="/contact"
+                    @submit.prevent="onSubmit"
+                    novalidate
+                >
                     <input type="hidden" name="_token" :value="csrfToken">
 
                     <!-- Hidden submit for Enter-to-submit reliability. -->
@@ -49,8 +142,10 @@ function errorFor(field) {
                                 Name
                             </label>
                             <input
-                                id="name" name="name" type="text" autocomplete="name"
-                                :value="old.name ?? ''"
+                                id="name" ref="nameRef" name="name" type="text" autocomplete="name"
+                                v-model="form.name"
+                                @blur="validateField('name')"
+                                @focus="clearFieldError('name')"
                                 class="w-full bg-gray-50 dark:bg-gray-800 border rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500"
                                 :class="errorFor('name') ? 'border-red-400 dark:border-red-500' : 'border-gray-200 dark:border-gray-700'"
                             >
@@ -66,8 +161,10 @@ function errorFor(field) {
                                 Email
                             </label>
                             <input
-                                id="email" name="email" type="email" autocomplete="email"
-                                :value="old.email ?? ''"
+                                id="email" ref="emailRef" name="email" type="email" autocomplete="email"
+                                v-model="form.email"
+                                @blur="validateField('email')"
+                                @focus="clearFieldError('email')"
                                 class="w-full bg-gray-50 dark:bg-gray-800 border rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500"
                                 :class="errorFor('email') ? 'border-red-400 dark:border-red-500' : 'border-gray-200 dark:border-gray-700'"
                             >
@@ -82,10 +179,13 @@ function errorFor(field) {
                                 Message
                             </label>
                             <textarea
-                                id="message" name="message" rows="6"
+                                id="message" ref="messageRef" name="message" rows="6"
+                                v-model="form.message"
+                                @blur="validateField('message')"
+                                @focus="clearFieldError('message')"
                                 class="w-full bg-gray-50 dark:bg-gray-800 border rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500 resize-y"
                                 :class="errorFor('message') ? 'border-red-400 dark:border-red-500' : 'border-gray-200 dark:border-gray-700'"
-                            >{{ old.message ?? '' }}</textarea>
+                            ></textarea>
                             <p v-if="errorFor('message')" class="mt-1 text-xs text-red-600 dark:text-red-400">{{ errorFor('message') }}</p>
                         </div>
 
