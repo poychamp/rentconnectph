@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Contact — RentConnectPH')
+@section('description', 'Send a message to the RentConnectPH team about listings, partnerships, or platform issues. We respond within one business day.')
 @section('page', 'contact')
 
 @push('scripts')
