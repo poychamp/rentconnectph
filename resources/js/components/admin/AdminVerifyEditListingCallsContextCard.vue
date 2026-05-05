@@ -2,9 +2,18 @@
 import { computed, inject, ref } from 'vue';
 
 const props = defineProps({
-    contactTypes: { type: Array, default: () => [] },
-    readOnly:     { type: Boolean, default: false },
+    contactTypes:             { type: Array,   default: () => [] },
+    readOnly:                 { type: Boolean, default: false },
+    verificationNotesEditable: { type: Boolean, default: false },
 });
+
+// verification_notes is now admin-overridable on the verify-edit page; the
+// per-field carve-out keeps the rest of the card read-only while opening
+// just this one textarea for edit.
+function isFieldReadOnly(field) {
+    if (field === 'verification_notes' && props.verificationNotesEditable) return false;
+    return props.readOnly;
+}
 
 const form = inject('addListingForm');
 const errors = inject('addListingFormErrors', ref({}));
@@ -22,7 +31,7 @@ const verificationNotesCharCount = computed(() => (form.verification_notes ?? ''
 
 // Reusable class builder: read-only → muted gray; otherwise normal/error states.
 function fieldClass(field) {
-    if (props.readOnly) {
+    if (isFieldReadOnly(field)) {
         return 'mt-1 w-full rounded-md border bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white cursor-not-allowed outline-none transition';
     }
     return [
@@ -119,12 +128,12 @@ function fieldClass(field) {
                 v-model="form.verification_notes"
                 rows="4"
                 placeholder="What did the owner say? Any flags noted during the visit?"
-                :readonly="readOnly"
+                :readonly="isFieldReadOnly('verification_notes')"
                 @focus="clearFieldError('verification_notes')"
                 @blur="validateField('verification_notes')"
                 :class="fieldClass('verification_notes')"
             ></textarea>
-            <p v-if="!readOnly && errorFor('verification_notes')" class="mt-1 text-xs text-red-600 dark:text-red-400">
+            <p v-if="!isFieldReadOnly('verification_notes') && errorFor('verification_notes')" class="mt-1 text-xs text-red-600 dark:text-red-400">
                 {{ errorFor('verification_notes') }}
             </p>
         </div>

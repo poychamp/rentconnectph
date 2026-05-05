@@ -150,6 +150,10 @@ const VALIDATORS = {
         if (f.photos.length > 20) return 'Maximum 20 photos allowed.';
         return null;
     },
+    verification_notes: (f) => {
+        if ((f.verification_notes ?? '').length > 2000) return 'Verification notes must be 2000 characters or fewer.';
+        return null;
+    },
 };
 
 function setFieldError(field, message) {
@@ -247,6 +251,7 @@ onMounted(() => {
                 <AdminVerifyEditListingCallsContextCard
                     :contact-types="formData.contactTypes"
                     :read-only="true"
+                    :verification-notes-editable="true"
                 />
 
                 <AdminVerifyEditListingRejectZone />

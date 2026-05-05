@@ -258,22 +258,21 @@ class AdminListingVerifyTest extends TestCase
         // Admin tampers via raw PUT with calls-team-captured + field-officer-captured
         // fields — server keeps the persisted values. Defense-in-depth: verify-edit
         // UI marks these read-only, and the controller backs that up server-side.
+        // (verification_notes is now admin-overridable per the verify-edit workflow.)
         $this->asAdmin();
         $listing = $this->visitedListing();
-        $originalContactPhone      = $listing->contact_phone;
-        $originalContactType       = $listing->contact_type;
-        $originalSourceSite        = $listing->source_site;
-        $originalSourceUrl         = $listing->source_url;
-        $originalVerificationNotes = $listing->verification_notes;
+        $originalContactPhone = $listing->contact_phone;
+        $originalContactType  = $listing->contact_type;
+        $originalSourceSite   = $listing->source_site;
+        $originalSourceUrl    = $listing->source_url;
 
         $this->put(
             route('admin.listings.verify', $listing->uuid),
             $this->validPayload($listing, [
-                'contact_phone'      => '+639999999999',
-                'contact_type'       => ContactType::caretaker()->value,
-                'source_site'        => SourceSite::olx()->value,
-                'source_url'         => 'https://attacker.example/tampered',
-                'verification_notes' => 'TAMPERED',
+                'contact_phone' => '+639999999999',
+                'contact_type'  => ContactType::caretaker()->value,
+                'source_site'   => SourceSite::olx()->value,
+                'source_url'    => 'https://attacker.example/tampered',
             ]),
         );
 
@@ -282,7 +281,30 @@ class AdminListingVerifyTest extends TestCase
         $this->assertSame($originalContactType, $fresh->contact_type);
         $this->assertSame($originalSourceSite, $fresh->source_site);
         $this->assertSame($originalSourceUrl, $fresh->source_url);
-        $this->assertSame($originalVerificationNotes, $fresh->verification_notes);
+    }
+
+    public function test_it_allows_admin_to_override_verification_notes_on_verify(): void
+    {
+        // verification_notes was historically calls-team-captured (and previously
+        // editable only by the field officer). Admin can now finalize/correct it
+        // during the verify step — clarifying ambiguous notes, adding broker-side
+        // context the field officer didn't capture, etc.
+        $this->asAdmin();
+        $listing = $this->visitedListing();
+
+        $this->put(
+            route('admin.listings.verify', $listing->uuid),
+            $this->validPayload($listing, [
+                'verification_notes' => 'Verified via call-back; owner confirmed asking rate. Broker fee split 50/50.',
+            ]),
+        );
+
+        $listing->refresh();
+        $this->assertSame(
+            'Verified via call-back; owner confirmed asking rate. Broker fee split 50/50.',
+            $listing->verification_notes,
+            'Admin must be able to override verification_notes during verify-edit.',
+        );
     }
 
     public function test_it_persists_is_featured_when_admin_toggles_it_on(): void
@@ -339,9 +361,10 @@ class AdminListingVerifyTest extends TestCase
 
         $invalid = [
             // Length caps
-            'title'         => str_repeat('a', 201),
-            'description'   => str_repeat('a', 5001),
-            'directions'    => str_repeat('a', 501),
+            'title'              => str_repeat('a', 201),
+            'description'        => str_repeat('a', 5001),
+            'directions'         => str_repeat('a', 501),
+            'verification_notes' => str_repeat('a', 2001),
             // Enum allowlist
             'listing_type'  => 'not-a-valid-type',
             'barangay'      => 'not-a-valid-barangay',

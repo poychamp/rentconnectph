@@ -269,10 +269,12 @@ class ListingController extends Controller
         $existingIds = $listing->images()->pluck('id')->all();
 
         // Strict validation — every renter-essential field required. nullable for
-        // admin-discretion fields (description, beds, baths, sqm, amenities).
-        // Calls-team-locked fields (contact_phone, contact_type, source_site,
-        // source_url, verification_notes) are NOT validated here AND NOT persisted
-        // below — silent-ignore, defense-in-depth on top of the read-only UI.
+        // admin-discretion fields (description, beds, baths, sqm, amenities,
+        // verification_notes). Calls-team-locked fields (contact_phone,
+        // contact_type, source_site, source_url) are NOT validated here AND
+        // NOT persisted below — silent-ignore, defense-in-depth on top of the
+        // read-only UI. verification_notes is admin-overridable per the
+        // verify-edit workflow.
         $validator = Validator::make($request->all(), [
             'title'                => ['required', 'string', 'max:200'],
             'description'          => ['nullable', 'string', 'max:5000'],
@@ -285,6 +287,7 @@ class ListingController extends Controller
             'latitude'             => ['required', 'numeric', 'between:-90,90'],
             'longitude'            => ['required', 'numeric', 'between:-180,180'],
             'directions'           => ['required', 'string', 'max:500'],
+            'verification_notes'   => ['nullable', 'string', 'max:2000'],
             'amenities'            => ['nullable', 'array', 'max:50'],
             'amenities.*'          => ['integer', 'exists:amenities,id'],
             'photos'               => ['required', 'array', 'min:1', 'max:20'],
@@ -311,6 +314,7 @@ class ListingController extends Controller
             'longitude.between'      => 'Longitude must be between -180 and 180.',
             'directions.required'    => 'Directions are required.',
             'directions.max'         => 'Directions are too long (max 500 characters).',
+            'verification_notes.max' => 'Verification notes must be 2000 characters or fewer.',
             'photos.required'        => 'At least one photo is required.',
             'photos.min'             => 'At least one photo is required.',
             'amenities.*.exists'     => "One or more selected amenities don't exist.",
@@ -343,21 +347,22 @@ class ListingController extends Controller
             // (separate Carbon::now() calls can drift by microseconds under fast loads).
             $now = Carbon::now();
             $listing->update([
-                'title'         => $validated['title'],
-                'description'   => $validated['description'] ?? null,
-                'type'          => $validated['listing_type'],
-                'price_monthly' => $validated['price_monthly'],
-                'barangay'      => $validated['barangay'],
-                'beds'          => $validated['beds']  ?? null,
-                'baths'         => $validated['baths'] ?? null,
-                'sqm'           => $validated['sqm']   ?? null,
-                'latitude'      => $validated['latitude'],
-                'longitude'     => $validated['longitude'],
-                'directions'    => $validated['directions'],
-                'is_featured'   => (bool) ($validated['is_featured'] ?? false),
-                'is_verified'   => true,
-                'verified_at'   => $now,
-                'listed_at'     => $now,
+                'title'              => $validated['title'],
+                'description'        => $validated['description'] ?? null,
+                'type'               => $validated['listing_type'],
+                'price_monthly'      => $validated['price_monthly'],
+                'barangay'           => $validated['barangay'],
+                'beds'               => $validated['beds']  ?? null,
+                'baths'              => $validated['baths'] ?? null,
+                'sqm'                => $validated['sqm']   ?? null,
+                'latitude'           => $validated['latitude'],
+                'longitude'          => $validated['longitude'],
+                'directions'         => $validated['directions'],
+                'verification_notes' => $validated['verification_notes'] ?? null,
+                'is_featured'        => (bool) ($validated['is_featured'] ?? false),
+                'is_verified'        => true,
+                'verified_at'        => $now,
+                'listed_at'          => $now,
             ]);
 
             if (! empty($removedImageIds)) {
