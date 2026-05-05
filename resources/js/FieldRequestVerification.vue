@@ -61,6 +61,7 @@ const addListingForm = reactive({
             ? Number(oldInput.longitude) : null)
         : (listing.value?.longitude ?? null),
     directions:    oldInput?.directions    ?? listing.value?.directions    ?? '',
+    verification_notes: oldInput?.verification_notes ?? listing.value?.verification_notes ?? '',
     amenities:     Array.isArray(oldInput?.amenities)
         ? oldInput.amenities.map(Number)
         : (Array.isArray(listing.value?.amenities)
@@ -158,6 +159,10 @@ const VALIDATORS = {
         const v = (f.directions ?? '').trim();
         if (!v) return 'Directions are required.';
         if (v.length > 500) return 'Directions are too long (max 500 characters).';
+        return null;
+    },
+    verification_notes: (f) => {
+        if ((f.verification_notes ?? '').length > 2000) return 'Verification notes must be 2000 characters or fewer.';
         return null;
     },
     photos: (f) => {

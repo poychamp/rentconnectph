@@ -318,6 +318,7 @@ class ListingController extends Controller
             'latitude'             => ['required', 'numeric', 'between:-90,90'],
             'longitude'            => ['required', 'numeric', 'between:-180,180'],
             'directions'           => ['required', 'string', 'max:500'],
+            'verification_notes'   => ['nullable', 'string', 'max:2000'],
             'amenities'            => ['nullable', 'array', 'max:50'],
             'amenities.*'          => ['integer', 'exists:amenities,id'],
             'photos'               => [
@@ -342,8 +343,9 @@ class ListingController extends Controller
         ], [
             'title.required'      => 'Title is required.',
             'title.max'           => 'Title is too long (max 200 characters).',
-            'directions.required' => 'Directions are required.',
-            'directions.max'      => 'Directions are too long (max 500 characters).',
+            'directions.required'    => 'Directions are required.',
+            'directions.max'         => 'Directions are too long (max 500 characters).',
+            'verification_notes.max' => 'Verification notes must be 2000 characters or fewer.',
             'latitude.required'   => 'Drop a map pin before requesting verification.',
             'latitude.between'    => 'Latitude must be between -90 and 90.',
             'longitude.required'  => 'Drop a map pin before requesting verification.',
@@ -382,19 +384,20 @@ class ListingController extends Controller
 
         DB::transaction(function () use ($request, $listing, $validated, $photos, $removedImageIds) {
             $listing->update([
-                'title'         => $validated['title'],
-                'description'   => $validated['description'] ?? null,
-                'type'          => $validated['listing_type'] ?? null,
-                'price_monthly' => $validated['price_monthly'] ?? null,
-                'barangay'      => $validated['barangay'] ?? null,
-                'beds'          => $validated['beds'] ?? null,
-                'baths'         => $validated['baths'] ?? null,
-                'sqm'           => $validated['sqm'] ?? null,
-                'latitude'      => $validated['latitude'],
-                'longitude'     => $validated['longitude'],
-                'directions'    => $validated['directions'],
-                'queue_status'  => QueueStatus::visited()->value,
-                'visited_at'    => Carbon::now(),
+                'title'              => $validated['title'],
+                'description'        => $validated['description'] ?? null,
+                'type'               => $validated['listing_type'] ?? null,
+                'price_monthly'      => $validated['price_monthly'] ?? null,
+                'barangay'           => $validated['barangay'] ?? null,
+                'beds'               => $validated['beds'] ?? null,
+                'baths'              => $validated['baths'] ?? null,
+                'sqm'                => $validated['sqm'] ?? null,
+                'latitude'           => $validated['latitude'],
+                'longitude'          => $validated['longitude'],
+                'directions'         => $validated['directions'],
+                'verification_notes' => $validated['verification_notes'] ?? null,
+                'queue_status'       => QueueStatus::visited()->value,
+                'visited_at'         => Carbon::now(),
             ]);
 
             if (! empty($removedImageIds)) {

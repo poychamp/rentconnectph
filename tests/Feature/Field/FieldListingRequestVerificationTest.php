@@ -167,6 +167,17 @@ class FieldListingRequestVerificationTest extends TestCase
         )->assertSessionHasErrors(['barangay'], null, 'requestVerification');
     }
 
+    public function test_it_rejects_verification_notes_longer_than_2000_characters(): void
+    {
+        $marco = $this->asMarco();
+        $listing = $this->readyListingFor($marco);
+
+        $this->put(
+            route('field.listings.request-verification', $listing->uuid),
+            $this->validPayload($listing, ['verification_notes' => str_repeat('x', 2001)]),
+        )->assertSessionHasErrors(['verification_notes'], null, 'requestVerification');
+    }
+
     public function test_it_requires_directions(): void
     {
         $marco = $this->asMarco();
@@ -216,6 +227,7 @@ class FieldListingRequestVerificationTest extends TestCase
             'baths'         => 1,
             'sqm'           => 25,
             'directions'    => 'Old directions.',
+            'verification_notes' => 'Original verification notes.',
         ]);
 
         $this->put(
@@ -232,6 +244,7 @@ class FieldListingRequestVerificationTest extends TestCase
                 'latitude'      => 8.4831,
                 'longitude'     => 124.6505,
                 'directions'    => 'Past the green gate.',
+                'verification_notes' => 'Visited Tue 10am — gate matches photos; aircon present.',
             ]),
         );
 
@@ -247,6 +260,10 @@ class FieldListingRequestVerificationTest extends TestCase
         $this->assertEqualsWithDelta(8.4831, (float) $listing->latitude, 0.0001);
         $this->assertEqualsWithDelta(124.6505, (float) $listing->longitude, 0.0001);
         $this->assertSame('Past the green gate.', $listing->directions);
+        $this->assertSame(
+            'Visited Tue 10am — gate matches photos; aircon present.',
+            $listing->verification_notes,
+        );
     }
 
     public function test_it_deletes_photos_that_are_not_in_the_submitted_array(): void
