@@ -10,7 +10,9 @@ class SitemapController extends Controller
 {
     public function index()
     {
-        $xml = Cache::remember('sitemap.xml', Carbon::now()->addDay(), function () {
+        $cacheKey = 'sitemap.xml.' . app()->environment();
+
+        $xml = Cache::remember($cacheKey, Carbon::now()->addDay(), function () {
             $listings = Listing::verified()
                 ->select(['uuid', 'updated_at'])
                 ->get();
