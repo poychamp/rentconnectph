@@ -19,4 +19,18 @@ class ProfileController extends Controller
             'dashboardUrl' => $isField ? '/field' : '/admin',
         ]);
     }
+
+    public function updateName(Request $request)
+    {
+        $validated = $request->validateWithBag('update-name', [
+            'name' => ['required', 'string', 'max:255'],
+        ], [
+            'name.required' => 'Please enter your name.',
+            'name.max' => 'Name must be 255 characters or fewer.',
+        ]);
+
+        $request->user('admin')->update(['name' => $validated['name']]);
+
+        return back()->with('success', 'Name updated.');
+    }
 }

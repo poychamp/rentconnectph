@@ -19,4 +19,5 @@ Route::middleware('guest.admin')->group(function () {
 // into its own named bag so failures don't clobber the other card.
 Route::middleware('auth:admin')->group(function () {
     Route::get('profile', [Admin\ProfileController::class, 'show'])->name('profile.show');
+    Route::put('profile/name', [Admin\ProfileController::class, 'updateName'])->name('profile.name');
 });

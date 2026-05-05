@@ -22,6 +22,7 @@ const NAME_VALIDATORS = {
 };
 
 function validateNameField(field) {
+    if (!CLIENT_VALIDATION_ENABLED) return;
     const msg = NAME_VALIDATORS[field]?.(nameForm[field]);
     if (msg) nameErrors[field] = msg;
     else delete nameErrors[field];
@@ -32,6 +33,7 @@ function clearNameError(field) {
 }
 
 function validateAllName() {
+    if (!CLIENT_VALIDATION_ENABLED) return true;
     let ok = true;
     Object.keys(NAME_VALIDATORS).forEach((field) => {
         const msg = NAME_VALIDATORS[field](nameForm[field]);
@@ -79,6 +81,7 @@ const PASSWORD_VALIDATORS = {
 };
 
 function validatePasswordField(field) {
+    if (!CLIENT_VALIDATION_ENABLED) return;
     const msg = PASSWORD_VALIDATORS[field]?.(passwordForm[field]);
     if (msg) passwordErrors[field] = msg;
     else delete passwordErrors[field];
@@ -89,6 +92,7 @@ function clearPasswordError(field) {
 }
 
 function validateAllPassword() {
+    if (!CLIENT_VALIDATION_ENABLED) return true;
     let ok = true;
     Object.keys(PASSWORD_VALIDATORS).forEach((field) => {
         const msg = PASSWORD_VALIDATORS[field](passwordForm[field]);
