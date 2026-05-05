@@ -26,7 +26,7 @@ class AdminHandoffDestroyTest extends TestCase
 
         $response = $this->delete(route('admin.handoffs.destroy', $lock));
 
-        $response->assertRedirect(route('admin.login'));
+        $response->assertRedirect(route('auth.login'));
     }
 
     public function test_it_forbids_field_officer(): void

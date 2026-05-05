@@ -38,7 +38,7 @@ class AdminAmenityRestoreTest extends TestCase
         $amenity = $this->trashedAmenity();
 
         $this->put(route('admin.amenities.restore', $amenity->uuid))
-            ->assertRedirect(route('admin.login'));
+            ->assertRedirect(route('auth.login'));
     }
 
     public function test_it_forbids_user_lacking_amenities_manage_permission(): void

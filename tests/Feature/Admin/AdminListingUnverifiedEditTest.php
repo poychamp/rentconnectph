@@ -26,7 +26,7 @@ class AdminListingUnverifiedEditTest extends TestCase
 
         $this->get(route('admin.listings.unverified-edit', [
             'listing' => $listing->uuid,
-        ]))->assertRedirect(route('admin.login'));
+        ]))->assertRedirect(route('auth.login'));
     }
 
     // =========================================================================

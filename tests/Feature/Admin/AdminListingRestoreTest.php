@@ -30,7 +30,7 @@ class AdminListingRestoreTest extends TestCase
 
         $response = $this->put(route('admin.listings.restore', ['listing' => $listing->uuid]));
 
-        $response->assertRedirect(route('admin.login'));
+        $response->assertRedirect(route('auth.login'));
     }
 
     public function test_it_404s_for_unknown_uuid(): void

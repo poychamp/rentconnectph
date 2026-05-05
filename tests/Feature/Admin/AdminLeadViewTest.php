@@ -25,7 +25,7 @@ class AdminLeadViewTest extends TestCase
     public function test_it_redirects_guests(): void
     {
         $this->get(route('admin.leads.index'))
-            ->assertRedirect(route('admin.login'));
+            ->assertRedirect(route('auth.login'));
     }
 
     public function test_it_forbids_field_officer(): void

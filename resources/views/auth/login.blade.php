@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
-@section('title', 'Admin Login — RentConnectPH')
-@section('page', 'admin-login')
+@section('title', 'Sign in — RentConnectPH')
+@section('page', 'auth-login')
 
 @push('scripts')
 <script>

@@ -116,7 +116,7 @@ class AdminListingUnverifiedUpdateTest extends TestCase
         $listing = $this->makeUnverifiedListing();
 
         $this->put(route('admin.listings.unverified-update', $listing->uuid), $this->notCalledPayload($listing))
-            ->assertRedirect(route('admin.login'));
+            ->assertRedirect(route('auth.login'));
     }
 
     public function test_it_returns_404_for_unknown_or_soft_deleted_uuid(): void

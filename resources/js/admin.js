@@ -9,10 +9,10 @@ import AdminToast from './components/admin/AdminToast.vue';
 const el = document.getElementById('app');
 
 if (el) {
-    const page = el.dataset.page || 'admin-login';
+    const page = el.dataset.page || 'auth-login';
 
     const roots = {
-        'admin-login':              () => import('./AdminLogin.vue'),
+        'auth-login':               () => import('./AuthLogin.vue'),
         'admin-dashboard':          () => import('./AdminDashboard.vue'),
         'add-listing':              () => import('./AdminListingCreate.vue'),
         'admin-edit-listing':       () => import('./AdminListingEdit.vue'),
@@ -43,7 +43,7 @@ if (el) {
         'field-verified-listings':  () => import('./FieldVerifiedListings.vue'),
     };
 
-    const loadRoot = roots[page] || roots['admin-login'];
+    const loadRoot = roots[page] || roots['auth-login'];
 
     loadRoot().then(({ default: Root }) => {
         createApp(Root)

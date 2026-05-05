@@ -102,7 +102,7 @@ class AdminListingVerifyTest extends TestCase
         $listing = $this->visitedListing();
 
         $this->put(route('admin.listings.verify', $listing->uuid), $this->validPayload($listing))
-            ->assertRedirect(route('admin.login'));
+            ->assertRedirect(route('auth.login'));
     }
 
     public function test_it_forbids_user_lacking_listings_manage_permission(): void

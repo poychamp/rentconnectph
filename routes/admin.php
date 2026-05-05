@@ -4,12 +4,9 @@ use App\Enums\AppPermission;
 use App\Http\Controllers\Admin;
 use Illuminate\Support\Facades\Route;
 
-// Public — login is the entry point. Bounce authed admins to dashboard
-// (no point letting them see the login form).
-Route::middleware('guest.admin')->group(function () {
-    Route::get('login', [Admin\AuthController::class, 'showLogin'])->name('login');
-    Route::post('login', [Admin\AuthController::class, 'login'])->name('login.attempt');
-});
+// Login routes moved to routes/auth.php (`/auth/login`) so the URL doesn't
+// imply admin-only — the same login surface serves field officers and any
+// future calls-team / staff role on the admin guard.
 
 // Guarded — auth:admin required for everything below
 Route::middleware('auth:admin')->group(function () {

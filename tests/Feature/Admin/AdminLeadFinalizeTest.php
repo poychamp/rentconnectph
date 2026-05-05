@@ -23,7 +23,7 @@ class AdminLeadFinalizeTest extends TestCase
         $lead = Lead::factory()->sent()->create();
 
         $this->put(route('admin.leads.finalize', $lead))
-            ->assertRedirect(route('admin.login'));
+            ->assertRedirect(route('auth.login'));
     }
 
     public function test_it_forbids_field_officer(): void

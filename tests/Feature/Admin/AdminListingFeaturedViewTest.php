@@ -17,7 +17,7 @@ class AdminListingFeaturedViewTest extends TestCase
     {
         $response = $this->get(route('admin.featured-listings.index'));
 
-        $response->assertRedirect(route('admin.login'));
+        $response->assertRedirect(route('auth.login'));
     }
 
     public function test_it_returns_only_featured_verified_listings_with_cover_photo_and_in_featured_order(): void

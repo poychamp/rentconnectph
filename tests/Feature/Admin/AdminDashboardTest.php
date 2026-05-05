@@ -15,7 +15,7 @@ class AdminDashboardTest extends TestCase
     {
         $response = $this->get(route('admin.dashboard'));
 
-        $response->assertRedirect(route('admin.login'));
+        $response->assertRedirect(route('auth.login'));
     }
 
     public function test_it_allows_super_admin(): void

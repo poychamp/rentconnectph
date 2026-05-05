@@ -86,7 +86,7 @@ class AdminListingUpdateTest extends TestCase
 
         $response = $this->put(route('admin.listings.update', $listing->uuid), $this->validPayload($listing));
 
-        $response->assertRedirect(route('admin.login'));
+        $response->assertRedirect(route('auth.login'));
     }
 
     public function test_it_returns_404_for_unknown_or_soft_deleted_uuid(): void

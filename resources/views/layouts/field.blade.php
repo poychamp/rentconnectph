@@ -22,7 +22,7 @@
 
     @php
         // Sidebar action-needed counters. Permission-gated so unauthorized
-        // pages (e.g. /admin/login during field-side bounces) don't run the
+        // pages (e.g. /auth/login during field-side bounces) don't run the
         // COUNT query. Mirrors Listing::scopeForOfficer used by the index
         // controller, so badge total = page row count for this officer.
         $fieldUser = auth('admin')->user();

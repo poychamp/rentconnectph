@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Admin;
+namespace Tests\Feature\Auth;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -9,13 +9,13 @@ use Illuminate\Support\Facades\Hash;
 use Tests\SeedDatabaseAfterRefresh;
 use Tests\TestCase;
 
-class AdminLoginTest extends TestCase
+class AuthLoginTest extends TestCase
 {
     use RefreshDatabase, SeedDatabaseAfterRefresh;
 
     public function test_it_rejects_empty_submit(): void
     {
-        $response = $this->post(route('admin.login.attempt'), []);
+        $response = $this->post(route('auth.login.attempt'), []);
 
         $response->assertRedirect();
         $response->assertSessionHasErrors([
@@ -27,7 +27,7 @@ class AdminLoginTest extends TestCase
 
     public function test_it_rejects_when_only_email_missing(): void
     {
-        $response = $this->post(route('admin.login.attempt'), ['password' => 'secret']);
+        $response = $this->post(route('auth.login.attempt'), ['password' => 'secret']);
 
         $response->assertRedirect();
         $response->assertSessionHasErrors([
@@ -38,7 +38,7 @@ class AdminLoginTest extends TestCase
 
     public function test_it_rejects_when_only_password_missing(): void
     {
-        $response = $this->post(route('admin.login.attempt'), ['email' => 'foo@bar.com']);
+        $response = $this->post(route('auth.login.attempt'), ['email' => 'foo@bar.com']);
 
         $response->assertRedirect();
         $response->assertSessionHasErrors([
@@ -53,7 +53,7 @@ class AdminLoginTest extends TestCase
             'password' => Hash::make('correct-password'),
         ]);
 
-        $response = $this->post(route('admin.login.attempt'), [
+        $response = $this->post(route('auth.login.attempt'), [
             'email' => $admin->email,
             'password' => 'wrong-password',
         ]);
@@ -65,7 +65,7 @@ class AdminLoginTest extends TestCase
 
     public function test_it_rejects_when_email_doesnt_exist(): void
     {
-        $response = $this->post(route('admin.login.attempt'), [
+        $response = $this->post(route('auth.login.attempt'), [
             'email' => 'ghost@nope.com',
             'password' => 'whatever',
         ]);
@@ -82,7 +82,7 @@ class AdminLoginTest extends TestCase
             'password' => Hash::make('correct-password'),
         ]);
 
-        $response = $this->post(route('admin.login.attempt'), [
+        $response = $this->post(route('auth.login.attempt'), [
             'email' => $admin->email,
             'password' => 'correct-password',
         ]);
@@ -98,7 +98,7 @@ class AdminLoginTest extends TestCase
             'password' => Hash::make('correct-password'),
         ]);
 
-        $response = $this->post(route('admin.login.attempt'), [
+        $response = $this->post(route('auth.login.attempt'), [
             'email' => $field->email,
             'password' => 'correct-password',
         ]);
@@ -114,7 +114,7 @@ class AdminLoginTest extends TestCase
             'password' => Hash::make('correct-password'),
         ]);
 
-        $this->post(route('admin.login.attempt'), [
+        $this->post(route('auth.login.attempt'), [
             'email' => $admin->email,
             'password' => 'correct-password',
         ]);
@@ -128,7 +128,7 @@ class AdminLoginTest extends TestCase
             'password' => Hash::make('correct-password'),
         ]);
 
-        $this->post(route('admin.login.attempt'), [
+        $this->post(route('auth.login.attempt'), [
             'email' => $admin->email,
             'password' => 'correct-password',
             'remember' => '1',
@@ -146,7 +146,7 @@ class AdminLoginTest extends TestCase
         $this->startSession();
         $sessionIdBefore = session()->getId();
 
-        $this->post(route('admin.login.attempt'), [
+        $this->post(route('auth.login.attempt'), [
             'email' => $admin->email,
             'password' => 'correct-password',
         ]);
@@ -165,7 +165,7 @@ class AdminLoginTest extends TestCase
 
         // Try to log in again — even with totally invalid creds, should bounce to dashboard
         // without reprocessing (validation must not run, original auth stays intact)
-        $response = $this->post(route('admin.login.attempt'), [
+        $response = $this->post(route('auth.login.attempt'), [
             'email'    => 'someone-else@example.com',
             'password' => 'wrong',
         ]);
@@ -182,12 +182,12 @@ class AdminLoginTest extends TestCase
             'password' => Hash::make('correct-password'),
         ]);
 
-        $this->post(route('admin.login.attempt'), [
+        $this->post(route('auth.login.attempt'), [
             'email' => $admin->email,
             'password' => $submittedPassword,
         ]);
 
-        $followUp = $this->get(route('admin.login'));
+        $followUp = $this->get(route('auth.login'));
 
         $followUp->assertDontSee($submittedPassword);
     }
@@ -200,7 +200,7 @@ class AdminLoginTest extends TestCase
 
         // First 5 failed attempts — all rejected with the standard "Incorrect" message
         for ($i = 1; $i <= 5; $i++) {
-            $response = $this->post(route('admin.login.attempt'), [
+            $response = $this->post(route('auth.login.attempt'), [
                 'email'    => $admin->email,
                 'password' => 'wrong-password',
             ]);
@@ -213,7 +213,7 @@ class AdminLoginTest extends TestCase
         }
 
         // 6th attempt — throttled. Different message (mentions waiting / too many).
-        $response = $this->post(route('admin.login.attempt'), [
+        $response = $this->post(route('auth.login.attempt'), [
             'email'    => $admin->email,
             'password' => 'wrong-password',
         ]);
@@ -228,7 +228,7 @@ class AdminLoginTest extends TestCase
         );
 
         // Even with CORRECT credentials, throttle still applies
-        $response = $this->post(route('admin.login.attempt'), [
+        $response = $this->post(route('auth.login.attempt'), [
             'email'    => $admin->email,
             'password' => 'correct-password',
         ]);
@@ -243,14 +243,14 @@ class AdminLoginTest extends TestCase
 
         // 4 failed attempts (just under the threshold)
         for ($i = 1; $i <= 4; $i++) {
-            $this->post(route('admin.login.attempt'), [
+            $this->post(route('auth.login.attempt'), [
                 'email'    => $admin->email,
                 'password' => 'wrong-password',
             ]);
         }
 
         // Successful login — resets the throttle counter
-        $response = $this->post(route('admin.login.attempt'), [
+        $response = $this->post(route('auth.login.attempt'), [
             'email'    => $admin->email,
             'password' => 'correct-password',
         ]);
@@ -262,7 +262,7 @@ class AdminLoginTest extends TestCase
 
         // Now do 5 more failed attempts — none should throttle (counter was reset)
         for ($i = 1; $i <= 5; $i++) {
-            $response = $this->post(route('admin.login.attempt'), [
+            $response = $this->post(route('auth.login.attempt'), [
                 'email'    => $admin->email,
                 'password' => 'wrong-password',
             ]);

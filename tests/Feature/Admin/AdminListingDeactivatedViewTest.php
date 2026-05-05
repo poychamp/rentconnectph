@@ -18,7 +18,7 @@ class AdminListingDeactivatedViewTest extends TestCase
     {
         $response = $this->get(route('admin.deactivated-listings.index'));
 
-        $response->assertRedirect(route('admin.login'));
+        $response->assertRedirect(route('auth.login'));
     }
 
     public function test_it_returns_paginated_deactivated_listings_with_expected_shape(): void

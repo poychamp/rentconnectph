@@ -39,7 +39,7 @@ class AdminListingEditViewTest extends TestCase
         $listing = $this->verifiedListing();
 
         $this->get(route('admin.listings.edit', $listing->uuid))
-            ->assertRedirect(route('admin.login'));
+            ->assertRedirect(route('auth.login'));
     }
 
     public function test_it_forbids_user_lacking_listings_manage_permission(): void

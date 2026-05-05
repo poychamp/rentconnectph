@@ -18,7 +18,7 @@ class AdminListingRejectedViewTest extends TestCase
     {
         $response = $this->get(route('admin.rejected-listings.index'));
 
-        $response->assertRedirect(route('admin.login'));
+        $response->assertRedirect(route('auth.login'));
     }
 
     public function test_it_returns_paginated_rejected_listings_with_expected_shape(): void

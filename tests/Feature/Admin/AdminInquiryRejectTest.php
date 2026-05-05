@@ -25,7 +25,7 @@ class AdminInquiryRejectTest extends TestCase
 
         $response = $this->put(route('admin.inquiries.reject', $inquiry));
 
-        $response->assertRedirect(route('admin.login'));
+        $response->assertRedirect(route('auth.login'));
     }
 
     public function test_it_forbids_field_officer(): void

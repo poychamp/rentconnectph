@@ -12,6 +12,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
         then: function () {
             Route::middleware('web')
+                ->prefix('auth')
+                ->name('auth.')
+                ->group(base_path('routes/auth.php'));
+
+            Route::middleware('web')
                 ->prefix('admin')
                 ->name('admin.')
                 ->group(base_path('routes/admin.php'));
@@ -29,10 +34,10 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         // Override the default Authenticate middleware redirect: send all unauthed
-        // hits to admin.login. Today, admin is the only route group using auth
-        // middleware so this callback only ever fires for /admin paths anyway.
+        // hits to auth.login (`/auth/login`) — shared login surface for the admin
+        // guard (admin + field roles, plus any future staff role on the same guard).
         // When a public-facing auth (broker / renter portal) lands, branch here.
-        $middleware->redirectGuestsTo(fn () => route('admin.login'));
+        $middleware->redirectGuestsTo(fn () => route('auth.login'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

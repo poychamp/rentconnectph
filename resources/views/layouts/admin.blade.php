@@ -22,7 +22,7 @@
 
     @php
         // Sidebar action-needed counters. Each block is permission-gated so
-        // unauthorized pages (e.g. /admin/login) don't run COUNT queries.
+        // unauthorized pages (e.g. /auth/login) don't run COUNT queries.
         // Each query mirrors its index controller exactly so badge totals
         // match what the admin sees on click-through.
         $adminUser = auth('admin')->user();

@@ -44,7 +44,7 @@ class FieldListingEditTest extends TestCase
 
         $response = $this->get(route('field.listings.edit', $listing->uuid));
 
-        $response->assertRedirect(route('admin.login'));
+        $response->assertRedirect(route('auth.login'));
     }
 
     public function test_it_forbids_user_lacking_listings_field_work_permission(): void

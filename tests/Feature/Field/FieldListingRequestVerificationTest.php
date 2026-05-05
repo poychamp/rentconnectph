@@ -94,7 +94,7 @@ class FieldListingRequestVerificationTest extends TestCase
         $listing = $this->readyListingFor($marco);
 
         $this->put(route('field.listings.request-verification', $listing->uuid))
-            ->assertRedirect(route('admin.login'));
+            ->assertRedirect(route('auth.login'));
     }
 
     public function test_it_forbids_user_lacking_listings_field_work_permission(): void

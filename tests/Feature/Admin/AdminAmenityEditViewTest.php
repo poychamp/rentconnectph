@@ -17,7 +17,7 @@ class AdminAmenityEditViewTest extends TestCase
         $amenity = Amenity::factory()->create();
 
         $this->get(route('admin.amenities.edit', $amenity->uuid))
-            ->assertRedirect(route('admin.login'));
+            ->assertRedirect(route('auth.login'));
     }
 
     public function test_it_forbids_user_lacking_amenities_manage_permission(): void

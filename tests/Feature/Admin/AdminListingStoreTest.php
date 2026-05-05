@@ -67,7 +67,7 @@ class AdminListingStoreTest extends TestCase
     {
         $response = $this->post(route('admin.listings.store'), $this->validPayload());
 
-        $response->assertRedirect(route('admin.login'));
+        $response->assertRedirect(route('auth.login'));
     }
 
     public function test_it_allows_authenticated_super_admin_to_post(): void

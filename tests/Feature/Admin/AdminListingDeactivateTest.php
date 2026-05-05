@@ -39,7 +39,7 @@ class AdminListingDeactivateTest extends TestCase
             $this->validPayload()
         );
 
-        $response->assertRedirect(route('admin.login'));
+        $response->assertRedirect(route('auth.login'));
     }
 
     public function test_it_404s_for_unknown_uuid(): void

@@ -16,7 +16,7 @@ class AdminAmenityDeletedViewTest extends TestCase
     public function test_it_redirects_guest_to_login(): void
     {
         $this->get(route('admin.deleted-amenities.index'))
-            ->assertRedirect(route('admin.login'));
+            ->assertRedirect(route('auth.login'));
     }
 
     public function test_it_forbids_user_lacking_amenities_manage_permission(): void

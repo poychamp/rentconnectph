@@ -16,7 +16,7 @@ class AdminListingCreateTest extends TestCase
     {
         $response = $this->get(route('admin.listings.create'));
 
-        $response->assertRedirect(route('admin.login'));
+        $response->assertRedirect(route('auth.login'));
     }
 
     public function test_it_returns_view_with_reference_data(): void

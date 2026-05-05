@@ -48,7 +48,7 @@ function onSubmit() {
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Sign in to your account to continue.</p>
 
             <form
-                action="/admin/login"
+                action="/auth/login"
                 method="POST"
                 @submit="onSubmit"
                 class="mt-6 space-y-4"
