@@ -376,8 +376,9 @@ class FieldListingUpdateTest extends TestCase
     // =========================================================================
     // Security boundary — calls-team-locked fields are silently ignored.
     // Calls-team owns contact_phone, contact_type, source_site, source_url,
-    // verification_notes, prequal_status. The form holds copies of these for
-    // read-only display, so a tampered submit could include them.
+    // prequal_status. The form holds copies of these for read-only display,
+    // so a tampered submit could include them. (verification_notes is now
+    // field-officer-editable per the on-site verification workflow.)
     // =========================================================================
 
     public function test_it_silently_ignores_calls_team_locked_fields_in_the_request(): void
@@ -392,7 +393,6 @@ class FieldListingUpdateTest extends TestCase
                 'contact_type'       => ContactType::authorizedRep()->value,
                 'source_site'        => SourceSite::facebookGroup()->value,
                 'source_url'         => 'https://attacker.example/owned',
-                'verification_notes' => 'Hijacked notes',
                 'prequal_status'     => PrequalStatus::notCalled()->value,
             ])
         );
@@ -402,8 +402,57 @@ class FieldListingUpdateTest extends TestCase
         $this->assertSame(ContactType::owner()->value,       $listing->contact_type);
         $this->assertSame(SourceSite::olx()->value,          $listing->source_site);
         $this->assertSame('https://olx.ph/original',         $listing->source_url);
-        $this->assertSame('Calls-team set this.',            $listing->verification_notes);
         $this->assertSame(PrequalStatus::calledYes()->value, $listing->prequal_status);
+    }
+
+    // =========================================================================
+    // Field-officer-editable carve-out — verification_notes was historically
+    // calls-team-locked but is now overridable by the field officer because
+    // the on-site visit reveals discrepancies the calls team couldn't know
+    // (gate not matching the photos, owner correcting details verbally,
+    // amenities present that weren't listed, etc.).
+    // =========================================================================
+
+    public function test_it_allows_field_officer_to_override_verification_notes(): void
+    {
+        $marco = $this->asMarco();
+        $listing = $this->assignedListingFor($marco);
+
+        $this->put(
+            route('field.listings.update', $listing->uuid),
+            $this->validPayload($listing, [
+                'verification_notes' => 'Visited Tue 10am — gate matches photos; owner confirmed +63917…; aircon present (not listed).',
+            ])
+        );
+
+        $listing->refresh();
+        $this->assertSame(
+            'Visited Tue 10am — gate matches photos; owner confirmed +63917…; aircon present (not listed).',
+            $listing->verification_notes,
+            'Field officer must be able to override calls-team verification_notes during on-site edit.',
+        );
+    }
+
+    public function test_it_rejects_verification_notes_longer_than_2000_characters(): void
+    {
+        $marco = $this->asMarco();
+        $listing = $this->assignedListingFor($marco);
+
+        $this->put(
+            route('field.listings.update', $listing->uuid),
+            $this->validPayload($listing, [
+                'verification_notes' => str_repeat('x', 2001),
+            ])
+        )->assertSessionHasErrors([
+            'verification_notes' => 'Verification notes must be 2000 characters or fewer.',
+        ]);
+
+        $listing->refresh();
+        $this->assertSame(
+            'Calls-team set this.',
+            $listing->verification_notes,
+            'verification_notes must be unchanged when validation rejects the payload.',
+        );
     }
 
     // =========================================================================

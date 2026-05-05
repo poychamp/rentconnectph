@@ -123,6 +123,7 @@ class ListingController extends Controller
             'latitude'             => ['nullable', 'numeric', 'between:-90,90'],
             'longitude'            => ['nullable', 'numeric', 'between:-180,180'],
             'directions'           => ['required', 'string', 'max:500'],
+            'verification_notes'   => ['nullable', 'string', 'max:2000'],
             'amenities'            => ['nullable', 'array', 'max:50'],
             'amenities.*'          => ['integer', 'exists:amenities,id'],
             'photos'               => ['nullable', 'array', 'max:20'],
@@ -145,6 +146,7 @@ class ListingController extends Controller
             'longitude.between'        => 'Longitude must be between -180 and 180.',
             'directions.required'      => 'Directions are required.',
             'directions.max'           => 'Directions are too long (max 500 characters).',
+            'verification_notes.max'   => 'Verification notes must be 2000 characters or fewer.',
         ]);
 
         $photos = $request->input('photos', []);
@@ -166,21 +168,23 @@ class ListingController extends Controller
         DB::transaction(function () use ($request, $listing, $validated, $photos, $removedImageIds) {
             // Field-officer slice — only editable fields are persisted.
             // Calls-team-locked (contact_phone, contact_type, source_site,
-            // source_url, verification_notes, prequal_status) and admin-owned
-            // (assigned_to, assigned_at, queue_status, is_verified,
-            // verified_at) fields are silently ignored.
+            // source_url, prequal_status) and admin-owned (assigned_to,
+            // assigned_at, queue_status, is_verified, verified_at) fields
+            // are silently ignored. verification_notes is field-officer-
+            // editable per the on-site verification workflow.
             $listing->update([
-                'title'         => $validated['title'],
-                'description'   => $validated['description'] ?? null,
-                'type'          => $validated['listing_type'] ?? null,
-                'price_monthly' => $validated['price_monthly'] ?? null,
-                'barangay'      => $validated['barangay'] ?? null,
-                'beds'          => $validated['beds'] ?? null,
-                'baths'         => $validated['baths'] ?? null,
-                'sqm'           => $validated['sqm'] ?? null,
-                'latitude'      => $validated['latitude'] ?? null,
-                'longitude'     => $validated['longitude'] ?? null,
-                'directions'    => $validated['directions'] ?? null,
+                'title'              => $validated['title'],
+                'description'        => $validated['description'] ?? null,
+                'type'               => $validated['listing_type'] ?? null,
+                'price_monthly'      => $validated['price_monthly'] ?? null,
+                'barangay'           => $validated['barangay'] ?? null,
+                'beds'               => $validated['beds'] ?? null,
+                'baths'              => $validated['baths'] ?? null,
+                'sqm'                => $validated['sqm'] ?? null,
+                'latitude'           => $validated['latitude'] ?? null,
+                'longitude'          => $validated['longitude'] ?? null,
+                'directions'         => $validated['directions'] ?? null,
+                'verification_notes' => $validated['verification_notes'] ?? null,
             ]);
 
             if (! empty($removedImageIds)) {

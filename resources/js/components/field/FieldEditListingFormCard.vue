@@ -111,18 +111,19 @@ const lockedClass = 'mt-1 w-full rounded-md border border-gray-200 dark:border-g
 
             <div>
                 <label for="verification-notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Notes for field officer
+                    Verification Notes
                 </label>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 mb-1">
-                    Pre-visit context from the calls team.
-                </p>
                 <textarea
                     id="verification-notes"
-                    :value="listing.verification_notes"
-                    readonly
+                    v-model="form.verification_notes"
                     rows="4"
-                    :class="[lockedClass, 'resize-y']"
+                    @focus="clearFieldError('verification_notes')"
+                    @blur="validateField('verification_notes')"
+                    :class="[...inputClassFor('verification_notes'), 'resize-y']"
                 ></textarea>
+                <p v-if="errorFor('verification_notes')" class="mt-1 text-xs text-red-600 dark:text-red-400">
+                    {{ errorFor('verification_notes') }}
+                </p>
             </div>
         </div>
 
