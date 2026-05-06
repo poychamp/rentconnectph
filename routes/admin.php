@@ -148,6 +148,6 @@ Route::middleware('auth:admin')->group(function () {
 
     // Vapor's signed S3 URL endpoint — browser calls this to get a pre-signed URL,
     // then PUTs the file directly to S3. Gated to admins so non-admins can't generate URLs.
-    Route::post('vapor/signed-storage-url', [\Laravel\Vapor\Http\Controllers\SignedStorageUrlController::class, 'store'])
+    Route::post('vapor/signed-storage-url', [\App\Http\Controllers\Vapor\SignedStorageUrlController::class, 'store'])
         ->name('vapor.signed-storage-url');
 });

@@ -54,6 +54,6 @@ Route::middleware('auth:admin')->group(function () {
     // then PUTs the file directly to S3. Mirrors the admin-side route per the
     // /admin /field namespace isolation rule. Auth-only (no per-permission
     // gate) so any admin-guard user assigned to ANY field listing can upload.
-    Route::post('vapor/signed-storage-url', [\Laravel\Vapor\Http\Controllers\SignedStorageUrlController::class, 'store'])
+    Route::post('vapor/signed-storage-url', [\App\Http\Controllers\Vapor\SignedStorageUrlController::class, 'store'])
         ->name('vapor.signed-storage-url');
 });
