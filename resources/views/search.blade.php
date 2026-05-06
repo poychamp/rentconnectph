@@ -2,6 +2,9 @@
 
 @section('title', 'Search Listings — RentConnectPH')
 @section('description', 'Search rental listings in Cagayan de Oro by price, location, beds, and amenities. Filter verified properties from local property owners.')
+@section('og_title', 'Search rental listings — RentConnectPH')
+@section('og_description', 'Search rental listings in Cagayan de Oro by price, location, beds, and amenities. Filter verified properties from local property owners.')
+@section('og_image', asset('og/search.webp'))
 @section('page', 'search')
 
 @push('scripts')

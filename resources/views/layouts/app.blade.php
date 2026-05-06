@@ -5,6 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="description" content="@yield('description', 'RentConnectPH connects renters with verified property owners across Cagayan de Oro. Browse apartments, condos, houses, and bedspaces with transparent pricing.')">
+
+    <meta property="og:site_name" content="RentConnectPH">
+    <meta property="og:locale" content="en_PH">
+    <meta property="og:type" content="@yield('og_type', 'website')">
+    <meta property="og:url" content="@yield('og_url', url()->current())">
+    <meta property="og:title" content="@yield('og_title', 'RentConnectPH — Verified rentals in Cagayan de Oro')">
+    <meta property="og:description" content="@yield('og_description', 'Browse verified rental listings in Cagayan de Oro. Apartments, condos, houses, and bedspaces from owner-direct properties with transparent pricing.')">
+    <meta property="og:image" content="@yield('og_image', asset('og/brand.webp'))">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
     <meta name="theme-color" content="#f97316">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">

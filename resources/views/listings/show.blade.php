@@ -1,10 +1,27 @@
 @extends('layouts.app')
 
-@section('title', $listing['title'] . ' — RentConnectPH')
-@section('description', $listing['type_label'] . ' for rent in ' . $listing['barangay_label'] . ', Cagayan de Oro — ₱' . number_format($listing['price_monthly']) . '/month. ' . $listing['beds'] . ' ' . \Illuminate\Support\Str::plural('bed', $listing['beds']) . ', ' . $listing['baths'] . ' ' . \Illuminate\Support\Str::plural('bath', $listing['baths']) . ', ' . $listing['sqm'] . ' sqm. View photos and amenities on RentConnectPH.')
-@section('page', 'listing-detail')
-
 @php
+    $type      = $listing['type_label']   ?? null;
+    $barangay  = $listing['barangay_label'] ?? null;
+    $price     = $listing['price_monthly'] ?? null;
+    $priceFmt  = $price !== null ? '₱' . number_format($price) . '/month' : null;
+
+    $specs = [];
+    if (($listing['beds']  ?? null) !== null) $specs[] = $listing['beds']  . ' ' . \Illuminate\Support\Str::plural('bed',  $listing['beds']);
+    if (($listing['baths'] ?? null) !== null) $specs[] = $listing['baths'] . ' ' . \Illuminate\Support\Str::plural('bath', $listing['baths']);
+    if (($listing['sqm']   ?? null) !== null) $specs[] = $listing['sqm']   . ' sqm';
+
+    $where = $barangay ? $barangay . ', Cagayan de Oro' : 'Cagayan de Oro';
+    $lede  = ($type ? $type . ' for rent in ' : 'For rent in ') . $where;
+    if ($priceFmt) $lede .= ' — ' . $priceFmt;
+
+    $listingDescription = $lede . '.' . ($specs ? ' ' . implode(', ', $specs) . '.' : '') . ' View photos and amenities on RentConnectPH.';
+
+    $ogTitleParts = [$listing['title']];
+    if ($priceFmt) $ogTitleParts[] = $priceFmt;
+    $ogTitleSuffix = $barangay ? ' in ' . $barangay : '';
+    $listingOgTitle = implode(' — ', $ogTitleParts) . $ogTitleSuffix;
+
     $inquireOldInput = old() ? [
         'listing_uuid' => old('listing_uuid'),
         'name'         => old('name'),
@@ -17,6 +34,14 @@
         'openInquireModal' => old('listing_uuid') !== null,
     ];
 @endphp
+
+@section('title', $listing['title'] . ' — RentConnectPH')
+@section('description', $listingDescription)
+@section('og_url', url('/listings/' . $listing['uuid']))
+@section('og_title', $listingOgTitle)
+@section('og_description', $listingDescription)
+@section('og_image', $listing['images'][0]['url'] ?? asset('og/brand.webp'))
+@section('page', 'listing-detail')
 
 @push('scripts')
 <script>
