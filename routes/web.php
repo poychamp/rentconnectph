@@ -5,6 +5,7 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InquiryController;
 use App\Http\Controllers\ListingController;
+use App\Http\Controllers\ManifestController;
 use App\Http\Controllers\PasswordController;
 use App\Http\Controllers\RobotsController;
 use App\Http\Controllers\SearchController;
@@ -47,3 +48,4 @@ Route::post('/inquiries', [InquiryController::class, 'store'])
 
 Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 Route::get('/robots.txt', [RobotsController::class, 'index'])->name('robots');
+Route::get('/manifest.json', [ManifestController::class, 'index'])->name('manifest');
