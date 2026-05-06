@@ -24,7 +24,7 @@ return [
         'favicon.svg',
         'favicon-96x96.png',
         'apple-touch-icon.png',
-        'site.webmanifest',
+        'manifest.json',
         'web-app-manifest-192x192.png',
         'web-app-manifest-512x512.png',
     ],
