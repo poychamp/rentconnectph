@@ -12,7 +12,7 @@
     <meta property="og:url" content="@yield('og_url', url()->current())">
     <meta property="og:title" content="@yield('og_title', 'RentConnectPH — Verified rentals in Cagayan de Oro')">
     <meta property="og:description" content="@yield('og_description', 'Browse verified rental listings in Cagayan de Oro. Apartments, condos, houses, and bedspaces from owner-direct properties with transparent pricing.')">
-    <meta property="og:image" content="@yield('og_image', asset('og/brand.webp'))">
+    <meta property="og:image" content="@yield('og_image', asset('og/brand.png'))">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
 

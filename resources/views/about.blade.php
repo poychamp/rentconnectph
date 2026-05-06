@@ -4,7 +4,7 @@
 @section('description', 'RentConnectPH is Cagayan de Oro\'s owner-direct rental platform. Verified listings from local property owners with PRC-licensed broker support at closing.')
 @section('og_title', 'About RentConnectPH')
 @section('og_description', 'RentConnectPH is Cagayan de Oro\'s owner-direct rental platform. Verified listings from local property owners with PRC-licensed broker support at closing.')
-@section('og_image', asset('og/about.webp'))
+@section('og_image', asset('og/about.png'))
 @section('page', 'about')
 
 @push('scripts')

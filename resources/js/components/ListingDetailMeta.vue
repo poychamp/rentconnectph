@@ -1,5 +1,6 @@
 <script setup>
 import { computed, inject } from 'vue';
+import ListingDetailShareCluster from './ListingDetailShareCluster.vue';
 
 const props = defineProps({
     listing: { type: Object, required: true },
@@ -30,10 +31,13 @@ const verifiedDateLabel = computed(() => {
 
 <template>
     <div :class="hideCta ? 'pt-3' : 'bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-6'">
-        <span class="inline-flex items-center gap-1 bg-emerald-500 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded">
-            <svg class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.707-9.293-4.5 4.5a1 1 0 0 1-1.414 0l-2-2a1 1 0 1 1 1.414-1.414L8.5 11.086l3.793-3.793a1 1 0 0 1 1.414 1.414Z" clip-rule="evenodd"/></svg>
-            Verified
-        </span>
+        <div class="flex items-start justify-between gap-2">
+            <span class="inline-flex items-center gap-1 bg-emerald-500 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded">
+                <svg class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.707-9.293-4.5 4.5a1 1 0 0 1-1.414 0l-2-2a1 1 0 1 1 1.414-1.414L8.5 11.086l3.793-3.793a1 1 0 0 1 1.414 1.414Z" clip-rule="evenodd"/></svg>
+                Verified
+            </span>
+            <ListingDetailShareCluster :listing="listing" />
+        </div>
 
         <h1 class="mt-3 text-2xl font-bold text-gray-900 dark:text-white leading-tight">
             {{ listing.title }}

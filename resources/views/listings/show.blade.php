@@ -40,7 +40,7 @@
 @section('og_url', url('/listings/' . $listing['uuid']))
 @section('og_title', $listingOgTitle)
 @section('og_description', $listingDescription)
-@section('og_image', $listing['images'][0]['url'] ?? asset('og/brand.webp'))
+@section('og_image', $listing['images'][0]['url'] ?? asset('og/brand.png'))
 @section('page', 'listing-detail')
 
 @push('scripts')
