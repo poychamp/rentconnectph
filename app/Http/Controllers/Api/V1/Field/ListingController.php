@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\Field;
 use App\Enums\AppPermission;
 use App\Enums\QueueStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\FieldListingDetailResource;
 use App\Http\Resources\FieldListingResource;
 use App\Models\Listing;
 use Illuminate\Http\JsonResponse;
@@ -43,5 +44,30 @@ class ListingController extends Controller
 
         return FieldListingResource::collection($rows)
             ->response();
+    }
+
+    public function show(Request $request, Listing $listing): JsonResponse
+    {
+        $user = $request->user();
+
+        abort_unless(
+            $user->hasPermissionTo(AppPermission::listingsFieldWork()->value, 'admin'),
+            403,
+        );
+
+        // Anti-enumeration: 404 (not 403) for listings not assigned to the caller.
+        // Covers BOTH queue_status=assigned and queue_status=visited so one detail
+        // screen serves the whole field workflow.
+        abort_unless($listing->assigned_to === $user->id, 404);
+
+        $listing->load([
+            'images' => fn ($q) => $q->orderBy('sort_order'),
+            'displayImage',
+            'amenities',
+        ]);
+
+        return response()->json([
+            'listing' => (new FieldListingDetailResource($listing))->resolve(),
+        ]);
     }
 }

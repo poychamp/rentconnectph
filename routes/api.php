@@ -22,5 +22,8 @@ Route::prefix('v1')->name('v1.')->group(function () {
         ->prefix('field')->name('field.')->group(function () {
             Route::get('listings/queued', [FieldListingController::class, 'queued'])
                 ->name('listings.queued');
+
+            Route::get('listings/{listing:uuid}', [FieldListingController::class, 'show'])
+                ->name('listings.show');
         });
 });
