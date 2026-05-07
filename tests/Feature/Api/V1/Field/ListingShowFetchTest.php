@@ -305,6 +305,80 @@ class ListingShowFetchTest extends TestCase
         $this->assertSame($parking->icon, $bySlug['parking']['icon']);
     }
 
+    public function test_it_returns_catalogs_for_dropdowns_and_amenity_picker(): void
+    {
+        $marco   = $this->actAsFieldOfficer();
+        $listing = $this->assignedListingFor($marco);
+
+        // Inline amenity catalog — TestSeeder doesn't run AmenitySeeder, so we
+        // pin the catalog with known rows.
+        $wifi    = Amenity::factory()->create(['slug' => 'wifi',    'name' => 'WiFi',    'icon' => 'wifi',    'sort_order' => 1]);
+        $parking = Amenity::factory()->create(['slug' => 'parking', 'name' => 'Parking', 'icon' => 'parking', 'sort_order' => 2]);
+        $aircon  = Amenity::factory()->create(['slug' => 'aircon',  'name' => 'Aircon',  'icon' => 'aircon',  'sort_order' => 3]);
+
+        $catalogs = $this->getJson(route('api.v1.field.listings.show', $listing->uuid))
+            ->assertOk()
+            ->json('catalogs');
+
+        // Five top-level catalogs ship under `catalogs`: 4 enum dropdowns + amenities.
+        $this->assertArrayHasKey('listing_types', $catalogs);
+        $this->assertArrayHasKey('barangays', $catalogs);
+        $this->assertArrayHasKey('source_sites', $catalogs);
+        $this->assertArrayHasKey('contact_types', $catalogs);
+        $this->assertArrayHasKey('amenities', $catalogs);
+
+        // Enum catalogs: array of {value, label}, full coverage of toValues() in declaration order.
+        $this->assertSame(
+            ListingType::toValues(),
+            collect($catalogs['listing_types'])->pluck('value')->all(),
+        );
+        $this->assertContains(
+            ['value' => ListingType::apartment()->value, 'label' => ListingType::apartment()->label],
+            $catalogs['listing_types'],
+        );
+
+        $this->assertSame(
+            Barangay::toValues(),
+            collect($catalogs['barangays'])->pluck('value')->all(),
+        );
+        $this->assertContains(
+            ['value' => Barangay::lapasan()->value, 'label' => Barangay::lapasan()->label],
+            $catalogs['barangays'],
+        );
+
+        $this->assertSame(
+            SourceSite::toValues(),
+            collect($catalogs['source_sites'])->pluck('value')->all(),
+        );
+        $this->assertContains(
+            ['value' => SourceSite::olx()->value, 'label' => SourceSite::olx()->label],
+            $catalogs['source_sites'],
+        );
+
+        $this->assertSame(
+            ContactType::toValues(),
+            collect($catalogs['contact_types'])->pluck('value')->all(),
+        );
+        $this->assertContains(
+            ['value' => ContactType::owner()->value, 'label' => ContactType::owner()->label],
+            $catalogs['contact_types'],
+        );
+
+        // Amenity catalog: array of {id, name, slug, icon}, ordered by sort_order ASC.
+        $this->assertCount(3, $catalogs['amenities']);
+        foreach ($catalogs['amenities'] as $a) {
+            $this->assertArrayHasKey('id', $a);
+            $this->assertArrayHasKey('name', $a);
+            $this->assertArrayHasKey('slug', $a);
+            $this->assertArrayHasKey('icon', $a);
+        }
+        $orderedIds = collect($catalogs['amenities'])->pluck('id')->all();
+        $this->assertSame([$wifi->id, $parking->id, $aircon->id], $orderedIds);
+        $this->assertSame('WiFi',    $catalogs['amenities'][0]['name']);
+        $this->assertSame('wifi',    $catalogs['amenities'][0]['slug']);
+        $this->assertSame('parking', $catalogs['amenities'][1]['icon']);
+    }
+
     public function test_it_lives_in_api_middleware_group_with_sanctum_field_abilities(): void
     {
         $route = Route::getRoutes()->getByName('api.v1.field.listings.show');

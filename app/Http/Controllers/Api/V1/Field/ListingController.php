@@ -3,10 +3,15 @@
 namespace App\Http\Controllers\Api\V1\Field;
 
 use App\Enums\AppPermission;
+use App\Enums\Barangay;
+use App\Enums\ContactType;
+use App\Enums\ListingType;
 use App\Enums\QueueStatus;
+use App\Enums\SourceSite;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\FieldListingDetailResource;
 use App\Http\Resources\FieldListingResource;
+use App\Models\Amenity;
 use App\Models\Listing;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -67,7 +72,33 @@ class ListingController extends Controller
         ]);
 
         return response()->json([
-            'listing' => (new FieldListingDetailResource($listing))->resolve(),
+            'listing'  => (new FieldListingDetailResource($listing))->resolve(),
+            'catalogs' => [
+                'listing_types' => $this->enumCatalog(ListingType::class),
+                'barangays'     => $this->enumCatalog(Barangay::class),
+                'source_sites'  => $this->enumCatalog(SourceSite::class),
+                'contact_types' => $this->enumCatalog(ContactType::class),
+                'amenities'     => Amenity::orderBy('sort_order')
+                    ->get(['id', 'name', 'slug', 'icon'])
+                    ->map(fn ($a) => [
+                        'id'   => $a->id,
+                        'name' => $a->name,
+                        'slug' => $a->slug,
+                        'icon' => $a->icon,
+                    ])
+                    ->all(),
+            ],
         ]);
+    }
+
+    /**
+     * @param  class-string<\Spatie\Enum\Enum>  $enum
+     * @return array<int, array{value: string, label: string}>
+     */
+    private function enumCatalog(string $enum): array
+    {
+        return collect($enum::toValues())
+            ->map(fn ($v) => ['value' => $v, 'label' => $enum::from($v)->label])
+            ->all();
     }
 }
