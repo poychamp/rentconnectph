@@ -36,6 +36,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'guest.admin' => \App\Http\Middleware\Admin\RedirectIfAuthenticatedAdmin::class,
             'bfcache' => \App\Http\Middleware\AllowsBfcache::class,
+            'abilities' => \Laravel\Sanctum\Http\Middleware\CheckAbilities::class,
+            'ability' => \Laravel\Sanctum\Http\Middleware\CheckForAnyAbility::class,
         ]);
 
         // Override the default Authenticate middleware redirect: send all unauthed
