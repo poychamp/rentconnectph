@@ -11,6 +11,7 @@ use App\Enums\SourceSite;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\FieldListingDetailResource;
 use App\Http\Resources\FieldListingResource;
+use App\Http\Resources\FieldPriorityListingResource;
 use App\Models\Amenity;
 use App\Models\Listing;
 use App\Models\ListingImage;
@@ -56,6 +57,51 @@ class ListingController extends Controller
 
         return FieldListingResource::collection($rows)
             ->response();
+    }
+
+    public function priority(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        abort_unless(
+            $user->hasPermissionTo(AppPermission::listingsFieldWork()->value, 'admin'),
+            403,
+        );
+
+        $userId = $user->id;
+
+        $rows = Listing::with('displayImage')
+            ->priorityForOfficer($userId)
+            ->orderBy('field_priority_order')
+            ->orderBy('id')
+            ->get();
+
+        // Self-heal walk: irregular rows (null OR duplicate field_priority_order)
+        // get appended past max in a single transaction. Idempotent on regular state.
+        $seen = [];
+        $kept = collect();
+        $irregular = collect();
+        foreach ($rows as $row) {
+            if ($row->field_priority_order === null
+                || isset($seen[$row->field_priority_order])) {
+                $irregular->push($row);
+            } else {
+                $seen[$row->field_priority_order] = true;
+                $kept->push($row);
+            }
+        }
+
+        if ($irregular->isNotEmpty()) {
+            $maxOrder = empty($seen) ? 0 : max(array_keys($seen));
+            DB::transaction(function () use ($irregular, $maxOrder) {
+                foreach ($irregular as $i => $listing) {
+                    $listing->update(['field_priority_order' => $maxOrder + 1 + $i]);
+                }
+            });
+            $rows = $kept->concat($irregular);
+        }
+
+        return FieldPriorityListingResource::collection($rows)->response();
     }
 
     public function show(Request $request, Listing $listing): JsonResponse
