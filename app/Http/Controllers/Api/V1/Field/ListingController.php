@@ -104,6 +104,43 @@ class ListingController extends Controller
         return FieldPriorityListingResource::collection($rows)->response();
     }
 
+    public function prioritySort(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        abort_unless(
+            $user->hasPermissionTo(AppPermission::listingsFieldWork()->value, 'admin'),
+            403,
+        );
+
+        $request->validate([
+            'order'   => ['required', 'array', 'min:1'],
+            'order.*' => ['required', 'string', 'uuid'],
+        ]);
+
+        $userId = $user->id;
+        $order  = $request->input('order');
+
+        $listings = Listing::priorityForOfficer($userId)
+            ->whereIn('uuid', $order)
+            ->get()
+            ->keyBy('uuid');
+
+        if ($listings->count() !== count($order)) {
+            throw ValidationException::withMessages([
+                'order' => 'One or more listings are not in your priority pool.',
+            ]);
+        }
+
+        DB::transaction(function () use ($listings, $order) {
+            foreach ($order as $i => $uuid) {
+                $listings[$uuid]->update(['field_priority_order' => $i + 1]);
+            }
+        });
+
+        return response()->json(['success' => true]);
+    }
+
     public function show(Request $request, Listing $listing): JsonResponse
     {
         $user = $request->user();

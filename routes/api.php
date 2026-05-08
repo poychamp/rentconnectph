@@ -27,6 +27,9 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::get('listings/priority', [FieldListingController::class, 'priority'])
                 ->name('listings.priority');
 
+            Route::patch('listings/priority-sort', [FieldListingController::class, 'prioritySort'])
+                ->name('listings.priority-sort');
+
             Route::get('listings/{listing:uuid}', [FieldListingController::class, 'show'])
                 ->name('listings.show');
 
