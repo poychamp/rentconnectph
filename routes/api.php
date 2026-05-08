@@ -30,6 +30,9 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::patch('listings/{listing:uuid}', [FieldListingController::class, 'update'])
                 ->name('listings.update');
 
+            Route::patch('listings/{listing:uuid}/request-verification', [FieldListingController::class, 'requestVerification'])
+                ->name('listings.request-verification');
+
             Route::post('vapor/signed-storage-url', [FieldVaporSignedStorageUrlController::class, 'store'])
                 ->name('vapor.signed-storage-url');
         });

@@ -15,6 +15,7 @@ use App\Models\Amenity;
 use App\Models\Listing;
 use App\Models\ListingImage;
 use App\Models\ListingLifecycleEvent;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -182,6 +183,180 @@ class ListingController extends Controller
                 'longitude'          => $validated['longitude'] ?? null,
                 'directions'         => $validated['directions'] ?? null,
                 'verification_notes' => $validated['verification_notes'] ?? null,
+            ]);
+
+            if (! empty($removedImageIds)) {
+                ListingImage::whereIn('id', $removedImageIds)->delete();
+            }
+
+            $orderedImageIds = [];
+            foreach ($photos as $i => $photo) {
+                if (isset($photo['existing_id'])) {
+                    ListingImage::where('id', $photo['existing_id'])->update(['sort_order' => $i]);
+                    $orderedImageIds[] = (int) $photo['existing_id'];
+                    continue;
+                }
+
+                $tmpKey       = $photo['key'];
+                $filename     = basename($tmpKey);
+                $permanentKey = "listings/{$listing->uuid}/{$filename}";
+
+                $copied = Storage::disk('s3')->copy($tmpKey, $permanentKey);
+                if (! $copied) {
+                    throw new \RuntimeException("Failed to copy {$tmpKey} to {$permanentKey}");
+                }
+
+                $img = ListingImage::create([
+                    'listing_id' => $listing->id,
+                    'url'        => Storage::disk('s3')->url($permanentKey),
+                    'sort_order' => $i,
+                ]);
+                $orderedImageIds[] = $img->id;
+            }
+
+            if (! empty($orderedImageIds)) {
+                $listing->update(['display_image_id' => $orderedImageIds[0]]);
+            }
+            $listing->amenities()->sync($validated['amenities'] ?? []);
+
+            ListingLifecycleEvent::create([
+                'listing_id' => $listing->id,
+                'event_type' => 'updated',
+                'actor_id'   => $user->id,
+                'notes'      => json_encode(
+                    $request->except(['_token', '_method']),
+                    JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+                ),
+            ]);
+        });
+
+        foreach ($photos as $photo) {
+            if (! isset($photo['key'])) continue;
+            try {
+                Storage::disk('s3')->delete($photo['key']);
+            } catch (\Throwable $e) {
+                // Swallow.
+            }
+        }
+
+        foreach ($removedImageUrls as $url) {
+            try {
+                $key = ltrim(parse_url($url, PHP_URL_PATH) ?? '', '/');
+                if ($key) Storage::disk('s3')->delete($key);
+            } catch (\Throwable $e) {
+                // Swallow.
+            }
+        }
+
+        return response()->json(['success' => true]);
+    }
+
+    public function requestVerification(Request $request, Listing $listing): JsonResponse
+    {
+        $user = $request->user();
+
+        abort_unless(
+            $user->hasPermissionTo(AppPermission::listingsFieldWork()->value, 'admin'),
+            403,
+        );
+
+        abort_unless(
+            $listing->assigned_to === $user->id
+                && $listing->queue_status === QueueStatus::assigned()->value,
+            404,
+        );
+
+        $existingIds = $listing->images()->pluck('id')->all();
+
+        $validated = $request->validate([
+            'title'                => ['required', 'string', 'max:200'],
+            'description'          => ['nullable', 'string'],
+            'listing_type'         => ['required', 'string', Rule::in(ListingType::toValues())],
+            'price_monthly'        => ['nullable', 'integer', 'min:1'],
+            'barangay'             => ['required', 'string', Rule::in(Barangay::toValues())],
+            'beds'                 => ['nullable', 'integer', 'min:0', 'max:20'],
+            'baths'                => ['nullable', 'integer', 'min:0', 'max:20'],
+            'sqm'                  => ['nullable', 'integer', 'min:1'],
+            'latitude'             => ['required', 'numeric', 'between:-90,90'],
+            'longitude'            => ['required', 'numeric', 'between:-180,180'],
+            'directions'           => ['required', 'string', 'max:500'],
+            'verification_notes'   => ['nullable', 'string', 'max:2000'],
+            'amenities'            => ['nullable', 'array', 'max:50'],
+            'amenities.*'          => ['integer', 'exists:amenities,id'],
+            'photos'               => [
+                'required', 'array', 'min:1', 'max:20',
+                function ($attribute, $value, $fail) {
+                    $hasNew = collect($value)->contains(
+                        fn ($p) => is_array($p)
+                            && isset($p['key'])
+                            && is_string($p['key'])
+                            && str_starts_with($p['key'], 'tmp/')
+                    );
+                    if (! $hasNew) {
+                        $fail('Upload at least one new photo from your visit.');
+                    }
+                },
+            ],
+            'photos.*'             => ['array'],
+            'photos.*.existing_id' => ['nullable', 'integer', Rule::in($existingIds)],
+            'photos.*.key'         => ['nullable', 'string', 'starts_with:tmp/'],
+            'photos.*.name'        => ['nullable', 'string'],
+            'photos.*.size'        => ['nullable', 'integer'],
+        ], [
+            'title.required'           => 'Title is required.',
+            'title.max'                => 'Title is too long (max 200 characters).',
+            'directions.required'      => 'Directions are required.',
+            'directions.max'           => 'Directions are too long (max 500 characters).',
+            'verification_notes.max'   => 'Verification notes must be 2000 characters or fewer.',
+            'latitude.required'        => 'Drop a map pin before requesting verification.',
+            'latitude.between'         => 'Latitude must be between -90 and 90.',
+            'longitude.required'       => 'Drop a map pin before requesting verification.',
+            'longitude.between'        => 'Longitude must be between -180 and 180.',
+            'photos.required'          => 'Upload at least one new photo from your visit.',
+            'photos.min'               => 'Upload at least one new photo from your visit.',
+            'photos.max'               => 'Maximum 20 photos allowed.',
+            'photos.*.key.starts_with' => 'Invalid photo key.',
+            'listing_type.required'    => 'Listing type is required.',
+            'listing_type.in'          => 'Invalid listing type.',
+            'price_monthly.min'        => 'Monthly rent must be at least ₱1.',
+            'barangay.required'        => 'Barangay is required.',
+            'barangay.in'              => 'Invalid barangay.',
+            'sqm.min'                  => 'Floor area must be at least 1 sqm.',
+            'amenities.*.exists'       => "One or more selected amenities don't exist.",
+        ]);
+
+        $photos = $request->input('photos', []);
+
+        foreach ($photos as $i => $photo) {
+            $hasExisting = isset($photo['existing_id']);
+            $hasKey      = isset($photo['key']) && $photo['key'] !== '';
+            if ($hasExisting === $hasKey) {
+                throw ValidationException::withMessages([
+                    "photos.{$i}" => 'Each photo must reference an existing photo or a new upload, not both or neither.',
+                ]);
+            }
+        }
+
+        $submittedExistingIds = collect($photos)->pluck('existing_id')->filter()->all();
+        $removedImageIds = array_values(array_diff($existingIds, $submittedExistingIds));
+        $removedImageUrls = ListingImage::whereIn('id', $removedImageIds)->pluck('url')->all();
+
+        DB::transaction(function () use ($request, $user, $listing, $validated, $photos, $removedImageIds) {
+            $listing->update([
+                'title'              => $validated['title'],
+                'description'        => $validated['description'] ?? null,
+                'type'               => $validated['listing_type'] ?? null,
+                'price_monthly'      => $validated['price_monthly'] ?? null,
+                'barangay'           => $validated['barangay'] ?? null,
+                'beds'               => $validated['beds'] ?? null,
+                'baths'              => $validated['baths'] ?? null,
+                'sqm'                => $validated['sqm'] ?? null,
+                'latitude'           => $validated['latitude'],
+                'longitude'          => $validated['longitude'],
+                'directions'         => $validated['directions'],
+                'verification_notes' => $validated['verification_notes'] ?? null,
+                'queue_status'       => QueueStatus::visited()->value,
+                'visited_at'         => Carbon::now(),
             ]);
 
             if (! empty($removedImageIds)) {
