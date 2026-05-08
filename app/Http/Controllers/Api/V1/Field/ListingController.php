@@ -425,6 +425,33 @@ class ListingController extends Controller
         return response()->json(['success' => true]);
     }
 
+    public function priorityToggle(Request $request, Listing $listing): JsonResponse
+    {
+        $user = $request->user();
+
+        abort_unless(
+            $user->hasPermissionTo(AppPermission::listingsFieldWork()->value, 'admin'),
+            403,
+        );
+
+        abort_unless(
+            $listing->assigned_to === $user->id
+                && $listing->queue_status === QueueStatus::assigned()->value,
+            404,
+        );
+
+        $newState = ! $listing->is_field_priority;
+
+        $updates = ['is_field_priority' => $newState];
+        if (! $newState) {
+            $updates['field_priority_order'] = null;
+        }
+
+        $listing->update($updates);
+
+        return response()->json(['success' => true]);
+    }
+
     /**
      * @param  class-string<\Spatie\Enum\Enum>  $enum
      * @return array<int, array{value: string, label: string}>
