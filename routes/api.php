@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\Auth\FieldLoginController;
 use App\Http\Controllers\Api\V1\Auth\LogoutController;
 use App\Http\Controllers\Api\V1\Field\ListingController as FieldListingController;
+use App\Http\Controllers\Api\V1\Field\Vapor\SignedStorageUrlController as FieldVaporSignedStorageUrlController;
 use App\Http\Controllers\Api\V1\MeController;
 use Illuminate\Support\Facades\Route;
 
@@ -25,5 +26,11 @@ Route::prefix('v1')->name('v1.')->group(function () {
 
             Route::get('listings/{listing:uuid}', [FieldListingController::class, 'show'])
                 ->name('listings.show');
+
+            Route::patch('listings/{listing:uuid}', [FieldListingController::class, 'update'])
+                ->name('listings.update');
+
+            Route::post('vapor/signed-storage-url', [FieldVaporSignedStorageUrlController::class, 'store'])
+                ->name('vapor.signed-storage-url');
         });
 });
