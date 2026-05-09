@@ -12,6 +12,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\FieldListingDetailResource;
 use App\Http\Resources\FieldListingResource;
 use App\Http\Resources\FieldPriorityListingResource;
+use App\Http\Resources\FieldSubmittedListingResource;
 use App\Models\Amenity;
 use App\Models\Listing;
 use App\Models\ListingImage;
@@ -56,6 +57,37 @@ class ListingController extends Controller
         }
 
         return FieldListingResource::collection($rows)
+            ->response();
+    }
+
+    public function submitted(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        abort_unless(
+            $user->hasPermissionTo(AppPermission::listingsFieldWork()->value, 'admin'),
+            403,
+        );
+
+        $userId = $user->id;
+        $q = trim((string) $request->query('q', ''));
+
+        if ($q !== '') {
+            $rows = Listing::search($q)
+                ->where('assigned_to', $userId)
+                ->where('queue_status', QueueStatus::visited()->value)
+                ->where('is_verified', 0)
+                ->query(fn ($eloquent) => $eloquent->with('displayImage'))
+                ->paginate(10);
+        } else {
+            $rows = Listing::with('displayImage')
+                ->submittedByOfficer($userId)
+                ->orderByDesc('visited_at')
+                ->orderByDesc('id')
+                ->paginate(10);
+        }
+
+        return FieldSubmittedListingResource::collection($rows)
             ->response();
     }
 
