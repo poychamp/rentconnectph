@@ -123,6 +123,20 @@ class ListingController extends Controller
             ->response();
     }
 
+    public function counts(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        abort_unless(
+            $user->hasPermissionTo(AppPermission::listingsFieldWork()->value, 'admin'),
+            403,
+        );
+
+        return response()->json([
+            'queued' => Listing::forOfficer($user->id)->count(),
+        ]);
+    }
+
     public function priority(Request $request): JsonResponse
     {
         $user = $request->user();
