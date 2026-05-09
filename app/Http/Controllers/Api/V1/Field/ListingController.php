@@ -13,6 +13,7 @@ use App\Http\Resources\FieldListingDetailResource;
 use App\Http\Resources\FieldListingResource;
 use App\Http\Resources\FieldPriorityListingResource;
 use App\Http\Resources\FieldSubmittedListingResource;
+use App\Http\Resources\FieldVerifiedListingResource;
 use App\Models\Amenity;
 use App\Models\Listing;
 use App\Models\ListingImage;
@@ -88,6 +89,37 @@ class ListingController extends Controller
         }
 
         return FieldSubmittedListingResource::collection($rows)
+            ->response();
+    }
+
+    public function verified(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        abort_unless(
+            $user->hasPermissionTo(AppPermission::listingsFieldWork()->value, 'admin'),
+            403,
+        );
+
+        $userId = $user->id;
+        $q = trim((string) $request->query('q', ''));
+
+        if ($q !== '') {
+            $rows = Listing::search($q)
+                ->where('assigned_to', $userId)
+                ->where('queue_status', QueueStatus::visited()->value)
+                ->where('is_verified', true)
+                ->query(fn ($eloquent) => $eloquent->with('displayImage'))
+                ->paginate(10);
+        } else {
+            $rows = Listing::with('displayImage')
+                ->verifiedByOfficer($userId)
+                ->orderByDesc('verified_at')
+                ->orderByDesc('id')
+                ->paginate(10);
+        }
+
+        return FieldVerifiedListingResource::collection($rows)
             ->response();
     }
 

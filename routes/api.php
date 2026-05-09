@@ -30,6 +30,9 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::get('listings/submitted', [FieldListingController::class, 'submitted'])
                 ->name('listings.submitted');
 
+            Route::get('listings/verified', [FieldListingController::class, 'verified'])
+                ->name('listings.verified');
+
             Route::patch('listings/priority-sort', [FieldListingController::class, 'prioritySort'])
                 ->name('listings.priority-sort');
 
