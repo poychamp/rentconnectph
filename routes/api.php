@@ -4,10 +4,17 @@ use App\Http\Controllers\Api\V1\Auth\FieldLoginController;
 use App\Http\Controllers\Api\V1\Auth\LogoutController;
 use App\Http\Controllers\Api\V1\Field\ListingController as FieldListingController;
 use App\Http\Controllers\Api\V1\Field\Vapor\SignedStorageUrlController as FieldVaporSignedStorageUrlController;
+use App\Http\Controllers\Api\V1\HomeController;
+use App\Http\Controllers\Api\V1\ListingController;
 use App\Http\Controllers\Api\V1\MeController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('v1.')->group(function () {
+    Route::get('home', HomeController::class)->name('home');
+
+    Route::get('listings/{listing:uuid}', [ListingController::class, 'show'])
+        ->name('listings.show');
+
     Route::post('auth/field-login', FieldLoginController::class)
         ->name('auth.field-login');
 
