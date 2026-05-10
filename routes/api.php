@@ -7,10 +7,13 @@ use App\Http\Controllers\Api\V1\Field\Vapor\SignedStorageUrlController as FieldV
 use App\Http\Controllers\Api\V1\HomeController;
 use App\Http\Controllers\Api\V1\ListingController;
 use App\Http\Controllers\Api\V1\MeController;
+use App\Http\Controllers\Api\V1\SearchController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('v1.')->group(function () {
     Route::get('home', HomeController::class)->name('home');
+
+    Route::get('search', SearchController::class)->name('search');
 
     Route::get('listings/{listing:uuid}', [ListingController::class, 'show'])
         ->name('listings.show');
