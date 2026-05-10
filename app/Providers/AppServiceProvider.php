@@ -41,6 +41,10 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perHour(5)->by($request->ip());
         });
 
+        RateLimiter::for('api-inquiry-submit', function (Request $request) {
+            return Limit::perHour(5)->by($request->ip());
+        });
+
         // Propagate Renter / Listing updates to child Inquiry Algolia
         // documents — only when the attributes that flow into Inquiry's
         // toSearchableArray actually changed. See observer classes.
