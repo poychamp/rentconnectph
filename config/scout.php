@@ -136,6 +136,8 @@ return [
                 'customRanking' => [
                     'desc(listed_at)',
                 ],
+                'minWordSizefor1Typo' => 6,
+                'minWordSizefor2Typos' => 9,
             ],
             env('SCOUT_PREFIX', '') . 'inquiries' => [
                 'searchableAttributes' => [
@@ -147,6 +149,8 @@ return [
                 'customRanking' => [
                     'desc(updated_at)',
                 ],
+                'minWordSizefor1Typo' => 6,
+                'minWordSizefor2Typos' => 9,
             ],
         ],
     ],
