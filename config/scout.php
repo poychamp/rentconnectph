@@ -117,6 +117,13 @@ return [
         'secret' => env('ALGOLIA_SECRET', ''),
         'index-settings' => [
             env('SCOUT_PREFIX', '') . 'listings' => [
+                'searchableAttributes' => [
+                    'title',
+                    'unordered(description)',
+                    'unordered(type,barangay)',
+                    'unordered(amenities,specs)',
+                    'unordered(contact_phone)',
+                ],
                 'attributesForFaceting' => [
                     'filterOnly(is_verified)',
                     'filterOnly(__soft_deleted)',

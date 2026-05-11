@@ -71,7 +71,7 @@ function goToPage(page) {
                             @input="scheduleSubmit"
                             @keydown.enter.prevent="navigateToSearch"
                             type="search"
-                            placeholder="Search title, barangay, directions…"
+                            placeholder="Search title, barangay…"
                             class="w-full rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 pl-10 pr-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none"
                         />
                     </div>
