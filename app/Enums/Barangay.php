@@ -5,6 +5,7 @@ namespace App\Enums;
 use Spatie\Enum\Enum;
 
 /**
+ * @method static self agora()
  * @method static self agusan()
  * @method static self balulang()
  * @method static self bayabas()
@@ -45,6 +46,7 @@ class Barangay extends Enum
     protected static function values(): array
     {
         return [
+            'agora' => 'agora',
             'agusan' => 'agusan',
             'balulang' => 'balulang',
             'bayabas' => 'bayabas',
@@ -85,6 +87,7 @@ class Barangay extends Enum
     protected static function labels(): array
     {
         return [
+            'agora' => 'Agora',
             'agusan' => 'Agusan',
             'balulang' => 'Balulang',
             'bayabas' => 'Bayabas',
