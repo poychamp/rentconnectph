@@ -1135,8 +1135,8 @@ class ListingController extends Controller
         $paginator = $q === ''
             ? Listing::awaitingVerification()
                 ->with('assignedTo')
-                ->orderByDesc('visited_at')
-                ->orderByDesc('id')
+                ->orderBy('visited_at')
+                ->orderBy('id')
                 ->paginate(10)
             : Listing::search($q)
                 ->where('queue_status', QueueStatus::visited()->value)

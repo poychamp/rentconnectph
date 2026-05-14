@@ -83,7 +83,7 @@ class AdminListingVisitedViewTest extends TestCase
         $this->assertSame(2, $page2['meta']['current_page']);
     }
 
-    public function test_it_sorts_by_visited_at_desc_by_default(): void
+    public function test_it_sorts_by_visited_at_asc_by_default(): void
     {
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
@@ -95,7 +95,7 @@ class AdminListingVisitedViewTest extends TestCase
         $payload = $this->get(route('admin.visited-listings.index'))->viewData('visited');
         $ids = array_map(fn ($r) => $r['id'], $payload['data']);
 
-        $this->assertSame([$newest->id, $middle->id, $oldest->id], $ids);
+        $this->assertSame([$oldest->id, $middle->id, $newest->id], $ids);
     }
 
     public function test_it_excludes_listings_with_queue_status_other_than_visited(): void
