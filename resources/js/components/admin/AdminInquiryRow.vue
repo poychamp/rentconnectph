@@ -154,7 +154,8 @@ const handoffUrl = computed(() => `/admin/inquiries/${props.inquiry.uuid}/handof
 
 function toLocal(phone) {
     if (!phone || !phone.startsWith('+63')) return null;
-    return '0' + phone.slice(3);
+    const local = '0' + phone.slice(3);
+    return `${local.slice(0, 4)} ${local.slice(4, 7)} ${local.slice(7)}`;
 }
 
 const showRejectModal  = ref(false);
