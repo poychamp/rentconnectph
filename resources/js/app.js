@@ -15,6 +15,8 @@ if (el) {
         'listing-detail': () => import('./ListingDetail.vue'),
         'search': () => import('./Search.vue'),
         'about': () => import('./About.vue'),
+        'privacy': () => import('./Privacy.vue'),
+        'terms': () => import('./Terms.vue'),
         'inquiry-success': () => import('./InquirySuccess.vue'),
         'contact': () => import('./Contact.vue'),
         'contact-sent': () => import('./ContactSent.vue'),

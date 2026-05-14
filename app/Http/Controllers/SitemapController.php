@@ -25,6 +25,8 @@ class SitemapController extends Controller
                     ['loc' => url('/search'),  'lastmod' => $now],
                     ['loc' => url('/about'),   'lastmod' => $now],
                     ['loc' => url('/contact'), 'lastmod' => $now],
+                    ['loc' => url('/privacy'), 'lastmod' => $now],
+                    ['loc' => url('/terms'),   'lastmod' => $now],
                 ],
                 'listings' => $listings,
             ])->render();

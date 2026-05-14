@@ -1,6 +1,6 @@
 <template>
-    <footer class="hidden md:flex border-t border-gray-100 dark:border-gray-800 mt-16 bg-white dark:bg-gray-900">
-        <div class="max-w-7xl mx-auto w-full px-4 md:px-6 lg:px-8 py-8 flex items-center justify-between">
+    <footer class="flex border-t border-gray-100 dark:border-gray-800 mt-16 bg-white dark:bg-gray-900">
+        <div class="max-w-7xl mx-auto w-full px-4 md:px-6 lg:px-8 py-6 md:py-8 flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
             <a href="/" class="flex items-center gap-2">
                 <span class="relative inline-flex items-center justify-center w-8 h-8 rounded-md bg-orange-500 text-white">
                     <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 2 12h3v8h6v-6h2v6h6v-8h3z"/></svg>
@@ -14,9 +14,13 @@
                     RentConnect<span class="text-orange-500">PH</span>
                 </span>
             </a>
-            <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400">
-                © 2026 RentConnectPH · PRC License 0023491 · Cagayan de Oro
-            </p>
+            <div class="flex flex-wrap items-center gap-x-3 md:gap-x-4 gap-y-1 text-xs md:text-sm text-gray-500 dark:text-gray-400">
+                <a href="/privacy" class="hover:text-orange-600 dark:hover:text-orange-400">Privacy</a>
+                <span aria-hidden="true" class="text-gray-300 dark:text-gray-700">·</span>
+                <a href="/terms" class="hover:text-orange-600 dark:hover:text-orange-400">Terms</a>
+                <span aria-hidden="true" class="text-gray-300 dark:text-gray-700">·</span>
+                <p>© 2026 RentConnectPH · PRC License 0023491 · Cagayan de Oro</p>
+            </div>
         </div>
     </footer>
 </template>

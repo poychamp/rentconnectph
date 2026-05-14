@@ -4,6 +4,7 @@ use App\Http\Controllers\AboutController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InquiryController;
+use App\Http\Controllers\LegalController;
 use App\Http\Controllers\ListingController;
 use App\Http\Controllers\ManifestController;
 use App\Http\Controllers\PasswordController;
@@ -17,6 +18,8 @@ Route::middleware('bfcache')->group(function () {
     Route::get('/listings/{listing:uuid}', [ListingController::class, 'show'])->name('listings.show');
     Route::get('/search', [SearchController::class, 'index'])->name('search');
     Route::get('/about', [AboutController::class, 'show'])->name('about');
+    Route::get('/privacy', [LegalController::class, 'privacy'])->name('privacy');
+    Route::get('/terms', [LegalController::class, 'terms'])->name('terms');
     Route::get('/inquiries-success', [InquiryController::class, 'success'])->name('inquiries.success');
     Route::get('/contact', [ContactController::class, 'show'])->name('contact.show');
     Route::get('/contact-sent', [ContactController::class, 'sent'])->name('contact.sent');
