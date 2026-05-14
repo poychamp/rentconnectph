@@ -40,6 +40,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'ability' => \Laravel\Sanctum\Http\Middleware\CheckForAnyAbility::class,
         ]);
 
+        $middleware->appendToGroup('api', \App\Http\Middleware\RequireJsonHeaders::class);
+
         // Override the default Authenticate middleware redirect: send all unauthed
         // hits to auth.login (`/auth/login`) — shared login surface for the admin
         // guard (admin + field roles, plus any future staff role on the same guard).

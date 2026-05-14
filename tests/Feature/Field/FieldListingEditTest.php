@@ -153,7 +153,7 @@ class FieldListingEditTest extends TestCase
         $this->assertArrayHasKey('created_at', $payload);
     }
 
-    public function test_it_does_not_expose_field_priority_order_in_the_resource(): void
+    public function test_it_exposes_field_priority_order_in_the_resource(): void
     {
         $marco = $this->asMarco();
         $listing = $this->assignedListingFor($marco);
@@ -164,7 +164,8 @@ class FieldListingEditTest extends TestCase
         $response->assertOk();
         $payload = $response->viewData('listing');
 
-        $this->assertArrayNotHasKey('field_priority_order', $payload);
+        $this->assertArrayHasKey('field_priority_order', $payload);
+        $this->assertSame(7, $payload['field_priority_order']);
     }
 
     public function test_it_returns_assigned_at_from_the_real_column_not_updated_at_proxy(): void

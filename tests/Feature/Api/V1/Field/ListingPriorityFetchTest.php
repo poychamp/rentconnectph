@@ -274,7 +274,7 @@ class ListingPriorityFetchTest extends TestCase
         $this->assertSame('Near SM CDO',                                  $row['directions']);
         $this->assertNull($row['display_image_url']);
         $this->assertSame(1,                                              $row['field_priority_order']);
-        $this->assertSame('2026-05-01T09:00:00+00:00',                    $row['assigned_at']);
+        $this->assertSame('2026-05-01T09:00:00+08:00',                    $row['assigned_at']);
 
         $this->assertSame(
             ['uuid', 'title', 'type_label', 'barangay_label', 'price_monthly',

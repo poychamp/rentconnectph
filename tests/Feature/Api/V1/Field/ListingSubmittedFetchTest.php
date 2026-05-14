@@ -263,7 +263,7 @@ class ListingSubmittedFetchTest extends TestCase
         $this->assertSame(25000,                                     $row['price_monthly']);
         $this->assertSame('Near SM CDO',                             $row['directions']);
         $this->assertNull($row['display_image_url']);
-        $this->assertSame('2026-05-04T14:30:00+00:00',               $row['visited_at']);
+        $this->assertSame('2026-05-04T14:30:00+08:00',               $row['visited_at']);
 
         $this->assertSame(
             ['uuid', 'title', 'type_label', 'barangay_label', 'price_monthly',
