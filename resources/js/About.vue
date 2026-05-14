@@ -252,6 +252,17 @@ onBeforeUnmount(() => {
             </div>
         </section>
 
+        <!-- Closing strip -->
+        <section class="border-t border-gray-100 dark:border-gray-800">
+            <div class="max-w-7xl mx-auto w-full px-4 md:px-6 lg:px-8 py-6 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs md:text-sm text-gray-500 dark:text-gray-400">
+                <a href="/privacy" class="hover:text-orange-600 dark:hover:text-orange-400">Privacy Policy</a>
+                <span aria-hidden="true" class="text-gray-300 dark:text-gray-700">·</span>
+                <a href="/terms" class="hover:text-orange-600 dark:hover:text-orange-400">Terms of Service</a>
+                <span aria-hidden="true" class="text-gray-300 dark:text-gray-700">·</span>
+                <p>© 2026 RentConnectPH · Cagayan de Oro</p>
+            </div>
+        </section>
+
         <Footer />
         <BottomNav />
 
