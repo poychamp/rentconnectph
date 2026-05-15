@@ -965,6 +965,7 @@ class ListingController extends Controller
             'source_site'   => ['nullable', 'string', Rule::in(SourceSite::toValues())],
             'source_url'    => ['nullable', 'string', 'url', 'max:2000'],
             'contact_phone' => ['required', 'string', new PhMobileNumber],
+            'verification_notes' => ['nullable', 'string', 'max:2000'],
             'intent'        => ['nullable', 'string', 'in:publish,publish-and-add-another'],
         ], [
             'title.required'        => 'Title is required.',
@@ -983,6 +984,7 @@ class ListingController extends Controller
             'source_url.url'        => 'Source URL must be a valid URL.',
             'source_url.max'        => 'Source URL is too long (max 2000 characters).',
             'contact_phone.required' => 'Contact phone is required.',
+            'verification_notes.max' => 'Verification notes must be 2000 characters or fewer.',
         ]);
 
         $intent = $validated['intent'] ?? 'publish';
@@ -1003,6 +1005,7 @@ class ListingController extends Controller
                 'source_site'    => $validated['source_site'] ?? null,
                 'source_url'     => $validated['source_url'] ?? null,
                 'contact_phone'  => PhMobile::normalize($validated['contact_phone']),
+                'verification_notes' => $validated['verification_notes'] ?? null,
                 'prequal_status' => PrequalStatus::notCalled()->value,
                 'queue_status'   => QueueStatus::unassigned()->value,
                 'is_verified'    => false,

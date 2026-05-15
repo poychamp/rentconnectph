@@ -48,6 +48,7 @@ const addListingForm = reactive({
     source_site:   old?.source_site   ?? '',
     source_url:    old?.source_url    ?? '',
     contact_phone: old?.contact_phone ?? '',
+    verification_notes: old?.verification_notes ?? '',
 });
 
 // Per-field validation errors, keyed by Laravel field name (e.g. 'title', 'photos.0.key').
@@ -122,6 +123,12 @@ const VALIDATORS = {
         if (!v) return null;
         if (v.length > 2000) return 'Source URL is too long (max 2000 characters).';
         try { new URL(v); } catch { return 'Source URL must be a valid URL.'; }
+        return null;
+    },
+    verification_notes: (f) => {
+        const v = f.verification_notes ?? '';
+        if (!v) return null;
+        if (v.length > 2000) return 'Verification notes must be 2000 characters or fewer.';
         return null;
     },
     // Mirrors PhMobile::normalize() in PHP — strip non-digits, classify shape,
@@ -228,6 +235,7 @@ onMounted(() => {
                     :barangays="formData.barangays"
                     :source-sites="formData.sourceSites"
                     :amenities="formData.amenities"
+                    :show-verification-notes="true"
                 />
             </main>
 

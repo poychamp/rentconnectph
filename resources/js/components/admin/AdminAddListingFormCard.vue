@@ -4,6 +4,7 @@ import AdminNumberStepper from './AdminNumberStepper.vue';
 import AdminAddListingAmenityPills from './AdminAddListingAmenityPills.vue';
 import AdminAddListingPhotoUpload from './AdminAddListingPhotoUpload.vue';
 import AdminAddListingMapPicker from './AdminAddListingMapPicker.vue';
+import AdminAddListingVerificationNotesCard from './AdminAddListingVerificationNotesCard.vue';
 
 const props = defineProps({
     listingTypes: { type: Array, required: true },
@@ -12,6 +13,7 @@ const props = defineProps({
     amenities:    { type: Array, required: true },
     readOnlyLead: { type: Boolean, default: false },
     hideLead:     { type: Boolean, default: false },
+    showVerificationNotes: { type: Boolean, default: false },
 });
 
 const form = inject('addListingForm');
@@ -115,6 +117,8 @@ const inputErrorClass = 'border-red-400 dark:border-red-500 focus:border-red-500
                 </div>
             </div>
         </div>
+
+        <AdminAddListingVerificationNotesCard v-if="showVerificationNotes" />
 
         <!-- TOP ROW: two 50/50 cards side by side -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">

@@ -314,6 +314,50 @@ class AdminListingStoreTest extends TestCase
     }
 
     // =========================================================================
+    // Validation — verification_notes (3) — admin's pre-publish calls-team notes
+    // =========================================================================
+
+    public function test_it_persists_verification_notes_when_provided(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        $this->post(route('admin.listings.store'), $this->validPayload([
+            'verification_notes' => 'Caller said owner accepts long-term tenants only.',
+        ]))->assertSessionHasNoErrors();
+
+        $this->assertSame(
+            'Caller said owner accepts long-term tenants only.',
+            Listing::first()->verification_notes
+        );
+    }
+
+    public function test_it_accepts_when_verification_notes_missing(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        // verification_notes is not in validPayload() defaults — this pins
+        // that omitting the field entirely is OK and persists null.
+        $this->post(route('admin.listings.store'), $this->validPayload())
+             ->assertSessionHasNoErrors();
+
+        $this->assertNull(Listing::first()->verification_notes);
+    }
+
+    public function test_it_rejects_verification_notes_too_long(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        $this->post(route('admin.listings.store'), $this->validPayload([
+            'verification_notes' => str_repeat('a', 2001),
+        ]))->assertSessionHasErrors([
+            'verification_notes' => 'Verification notes must be 2000 characters or fewer.',
+        ]);
+    }
+
+    // =========================================================================
     // Validation — source fields (5) — FRD-023
     // =========================================================================
 
