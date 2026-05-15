@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\Auth\FieldLoginController;
 use App\Http\Controllers\Api\V1\Auth\LogoutController;
 use App\Http\Controllers\Api\V1\ContactController;
 use App\Http\Controllers\Api\V1\Field\ListingController as FieldListingController;
+use App\Http\Controllers\Api\V1\Field\ProfileNameController as FieldProfileNameController;
 use App\Http\Controllers\Api\V1\Field\Vapor\SignedStorageUrlController as FieldVaporSignedStorageUrlController;
 use App\Http\Controllers\Api\V1\HomeController;
 use App\Http\Controllers\Api\V1\InquiryController;
@@ -73,5 +74,8 @@ Route::prefix('v1')->name('v1.')->group(function () {
 
             Route::post('vapor/signed-storage-url', [FieldVaporSignedStorageUrlController::class, 'store'])
                 ->name('vapor.signed-storage-url');
+
+            Route::patch('profile/name', FieldProfileNameController::class)
+                ->name('profile.name');
         });
 });
