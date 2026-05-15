@@ -39,4 +39,8 @@ return [
         'token' => env('MAPBOX_TOKEN'),
     ],
 
+    'google_analytics' => [
+        'measurement_id' => env('GA_MEASUREMENT_ID'),
+    ],
+
 ];
