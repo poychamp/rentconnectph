@@ -190,7 +190,7 @@ const inputErrorClass = 'border-red-400 dark:border-red-500 focus:border-red-500
                                     : 'border-gray-200 dark:border-gray-700 focus:border-orange-500 focus:ring-orange-500',
                             ]"
                         >
-                            <option value="" disabled>Select type...</option>
+                            <option value="">— None —</option>
                             <option v-for="t in listingTypes" :key="t.value" :value="t.value">{{ t.label }}</option>
                         </select>
                         <p v-if="errorFor('listing_type')" class="mt-1 text-xs text-red-600 dark:text-red-400">
@@ -244,7 +244,7 @@ const inputErrorClass = 'border-red-400 dark:border-red-500 focus:border-red-500
                                 : 'border-gray-200 dark:border-gray-700 focus:border-orange-500 focus:ring-orange-500',
                         ]"
                     >
-                        <option value="" disabled>Select barangay...</option>
+                        <option value="">— None —</option>
                         <option v-for="b in barangays" :key="b.value" :value="b.value">{{ b.label }}</option>
                     </select>
                     <p v-if="errorFor('barangay')" class="mt-1 text-xs text-red-600 dark:text-red-400">

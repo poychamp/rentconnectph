@@ -16,7 +16,9 @@ class AdminHandoffLockResource extends JsonResource
             'listing' => [
                 'uuid'           => $this->listing->uuid,
                 'title'          => $this->listing->title,
-                'barangay_label' => Barangay::from($this->listing->barangay)->label,
+                'barangay_label' => $this->listing->barangay
+                    ? Barangay::from($this->listing->barangay)->label
+                    : null,
                 'contact_phone'  => $this->listing->contact_phone,
             ],
             'renter' => [

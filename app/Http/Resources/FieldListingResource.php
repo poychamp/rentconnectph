@@ -16,7 +16,7 @@ class FieldListingResource extends JsonResource
         return [
             'uuid'                 => $this->uuid,
             'title'                => $this->title,
-            'type_label'           => ListingType::from($this->type)->label,
+            'type_label'           => $this->type ? ListingType::from($this->type)->label : null,
             'barangay_label'       => $this->barangay
                 ? Barangay::from($this->barangay)->label
                 : null,

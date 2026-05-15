@@ -16,8 +16,12 @@ class AdminUnverifiedListingResource extends JsonResource
             'id'                   => $this->id,
             'uuid'                 => $this->uuid,
             'name'                 => $this->title,
-            'type_label'           => ListingType::from($this->type)->label,
-            'barangay_label'       => Barangay::from($this->barangay)->label,
+            'type_label'           => $this->type
+                ? ListingType::from($this->type)->label
+                : null,
+            'barangay_label'       => $this->barangay
+                ? Barangay::from($this->barangay)->label
+                : null,
             'contact_phone'        => $this->contact_phone,
             'prequal_status'       => $this->prequal_status,
             'prequal_status_label' => $this->prequal_status

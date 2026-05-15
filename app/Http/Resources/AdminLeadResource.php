@@ -35,7 +35,9 @@ class AdminLeadResource extends JsonResource
             'listing' => [
                 'uuid'               => $this->inquiry->listing->uuid,
                 'title'              => $this->inquiry->listing->title,
-                'barangay_label'     => Barangay::from($this->inquiry->listing->barangay)->label,
+                'barangay_label'     => $this->inquiry->listing->barangay
+                    ? Barangay::from($this->inquiry->listing->barangay)->label
+                    : null,
                 'contact_phone'      => $this->inquiry->listing->contact_phone,
                 'contact_type_label' => $this->inquiry->listing->contact_type
                     ? ContactType::from($this->inquiry->listing->contact_type)->label
