@@ -44,7 +44,7 @@ class AdminLeadResource extends JsonResource
                     : null,
                 'verification_notes' => $this->inquiry->listing->verification_notes,
             ],
-            'listing_detail_url' => '/listings/' . $this->inquiry->listing->uuid,
+            'listing_detail_url' => url('/listings/' . $this->inquiry->listing->uuid),
         ];
     }
 }

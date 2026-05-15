@@ -338,7 +338,7 @@ const copyState        = ref('idle');  // idle | success | error
 
 function buildTemplate() {
     const l = props.lead;
-    const url = window.location.origin + l.listing_detail_url;
+    const url = l.listing_detail_url;
     const lines = ['New lead from RentConnectPH:', ''];
 
     lines.push('LISTING');

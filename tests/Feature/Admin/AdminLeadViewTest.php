@@ -208,7 +208,7 @@ class AdminLeadViewTest extends TestCase
         $this->assertSame('Owner', $row['listing']['contact_type_label']);
         $this->assertSame('Owner answered on first call.', $row['listing']['verification_notes']);
 
-        $this->assertSame('/listings/' . $listing->uuid, $row['listing_detail_url']);
+        $this->assertSame(url('/listings/' . $listing->uuid), $row['listing_detail_url']);
     }
 
     // ---------------------------------------------------------------------
