@@ -130,7 +130,7 @@ const VALIDATORS = {
         return null;
     },
     sqm: (f) => {
-        const empty = f.sqm === null || f.sqm === '' || f.sqm === undefined;
+        const empty = f.sqm === null || f.sqm === '' || f.sqm === undefined || f.sqm === 0;
         if (empty) return null;
         const n = Number(f.sqm);
         if (!Number.isFinite(n)) return null;

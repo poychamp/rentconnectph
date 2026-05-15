@@ -372,7 +372,7 @@ class AdminListingVerifyTest extends TestCase
             'price_monthly' => 0,
             'beds'          => 21,
             'baths'         => 21,
-            'sqm'           => 0,
+            'sqm'           => -1,
             'latitude'      => 91,
             'longitude'     => 181,
         ];

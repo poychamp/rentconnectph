@@ -422,7 +422,7 @@ class ListingRequestVerificationTest extends TestCase
 
         $this->patchJson(
             route('api.v1.field.listings.request-verification', $listing->uuid),
-            $this->validPayload($listing, ['sqm' => 0, 'price_monthly' => 0])
+            $this->validPayload($listing, ['sqm' => -1, 'price_monthly' => 0])
         )->assertUnprocessable()
           ->assertJsonValidationErrors(['sqm', 'price_monthly']);
     }

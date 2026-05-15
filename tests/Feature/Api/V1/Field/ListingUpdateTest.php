@@ -321,7 +321,7 @@ class ListingUpdateTest extends TestCase
 
         $this->patchJson(
             route('api.v1.field.listings.update', $listing->uuid),
-            $this->validPayload($listing, ['sqm' => 0, 'price_monthly' => 0])
+            $this->validPayload($listing, ['sqm' => -1, 'price_monthly' => 0])
         )->assertUnprocessable()
           ->assertJsonValidationErrors(['sqm', 'price_monthly']);
     }

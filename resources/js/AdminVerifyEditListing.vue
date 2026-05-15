@@ -115,7 +115,7 @@ const VALIDATORS = {
         return null;
     },
     sqm: (f) => {
-        if (f.sqm === null || f.sqm === '' || f.sqm === undefined) return null;
+        if (f.sqm === null || f.sqm === '' || f.sqm === undefined || f.sqm === 0) return null;
         const n = Number(f.sqm);
         if (!Number.isFinite(n)) return null;
         if (n < 1) return 'Floor area must be at least 1 sqm.';
