@@ -140,6 +140,26 @@ class ProfileNameUpdateTest extends TestCase
     }
 
     // =========================================================================
+    // Throttle (1)
+    // =========================================================================
+
+    public function test_it_throttles_after_10_updates_in_an_hour(): void
+    {
+        $user  = $this->makeFieldUser();
+        $token = $this->issueFieldToken($user);
+
+        for ($i = 0; $i < 10; $i++) {
+            $this->withHeaders(['Authorization' => "Bearer {$token}"])
+                ->patchJson(route('api.v1.field.profile.name'), ['name' => "Name {$i}"])
+                ->assertOk();
+        }
+
+        $this->withHeaders(['Authorization' => "Bearer {$token}"])
+            ->patchJson(route('api.v1.field.profile.name'), ['name' => 'One Too Many'])
+            ->assertStatus(429);
+    }
+
+    // =========================================================================
     // Middleware introspection (1)
     // =========================================================================
 

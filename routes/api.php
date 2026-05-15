@@ -76,6 +76,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
                 ->name('vapor.signed-storage-url');
 
             Route::patch('profile/name', FieldProfileNameController::class)
+                ->middleware('throttle:api-update-name')
                 ->name('profile.name');
         });
 });
