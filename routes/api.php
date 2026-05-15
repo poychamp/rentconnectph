@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\Auth\LogoutController;
 use App\Http\Controllers\Api\V1\ContactController;
 use App\Http\Controllers\Api\V1\Field\ListingController as FieldListingController;
 use App\Http\Controllers\Api\V1\Field\ProfileNameController as FieldProfileNameController;
+use App\Http\Controllers\Api\V1\Field\ProfilePasswordController as FieldProfilePasswordController;
 use App\Http\Controllers\Api\V1\Field\Vapor\SignedStorageUrlController as FieldVaporSignedStorageUrlController;
 use App\Http\Controllers\Api\V1\HomeController;
 use App\Http\Controllers\Api\V1\InquiryController;
@@ -78,5 +79,9 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::patch('profile/name', FieldProfileNameController::class)
                 ->middleware('throttle:api-update-name')
                 ->name('profile.name');
+
+            Route::patch('profile/password', FieldProfilePasswordController::class)
+                ->middleware('throttle:api-update-password')
+                ->name('profile.password');
         });
 });

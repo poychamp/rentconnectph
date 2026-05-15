@@ -53,6 +53,10 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perHour(10)->by($request->user()->id);
         });
 
+        RateLimiter::for('api-update-password', function (Request $request) {
+            return Limit::perHour(10)->by($request->user()->id);
+        });
+
         // Propagate Renter / Listing updates to child Inquiry Algolia
         // documents — only when the attributes that flow into Inquiry's
         // toSearchableArray actually changed. See observer classes.
