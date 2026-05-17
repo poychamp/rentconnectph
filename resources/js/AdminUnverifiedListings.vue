@@ -27,7 +27,7 @@ const hasQuery = (initialUrlParams.get('q') ?? '').trim() !== '';
 // When a search is active, sort isn't applied server-side (Scout path drops it)
 // — clear the visual sort state so neither column shows an active arrow.
 const currentSort = ref(hasQuery ? '' : (initialUrlParams.get('sort') ?? 'created_at'));
-const currentDir  = ref(hasQuery ? '' : (initialUrlParams.get('dir')  ?? 'asc'));
+const currentDir  = ref(hasQuery ? '' : (initialUrlParams.get('dir')  ?? 'desc'));
 
 function goToPage(page) {
     const params = new URLSearchParams(window.location.search);
