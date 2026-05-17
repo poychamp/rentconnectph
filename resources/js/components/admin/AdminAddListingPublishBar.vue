@@ -94,7 +94,7 @@ function publish(intent = 'publish') {
             @click="publish('publish-and-add-another')"
             class="px-4 py-2 rounded-md border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
-            Publish &amp; add another
+            Submit &amp; add another
         </button>
 
         <button
@@ -110,7 +110,7 @@ function publish(intent = 'publish') {
             <svg v-else class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M9 10h11M9 10l-4 4 4 4M20 6V4"/>
             </svg>
-            {{ submitting ? 'Publishing...' : 'Publish listing' }}
+            {{ submitting ? 'Submitting...' : 'Submit' }}
         </button>
     </div>
 </template>
