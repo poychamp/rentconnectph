@@ -112,6 +112,8 @@ class AdminListingReopenViewTest extends TestCase
             'amenities relation must be eager-loaded for the amenities card');
         $this->assertTrue($viewListing->relationLoaded('latestLifecycleEvent'),
             'latestLifecycleEvent must be eager-loaded for the rejection banner');
+        $this->assertTrue($viewListing->relationLoaded('listingContact'),
+            'listingContact must be eager-loaded for the contact card');
 
         $this->assertNotNull($viewListing->latestLifecycleEvent);
         $this->assertSame($event->id,  $viewListing->latestLifecycleEvent->id);

@@ -17,11 +17,17 @@ const formattedSubmittedAt = computed(() => {
         <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">Source &amp; Notes</h3>
 
         <dl class="space-y-3 text-sm">
-            <div v-if="listing.contact_phone" class="flex flex-col">
+            <div v-if="listing.listing_contact" class="flex flex-col">
                 <dt class="text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">Contact</dt>
                 <dd class="text-gray-900 dark:text-gray-100">
-                    <a :href="'tel:' + listing.contact_phone" class="text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300">{{ listing.contact_phone }}</a>
+                    <a
+                        v-if="listing.listing_contact.phone"
+                        :href="'tel:' + listing.listing_contact.phone"
+                        class="text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300"
+                    >{{ listing.listing_contact.phone }}</a>
                     <span v-if="listing.contact_type_label" class="text-gray-500 dark:text-gray-400"> · {{ listing.contact_type_label }}</span>
+                    <span v-if="listing.listing_contact.name" class="block text-gray-700 dark:text-gray-300">{{ listing.listing_contact.name }}</span>
+                    <span v-if="listing.listing_contact.notes" class="block text-xs text-gray-500 dark:text-gray-400 whitespace-pre-wrap mt-1">{{ listing.listing_contact.notes }}</span>
                 </dd>
             </div>
 

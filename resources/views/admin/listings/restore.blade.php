@@ -12,8 +12,8 @@
     $listingPayload = [
         'uuid'               => $listing->uuid,
         'title'              => $listing->title,
-        'type_label'         => \App\Enums\ListingType::from($listing->type)->label,
-        'barangay_label'     => \App\Enums\Barangay::from($listing->barangay)->label,
+        'type_label'         => $listing->type ? \App\Enums\ListingType::from($listing->type)->label : null,
+        'barangay_label'     => $listing->barangay ? \App\Enums\Barangay::from($listing->barangay)->label : null,
         'price_monthly'      => $listing->price_monthly,
         'beds'               => $listing->beds,
         'baths'              => $listing->baths,
