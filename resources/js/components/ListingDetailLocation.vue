@@ -36,14 +36,6 @@ onMounted(async () => {
     new google.maps.Marker({
         position,
         map,
-        icon: {
-            path: google.maps.SymbolPath.CIRCLE,
-            fillColor: '#f97316',
-            fillOpacity: 1,
-            strokeColor: '#ffffff',
-            strokeWeight: 2,
-            scale: 10,
-        },
     });
 });
 
