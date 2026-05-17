@@ -6,11 +6,9 @@ use App\Enums\InquiryStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\AdminInquiryFilteredResource;
 use App\Http\Resources\AdminInquiryResource;
-use App\Models\HandoffLock;
 use App\Models\Inquiry;
 use App\Support\PhMobile;
 use Carbon\Carbon;
-use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -22,7 +20,6 @@ class InquiryController extends Controller
     {
         $rows = Inquiry::query()
             ->where('status', InquiryStatus::new()->value)
-            ->whereHas('listing', fn ($q) => $q->whereDoesntHave('activeHandoff'))
             ->with(['renter', 'listing'])
             ->orderBy('created_at')
             ->orderBy('id')
@@ -108,69 +105,11 @@ class InquiryController extends Controller
             ->with('info', 'Inquiry marked as rejected.');
     }
 
-    public function handoff(Inquiry $inquiry): RedirectResponse
-    {
-        abort_unless($inquiry->status === InquiryStatus::new()->value, 422);
-
-        $listing = $inquiry->listing;
-        abort_if(! $listing, 404, 'Listing no longer available.');
-
-        $validated = request()->validateWithBag(
-            'handoff-' . $inquiry->uuid,
-            [
-                'notes'        => 'nullable|string|max:2000',
-                'renter_notes' => 'nullable|string|max:2000',
-            ],
-            [
-                'notes.max'        => 'Inquiry notes must be 2000 characters or fewer.',
-                'renter_notes.max' => 'Renter notes must be 2000 characters or fewer.',
-            ],
-        );
-
-        $inquiryNotes = ($validated['notes']        ?? '') !== '' ? $validated['notes']        : null;
-        $renterNotes  = ($validated['renter_notes'] ?? '') !== '' ? $validated['renter_notes'] : null;
-
-        try {
-            DB::transaction(function () use ($inquiry, $listing, $inquiryNotes, $renterNotes) {
-                HandoffLock::create([
-                    'inquiry_id' => $inquiry->id,
-                    'listing_id' => $listing->id,
-                    'created_by' => auth('admin')->id(),
-                ]);
-
-                $inquiry->update([
-                    'status'        => InquiryStatus::handedOff()->value,
-                    'handed_off_at' => Carbon::now(),
-                    'handed_off_by' => auth('admin')->id(),
-                    'notes'         => $inquiryNotes,
-                ]);
-
-                $inquiry->renter->update([
-                    'notes'        => $renterNotes,
-                    'is_qualified' => true,
-                ]);
-            });
-        } catch (QueryException $e) {
-            // UNIQUE on handoff_locks.listing_id triggered — race lost.
-            // MySQL: SQLSTATE[23000] errorInfo[1] === 1062.
-            // SQLite (test env): SQLSTATE[23000] errorInfo[1] === 19.
-            $code = $e->errorInfo[1] ?? null;
-            if (in_array($code, [1062, 19], true)) {
-                abort(409, 'This listing already has an active handoff.');
-            }
-            throw $e;
-        }
-
-        return redirect()->route('admin.filtered-inquiries.index')
-            ->with('success', 'Handoff recorded — renter qualified, listing locked.');
-    }
-
     private function counts(): array
     {
         return [
             'filtered' => Inquiry::query()
                 ->where('status', InquiryStatus::new()->value)
-                ->whereHas('listing', fn ($q) => $q->whereDoesntHave('activeHandoff'))
                 ->count(),
             'all'      => Inquiry::count(),
         ];

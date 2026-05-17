@@ -124,17 +124,8 @@ Route::middleware('auth:admin')->group(function () {
         Route::put('inquiries/{inquiry:uuid}/reject', [Admin\InquiryController::class, 'reject'])
             ->name('inquiries.reject');
 
-        Route::put('inquiries/{inquiry:uuid}/handoff', [Admin\InquiryController::class, 'handoff'])
-            ->name('inquiries.handoff');
-
         Route::post('inquiries/{inquiry:uuid}/lead', [Admin\LeadController::class, 'store'])
             ->name('inquiries.lead.store');
-
-        Route::get('handoffs', [Admin\HandoffController::class, 'index'])
-            ->name('handoffs.index');
-
-        Route::delete('handoffs/{handoffLock}', [Admin\HandoffController::class, 'destroy'])
-            ->name('handoffs.destroy');
 
         Route::get('leads', [Admin\LeadController::class, 'index'])
             ->name('leads.index');

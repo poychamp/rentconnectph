@@ -43,9 +43,7 @@
         if ($adminUser?->can('inquiries.manage')) {
             $adminSidebarBadges['filteredInquiries'] = \App\Models\Inquiry::query()
                 ->where('status', \App\Enums\InquiryStatus::new()->value)
-                ->whereHas('listing', fn ($q) => $q->whereDoesntHave('activeHandoff'))
                 ->count();
-            $adminSidebarBadges['handoffs'] = \App\Models\HandoffLock::count();
             // "New leads" = pending only — admin hasn't sent to broker yet.
             $adminSidebarBadges['pendingLeads'] = \App\Models\Lead::where('status', \App\Enums\LeadStatus::pending()->value)
                 ->count();

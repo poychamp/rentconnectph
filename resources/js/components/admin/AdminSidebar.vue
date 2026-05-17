@@ -135,14 +135,6 @@ const sections = [
                     || path.startsWith('/admin/inquiries'),
             },
             {
-                name: 'Handoffs',
-                href: '/admin/handoffs',
-                icon: 'lock',
-                requires: 'inquiries.manage',
-                badge: 'handoffs',
-                matches: (path) => path.startsWith('/admin/handoffs'),
-            },
-            {
                 name: 'Leads',
                 href: '/admin/leads',
                 icon: 'handshake',

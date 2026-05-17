@@ -128,11 +128,6 @@ class Listing extends Model
         return $this->hasMany(ListingLifecycleEvent::class)->orderByDesc('created_at');
     }
 
-    public function activeHandoff(): \Illuminate\Database\Eloquent\Relations\HasOne
-    {
-        return $this->hasOne(HandoffLock::class);
-    }
-
     public function inquiries(): HasMany
     {
         return $this->hasMany(Inquiry::class);
