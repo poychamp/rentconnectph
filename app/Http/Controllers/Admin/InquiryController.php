@@ -2,15 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\InquiryStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\AdminInquiryResource;
 use App\Models\Inquiry;
 use App\Support\PhMobile;
-use Carbon\Carbon;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class InquiryController extends Controller
@@ -21,17 +17,17 @@ class InquiryController extends Controller
 
         if ($q === '') {
             // Browse: Eloquent paginate sorted by most-recently-touched first.
-            // updated_at (not created_at) so handoffs / rejects / note edits
-            // bubble back to the top — reference lookup is "what changed
-            // recently?" not "what came in recently?".
+            // updated_at (not created_at) so note edits bubble back to the top
+            // — reference lookup is "what changed recently?" not "what came in
+            // recently?".
             $rows = Inquiry::query()
                 ->with(['renter', 'listing.listingContact'])
                 ->orderByDesc('updated_at')
                 ->orderByDesc('id')
                 ->paginate(10);
         } else {
-            // Search: Scout against the JOINed renters + listings (see
-            // Inquiry::newScoutQuery + toSearchableArray dotted keys).
+            // Search: Scout against the JOINed renters + listings + listing_contacts
+            // (see Inquiry::newScoutQuery + toSearchableArray dotted keys).
             // Phone-shaped input gets normalized to E.164 so 0917… and +639…
             // both match the canonical stored form. Non-phone input passes raw.
             $searchInput = PhMobile::normalize($q) ?? $q;
@@ -46,45 +42,5 @@ class InquiryController extends Controller
             'inquiries' => AdminInquiryResource::collection($rows)->response()->getData(true),
             'filters'   => ['q' => $q],
         ]);
-    }
-
-    public function reject(Inquiry $inquiry): RedirectResponse
-    {
-        abort_unless($inquiry->status === InquiryStatus::new()->value, 422);
-
-        $validated = request()->validateWithBag(
-            'reject-' . $inquiry->uuid,
-            [
-                'notes'           => 'nullable|string|max:2000',
-                'renter_notes'    => 'nullable|string|max:2000',
-                'is_disqualified' => 'sometimes|boolean',
-            ],
-            [
-                'notes.max'        => 'Inquiry notes must be 2000 characters or fewer.',
-                'renter_notes.max' => 'Renter notes must be 2000 characters or fewer.',
-            ],
-        );
-
-        $inquiryNotes = ($validated['notes']        ?? '') !== '' ? $validated['notes']        : null;
-        $renterNotes  = ($validated['renter_notes'] ?? '') !== '' ? $validated['renter_notes'] : null;
-
-        $renterUpdate = ['notes' => $renterNotes];
-        if (! empty($validated['is_disqualified'])) {
-            $renterUpdate['is_qualified'] = false;
-        }
-
-        DB::transaction(function () use ($inquiry, $inquiryNotes, $renterUpdate) {
-            $inquiry->update([
-                'status'      => InquiryStatus::rejected()->value,
-                'notes'       => $inquiryNotes,
-                'rejected_at' => Carbon::now(),
-                'rejected_by' => auth('admin')->id(),
-            ]);
-
-            $inquiry->renter->update($renterUpdate);
-        });
-
-        return redirect()->route('admin.inquiries.index')
-            ->with('info', 'Inquiry marked as rejected.');
     }
 }

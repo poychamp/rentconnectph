@@ -118,8 +118,6 @@ Route::middleware('auth:admin')->group(function () {
         Route::get('inquiries', [Admin\InquiryController::class, 'index'])
             ->name('inquiries.index');
 
-        Route::put('inquiries/{inquiry:uuid}/reject', [Admin\InquiryController::class, 'reject'])
-            ->name('inquiries.reject');
     });
 
     // Vapor's signed S3 URL endpoint — browser calls this to get a pre-signed URL,

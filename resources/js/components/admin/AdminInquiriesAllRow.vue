@@ -40,14 +40,6 @@ const lifecycle = computed(() => {
             color: 'emerald',
         };
     }
-    if (props.inquiry.status === 'rejected') {
-        return {
-            label: 'Rejected',
-            ts:    props.inquiry.rejected_at,
-            actor: props.inquiry.rejected_by_name,
-            color: 'rose',
-        };
-    }
     return null;
 });
 
@@ -69,7 +61,6 @@ const statusBadgeClass = computed(() => {
     const colors = {
         new:        'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300',
         handed_off: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300',
-        rejected:   'bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300',
     };
     return colors[props.inquiry.status] ?? 'bg-gray-100 dark:bg-gray-800/40 text-gray-700 dark:text-gray-300';
 });
@@ -248,7 +239,7 @@ onMounted(() => {
                     <span
                         v-else-if="inquiry.renter.is_qualified === false"
                         class="inline-block text-[10px] px-1.5 py-0.5 rounded-full bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 font-semibold uppercase tracking-wider"
-                        title="Renter was explicitly disqualified on a prior reject"
+                        title="Renter is marked as disqualified"
                     >
                         Disqualified
                     </span>
@@ -311,7 +302,7 @@ onMounted(() => {
             </div>
         </div>
 
-        <!-- Lifecycle footer (handed_off + rejected only) -->
+        <!-- Lifecycle footer (handed_off only) -->
         <div v-if="lifecycle" class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
             <p class="text-xs text-gray-500 dark:text-gray-400">
                 <span class="font-semibold" :class="lifecycleLabelClass">{{ lifecycle.label }}</span>
