@@ -277,10 +277,10 @@ onMounted(() => {
                 </p>
                 <div class="flex items-center gap-2 mb-1">
                     <span
-                        v-if="inquiry.listing.contact_phone"
+                        v-if="inquiry.listing.listing_contact?.phone"
                         class="font-mono text-sm text-gray-900 dark:text-white"
                     >
-                        {{ toLocal(inquiry.listing.contact_phone) ?? inquiry.listing.contact_phone }}
+                        {{ toLocal(inquiry.listing.listing_contact.phone) ?? inquiry.listing.listing_contact.phone }}
                     </span>
                     <span v-else class="text-sm text-gray-400 italic">No contact on file</span>
                     <span
@@ -290,8 +290,14 @@ onMounted(() => {
                         {{ inquiry.listing.contact_type_label }}
                     </span>
                 </div>
-                <p v-if="toLocal(inquiry.listing.contact_phone)" class="font-mono text-xs text-gray-500 dark:text-gray-400">
-                    {{ inquiry.listing.contact_phone }}
+                <p v-if="inquiry.listing.listing_contact?.phone && toLocal(inquiry.listing.listing_contact.phone)" class="font-mono text-xs text-gray-500 dark:text-gray-400">
+                    {{ inquiry.listing.listing_contact.phone }}
+                </p>
+                <p v-if="inquiry.listing.listing_contact?.name" class="text-sm text-gray-700 dark:text-gray-300 mt-1">
+                    {{ inquiry.listing.listing_contact.name }}
+                </p>
+                <p v-if="inquiry.listing.listing_contact?.notes" class="text-xs text-gray-500 dark:text-gray-400 mt-1 whitespace-pre-wrap">
+                    {{ inquiry.listing.listing_contact.notes }}
                 </p>
 
                 <div v-if="inquiry.listing.verification_notes" class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">

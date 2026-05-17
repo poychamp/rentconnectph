@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\InquiryStatus;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\AdminInquiryFilteredResource;
 use App\Http\Resources\AdminInquiryResource;
 use App\Models\Inquiry;
 use App\Support\PhMobile;
@@ -16,21 +15,6 @@ use Illuminate\View\View;
 
 class InquiryController extends Controller
 {
-    public function filteredIndex(): View
-    {
-        $rows = Inquiry::query()
-            ->where('status', InquiryStatus::new()->value)
-            ->with(['renter', 'listing'])
-            ->orderBy('created_at')
-            ->orderBy('id')
-            ->paginate(10);
-
-        return view('admin.inquiries.filtered-index', [
-            'inquiries' => AdminInquiryFilteredResource::collection($rows)->response()->getData(true),
-            'counts'    => $this->counts(),
-        ]);
-    }
-
     public function index(Request $request): View
     {
         $q = trim((string) $request->query('q', ''));
@@ -41,7 +25,7 @@ class InquiryController extends Controller
             // bubble back to the top — reference lookup is "what changed
             // recently?" not "what came in recently?".
             $rows = Inquiry::query()
-                ->with(['renter', 'listing', 'handedOffBy', 'rejectedBy'])
+                ->with(['renter', 'listing.listingContact'])
                 ->orderByDesc('updated_at')
                 ->orderByDesc('id')
                 ->paginate(10);
@@ -53,14 +37,13 @@ class InquiryController extends Controller
             $searchInput = PhMobile::normalize($q) ?? $q;
 
             $rows = Inquiry::search($searchInput)
-                ->query(fn ($qb) => $qb->with(['renter', 'listing', 'handedOffBy', 'rejectedBy']))
+                ->query(fn ($qb) => $qb->with(['renter', 'listing.listingContact']))
                 ->paginate(10)
                 ->appends($request->only(['q']));
         }
 
         return view('admin.inquiries.index', [
             'inquiries' => AdminInquiryResource::collection($rows)->response()->getData(true),
-            'counts'    => $this->counts(),
             'filters'   => ['q' => $q],
         ]);
     }
@@ -101,17 +84,7 @@ class InquiryController extends Controller
             $inquiry->renter->update($renterUpdate);
         });
 
-        return redirect()->route('admin.filtered-inquiries.index')
+        return redirect()->route('admin.inquiries.index')
             ->with('info', 'Inquiry marked as rejected.');
-    }
-
-    private function counts(): array
-    {
-        return [
-            'filtered' => Inquiry::query()
-                ->where('status', InquiryStatus::new()->value)
-                ->count(),
-            'all'      => Inquiry::count(),
-        ];
     }
 }

@@ -2,14 +2,13 @@
 
 namespace Tests\Feature\Admin;
 
-use App\Enums\InquiryStatus;
 use App\Models\Inquiry;
 use App\Models\Listing;
+use App\Models\ListingContact;
 use App\Models\Renter;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Tests\SeedDatabaseAfterRefresh;
 use Tests\TestCase;
 
@@ -53,31 +52,7 @@ class AdminInquiryViewTest extends TestCase
     }
 
     // ---------------------------------------------------------------------
-    // Slice — All tab shows EVERY status (no whereDoesntHave('activeHandoff'))
-    // ---------------------------------------------------------------------
-
-    public function test_it_returns_inquiries_across_all_statuses(): void
-    {
-        $admin = User::factory()->superAdmin()->create();
-        $this->actingAs($admin, 'admin');
-
-        Inquiry::factory()->create();              // status=new
-        Inquiry::factory()->handedOff()->create(); // status=handed_off
-        Inquiry::factory()->rejected()->create();  // status=rejected
-
-        $response = $this->get(route('admin.inquiries.index'));
-        $response->assertOk();
-
-        $rows = $response->viewData('inquiries')['data'];
-        $this->assertCount(3, $rows, 'All tab must include every status (new + handed_off + rejected)');
-
-        $statuses = array_column($rows, 'status');
-        sort($statuses);
-        $this->assertSame(['handed_off', 'new', 'rejected'], $statuses);
-    }
-
-    // ---------------------------------------------------------------------
-    // Sort — newest first (opposite of Filtered tab's oldest-first queue)
+    // Sort — newest first
     // ---------------------------------------------------------------------
 
     public function test_it_orders_by_updated_at_desc_then_id_desc(): void
@@ -229,32 +204,59 @@ class AdminInquiryViewTest extends TestCase
     }
 
     // ---------------------------------------------------------------------
-    // Resource shape — extended keys (notes, handed_off_at, rejected_at,
-    // handed_off_by_name, rejected_by_name) + ?->name graceful nil
+    // Search — listing contact phone via PhMobile::normalize round-trip
     // ---------------------------------------------------------------------
 
-    public function test_it_returns_extended_resource_shape(): void
+    public function test_it_filters_by_listing_contact_phone(): void
     {
-        $auth  = User::factory()->superAdmin()->create();
-        $actor = User::factory()->superAdmin()->create(['name' => 'Mae Handover']);
-        $this->actingAs($auth, 'admin');
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        $broker = ListingContact::factory()->create(['phone' => '+639171234567']);
+        $other  = ListingContact::factory()->create(['phone' => '+639998887777']);
+
+        $brokerListing = Listing::factory()->verified()->create(['listing_contact_id' => $broker->id]);
+        $otherListing  = Listing::factory()->verified()->create(['listing_contact_id' => $other->id]);
+
+        Inquiry::factory()->for($brokerListing)->create();
+        Inquiry::factory()->for($otherListing)->create();
+
+        $response = $this->get(route('admin.inquiries.index', ['q' => '09171234567']));
+        $response->assertOk();
+
+        $rows = $response->viewData('inquiries')['data'];
+        $this->assertCount(1, $rows, 'Local-format query must match listing contact via PhMobile::normalize round-trip');
+        $this->assertSame('+639171234567', $rows[0]['listing']['listing_contact']['phone']);
+    }
+
+    // ---------------------------------------------------------------------
+    // Resource shape — uuid, submitted_at, notes, renter, listing
+    // ---------------------------------------------------------------------
+
+    public function test_it_returns_resource_shape(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
 
         $renter = Renter::factory()->create([
             'name'  => 'Maria Cruz',
             'phone' => '+639171234567',
         ]);
+        $contact = ListingContact::factory()->create([
+            'phone' => '+639998887777',
+            'name'  => 'Maria Reyes',
+            'notes' => 'Philhomes broker',
+        ]);
         $listing = Listing::factory()->verified()->create([
-            'title'    => 'Beachfront Condo',
-            'barangay' => 'carmen',
+            'title'              => 'Beachfront Condo',
+            'barangay'           => 'carmen',
+            'listing_contact_id' => $contact->id,
         ]);
 
         Inquiry::factory()
             ->for($renter)
             ->for($listing)
-            ->handedOff($actor)
-            ->create([
-                'notes' => 'Owner OK with Aug 1 move-in.',
-            ]);
+            ->create(['notes' => 'Owner OK with Aug 1 move-in.']);
 
         $response = $this->get(route('admin.inquiries.index'));
         $response->assertOk();
@@ -262,62 +264,15 @@ class AdminInquiryViewTest extends TestCase
         $row = $response->viewData('inquiries')['data'][0];
 
         $this->assertEqualsCanonicalizing(
-            ['uuid', 'status', 'status_label', 'submitted_at', 'notes', 'handed_off_at', 'rejected_at', 'handed_off_by_name', 'rejected_by_name', 'renter', 'listing'],
+            ['uuid', 'submitted_at', 'notes', 'renter', 'listing'],
             array_keys($row),
         );
 
-        $this->assertSame(InquiryStatus::handedOff()->value, $row['status']);
-        $this->assertSame('Handed Off', $row['status_label']);
         $this->assertSame('Owner OK with Aug 1 move-in.', $row['notes']);
-        $this->assertNotNull($row['handed_off_at']);
-        $this->assertSame('Mae Handover', $row['handed_off_by_name']);
-        $this->assertNull($row['rejected_at']);
-        $this->assertNull($row['rejected_by_name']);
-
-        // ?->name graceful nil — after actor is hard-deleted, nullOnDelete
-        // cascades the FK to null, and the resource's `?->name` returns null
-        // without throwing on a null relation.
-        $actor->forceDelete();
-
-        $response2 = $this->get(route('admin.inquiries.index'));
-        $row2 = $response2->viewData('inquiries')['data'][0];
-
-        $this->assertNull(
-            $row2['handed_off_by_name'],
-            'handed_off_by_name must null-out gracefully when admin is hard-deleted (nullOnDelete cascade + ?->name)',
-        );
-    }
-
-    // ---------------------------------------------------------------------
-    // N+1 prevention — eager-load chain includes both actor relations
-    // ---------------------------------------------------------------------
-
-    public function test_it_eager_loads_actor_relations(): void
-    {
-        $auth = User::factory()->superAdmin()->create();
-        $this->actingAs($auth, 'admin');
-
-        // 5 handed-off inquiries — each gets its own admin via factory default,
-        // so the handedOffBy relation has 5 distinct rows to resolve.
-        for ($i = 0; $i < 5; $i++) {
-            Inquiry::factory()->handedOff()->create();
-        }
-
-        DB::enableQueryLog();
-
-        $response = $this->get(route('admin.inquiries.index'));
-        $response->assertOk();
-
-        $queryCount = count(DB::getQueryLog());
-        DB::disableQueryLog();
-
-        // Tolerant threshold matches AdminInquiryFilteredViewTest's N+1 budget.
-        // 5 inquiries with eager-loaded renter + listing + handedOffBy +
-        // rejectedBy should yield ~10-14 queries; 20 catches genuine N+1.
-        $this->assertLessThanOrEqual(
-            20,
-            $queryCount,
-            "All-inquiries index should eager-load renter, listing, handedOffBy, rejectedBy — query count was {$queryCount}, suggests N+1 regression.",
-        );
+        $this->assertSame('Maria Cruz', $row['renter']['name']);
+        $this->assertSame('+639171234567', $row['renter']['phone']);
+        $this->assertSame('Beachfront Condo', $row['listing']['title']);
+        $this->assertSame('+639998887777', $row['listing']['listing_contact']['phone']);
+        $this->assertSame('Maria Reyes', $row['listing']['listing_contact']['name']);
     }
 }

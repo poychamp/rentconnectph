@@ -15,7 +15,6 @@
     window.__INITIAL_INQUIRIES__ = {
         user:      @json($authUser),
         inquiries: @json($inquiries),
-        counts:    @json($counts),
         filters:   @json($filters),
         errors:    @json($errorBags),
         oldInput:  @json(old()),

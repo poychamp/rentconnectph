@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Enums\InquiryStatus;
 use App\Models\Inquiry;
 use App\Models\Listing;
 use App\Models\Renter;
@@ -55,7 +54,6 @@ class ListingInquireTest extends TestCase
         $inquiry = Inquiry::first();
         $this->assertSame($renter->id, $inquiry->renter_id);
         $this->assertSame($listing->id, $inquiry->listing_id);
-        $this->assertSame(InquiryStatus::new()->value, $inquiry->status);
     }
 
     public function test_it_normalizes_local_format_to_e164(): void
@@ -283,17 +281,6 @@ class ListingInquireTest extends TestCase
     // ---------------------------------------------------------------------
     // Security boundaries
     // ---------------------------------------------------------------------
-
-    public function test_it_silently_ignores_status_in_request_payload(): void
-    {
-        $listing = Listing::factory()->verified()->create();
-
-        $this->post(route('inquiries.store'), $this->validPayload($listing, [
-            'status' => InquiryStatus::rejected()->value,
-        ]));
-
-        $this->assertSame(InquiryStatus::new()->value, Inquiry::sole()->status);
-    }
 
     public function test_it_silently_ignores_is_qualified_in_request_payload(): void
     {

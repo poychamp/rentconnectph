@@ -127,12 +127,10 @@ const sections = [
         items: [
             {
                 name: 'Inquiries',
-                href: '/admin/filtered-inquiries',
+                href: '/admin/inquiries',
                 icon: 'mail',
                 requires: 'inquiries.manage',
-                badge: 'filteredInquiries',
-                matches: (path) => path.startsWith('/admin/filtered-inquiries')
-                    || path.startsWith('/admin/inquiries'),
+                matches: (path) => path.startsWith('/admin/inquiries'),
             },
         ],
     },

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\InquiryStatus;
 use App\Models\Inquiry;
 use App\Models\Listing;
 use App\Models\Renter;
@@ -42,7 +41,6 @@ class InquiryController extends Controller
             Inquiry::create([
                 'renter_id'  => $renter->id,
                 'listing_id' => $listing->id,
-                'status'     => InquiryStatus::new()->value,
             ]);
         });
 

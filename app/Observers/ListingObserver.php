@@ -15,8 +15,9 @@ class ListingObserver
         // Propagate to child inquiries' Algolia documents only when the
         // attributes that flow into Inquiry::toSearchableArray actually
         // changed. Avoids a wasted reindex on is_featured / queue_status
-        // / verification_notes / etc. flips.
-        if ($listing->wasChanged(['title', 'contact_phone'])) {
+        // / verification_notes / etc. flips. listing_contact_id changes
+        // propagate the new contact's phone into child inquiry documents.
+        if ($listing->wasChanged(['title', 'listing_contact_id'])) {
             $listing->inquiries->each->searchable();
         }
     }

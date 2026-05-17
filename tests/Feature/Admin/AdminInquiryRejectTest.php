@@ -94,7 +94,7 @@ class AdminInquiryRejectTest extends TestCase
         $this->assertSame($admin->id, $inquiry->rejected_by);
     }
 
-    public function test_it_redirects_to_filtered_inquiries_index_with_info_flash(): void
+    public function test_it_redirects_to_inquiries_index_with_info_flash(): void
     {
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
@@ -103,41 +103,8 @@ class AdminInquiryRejectTest extends TestCase
 
         $response = $this->put(route('admin.inquiries.reject', $inquiry));
 
-        $response->assertRedirect(route('admin.filtered-inquiries.index'));
+        $response->assertRedirect(route('admin.inquiries.index'));
         $response->assertSessionHas('info', 'Inquiry marked as rejected.');
-    }
-
-    // ---------------------------------------------------------------------
-    // Queue exclusion — rejected inquiry leaves the filtered queue
-    // (status=new only). Untouched new inquiry still appears.
-    // ---------------------------------------------------------------------
-
-    public function test_it_excludes_the_inquiry_from_the_filtered_queue_after_reject(): void
-    {
-        $admin = User::factory()->superAdmin()->create();
-        $this->actingAs($admin, 'admin');
-
-        $inquiryA = Inquiry::factory()->create();
-        $inquiryB = Inquiry::factory()->create();
-
-        $this->put(route('admin.inquiries.reject', $inquiryA))
-            ->assertRedirect(route('admin.filtered-inquiries.index'));
-
-        $response = $this->get(route('admin.filtered-inquiries.index'));
-        $response->assertOk();
-
-        $uuids = array_map(fn ($r) => $r['uuid'], $response->viewData('inquiries')['data']);
-
-        $this->assertNotContains(
-            $inquiryA->uuid,
-            $uuids,
-            'Rejected inquiry must be excluded from the filtered queue (status=new only).',
-        );
-        $this->assertContains(
-            $inquiryB->uuid,
-            $uuids,
-            'Untouched new inquiry should still appear.',
-        );
     }
 
     // ---------------------------------------------------------------------

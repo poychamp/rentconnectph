@@ -115,9 +115,6 @@ Route::middleware('auth:admin')->group(function () {
     // via Gate::before bypass; permission exists in DB but no explicit role grant
     // (calls-team role lands later).
     Route::middleware('can:' . AppPermission::inquiriesManage()->value)->group(function () {
-        Route::get('filtered-inquiries', [Admin\InquiryController::class, 'filteredIndex'])
-            ->name('filtered-inquiries.index');
-
         Route::get('inquiries', [Admin\InquiryController::class, 'index'])
             ->name('inquiries.index');
 

@@ -18,17 +18,7 @@ class Inquiry extends Model
         'uuid',
         'renter_id',
         'listing_id',
-        'status',
         'notes',
-        'rejected_at',
-        'rejected_by',
-        'handed_off_at',
-        'handed_off_by',
-    ];
-
-    protected $casts = [
-        'rejected_at'   => 'datetime',
-        'handed_off_at' => 'datetime',
     ];
 
     public function newScoutQuery(ScoutBuilder $builder)
@@ -43,6 +33,7 @@ class Inquiry extends Model
         return $this->newQuery()
             ->join('renters', 'inquiries.renter_id', '=', 'renters.id')
             ->join('listings', 'inquiries.listing_id', '=', 'listings.id')
+            ->leftJoin('listing_contacts', 'listings.listing_contact_id', '=', 'listing_contacts.id')
             ->select('inquiries.*');
     }
 
@@ -58,7 +49,7 @@ class Inquiry extends Model
                 'renter_name'           => $this->renter?->name,
                 'renter_phone'          => $this->renter?->phone,
                 'listing_title'         => $this->listing?->title,
-                'listing_contact_phone' => $this->listing?->contact_phone,
+                'listing_contact_phone' => $this->listing?->listingContact?->phone,
                 'updated_at'            => $this->updated_at?->getTimestamp(),
             ];
         }
@@ -66,13 +57,13 @@ class Inquiry extends Model
         // Database driver (tests + local): dotted keys ride newScoutQuery's
         // JOINs. Eloquent's qualifyColumn returns dotted strings as-is, so
         // Scout's database engine builds WHERE renters.name LIKE ? against
-        // the joined renters/listings tables.
+        // the joined renters/listings/listing_contacts tables.
         return [
             'uuid'                   => $this->uuid,
             'renters.name'           => $this->renter?->name,
             'renters.phone'          => $this->renter?->phone,
             'listings.title'         => $this->listing?->title,
-            'listings.contact_phone' => $this->listing?->contact_phone,
+            'listing_contacts.phone' => $this->listing?->listingContact?->phone,
         ];
     }
 
@@ -85,15 +76,4 @@ class Inquiry extends Model
     {
         return $this->belongsTo(Listing::class);
     }
-
-    public function handedOffBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'handed_off_by');
-    }
-
-    public function rejectedBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'rejected_by');
-    }
-
 }

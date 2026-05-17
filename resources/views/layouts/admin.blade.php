@@ -40,11 +40,6 @@
             $adminSidebarBadges['visitedListings'] = \App\Models\Listing::awaitingVerification()->count();
         }
 
-        if ($adminUser?->can('inquiries.manage')) {
-            $adminSidebarBadges['filteredInquiries'] = \App\Models\Inquiry::query()
-                ->where('status', \App\Enums\InquiryStatus::new()->value)
-                ->count();
-        }
     @endphp
 
     <script>

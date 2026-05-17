@@ -4,7 +4,6 @@ namespace App\Http\Resources;
 
 use App\Enums\Barangay;
 use App\Enums\ContactType;
-use App\Enums\InquiryStatus;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class AdminInquiryResource extends JsonResource
@@ -12,15 +11,9 @@ class AdminInquiryResource extends JsonResource
     public function toArray($request): array
     {
         return [
-            'uuid'               => $this->uuid,
-            'status'             => $this->status,
-            'status_label'       => InquiryStatus::from($this->status)->label,
-            'submitted_at'       => $this->created_at?->toIso8601String(),
-            'notes'              => $this->notes,
-            'handed_off_at'      => $this->handed_off_at?->toIso8601String(),
-            'rejected_at'        => $this->rejected_at?->toIso8601String(),
-            'handed_off_by_name' => $this->handedOffBy?->name,
-            'rejected_by_name'   => $this->rejectedBy?->name,
+            'uuid'         => $this->uuid,
+            'submitted_at' => $this->created_at?->toIso8601String(),
+            'notes'        => $this->notes,
             'renter' => [
                 'name'         => $this->renter->name,
                 'phone'        => $this->renter->phone,
@@ -33,7 +26,12 @@ class AdminInquiryResource extends JsonResource
                 'barangay_label'     => $this->listing->barangay
                     ? Barangay::from($this->listing->barangay)->label
                     : null,
-                'contact_phone'      => $this->listing->contact_phone,
+                'listing_contact'    => $this->listing->listingContact ? [
+                    'uuid'  => $this->listing->listingContact->uuid,
+                    'phone' => $this->listing->listingContact->phone,
+                    'name'  => $this->listing->listingContact->name,
+                    'notes' => $this->listing->listingContact->notes,
+                ] : null,
                 'contact_type_label' => $this->listing->contact_type
                     ? ContactType::from($this->listing->contact_type)->label
                     : null,

@@ -2,7 +2,6 @@
 import { ref } from 'vue';
 import AdminSidebar from './components/admin/AdminSidebar.vue';
 import AdminTopBar from './components/admin/AdminTopBar.vue';
-import AdminInquiriesTabs from './components/admin/AdminInquiriesTabs.vue';
 import AdminInquiriesSearchBar from './components/admin/AdminInquiriesSearchBar.vue';
 import AdminInquiriesAllTable from './components/admin/AdminInquiriesAllTable.vue';
 import AdminInquiriesPagination from './components/admin/AdminInquiriesPagination.vue';
@@ -10,7 +9,6 @@ import AdminInquiriesPagination from './components/admin/AdminInquiriesPaginatio
 const initial = window.__INITIAL_INQUIRIES__ ?? {
     user: null,
     inquiries: { data: [], meta: { current_page: 1, last_page: 1, total: 0, per_page: 10 }, links: {} },
-    counts: { filtered: 0, all: 0 },
     filters: { q: '' },
     errors: {},
     oldInput: {},
@@ -22,7 +20,6 @@ const user = ref(initial.user ?? {
 
 const rows     = ref(initial.inquiries.data);
 const meta     = ref(initial.inquiries.meta);
-const counts   = ref(initial.counts);
 const filters  = ref(initial.filters);
 const errors   = ref(initial.errors ?? {});
 const oldInput = ref(initial.oldInput ?? {});
@@ -52,8 +49,6 @@ const emptyMessage = filters.value.q
                         Reference list of every inquiry across all statuses. Search by renter or listing.
                     </p>
                 </div>
-
-                <AdminInquiriesTabs active="all" :counts="counts" />
 
                 <AdminInquiriesSearchBar :initial-q="filters.q" />
 
