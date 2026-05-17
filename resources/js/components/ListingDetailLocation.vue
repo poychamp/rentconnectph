@@ -11,22 +11,9 @@ let themeObserver = null;
 
 const googleMapsEnabled = window.__ASSETS__?.googleMapsEnabled === true;
 
-const isIOS = (() => {
-    const ua = navigator.userAgent;
-    if (/iPad|iPhone|iPod/.test(ua)) return true;
-    return navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
-})();
-
 const hasCoords = computed(
     () => props.listing.latitude != null && props.listing.longitude != null
 );
-
-const mapHref = computed(() => {
-    const coords = `${props.listing.latitude},${props.listing.longitude}`;
-    return isIOS
-        ? `comgooglemaps://?q=${coords}`
-        : `https://www.google.com/maps/search/?api=1&query=${coords}`;
-});
 
 function isDark() {
     return document.documentElement.classList.contains('dark');
@@ -133,9 +120,9 @@ onBeforeUnmount(() => {
                 Exact address provided after inquiry. Map shows approximate barangay-level location.
             </p>
             <a
-                :href="mapHref"
-                :target="isIOS ? null : '_blank'"
-                :rel="isIOS ? null : 'noopener noreferrer'"
+                :href="`https://www.google.com/maps/search/?api=1&query=${listing.latitude},${listing.longitude}`"
+                target="_blank"
+                rel="noopener noreferrer"
                 class="mt-4 inline-flex items-center justify-center gap-2 w-full sm:w-auto px-5 py-2.5 rounded-xl border border-orange-500 bg-transparent text-orange-500 text-sm font-semibold transition-opacity duration-[80ms] ease-out active:opacity-50"
             >
                 <svg
