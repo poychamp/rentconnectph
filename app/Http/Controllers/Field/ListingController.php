@@ -529,6 +529,7 @@ class ListingController extends Controller
         $listing->load([
             'images' => fn ($q) => $q->orderBy('sort_order'),
             'amenities',
+            'listingContact',
         ]);
 
         $from = $request->query('from');

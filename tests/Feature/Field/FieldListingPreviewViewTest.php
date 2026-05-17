@@ -105,6 +105,10 @@ class FieldListingPreviewViewTest extends TestCase
             $viewListing->relationLoaded('amenities'),
             'amenities relation must be eager-loaded for the amenities card',
         );
+        $this->assertTrue(
+            $viewListing->relationLoaded('listingContact'),
+            'listingContact must be eager-loaded for the contact card',
+        );
     }
 
     public function test_it_loads_preview_for_verified_listings_assigned_to_the_current_officer(): void
