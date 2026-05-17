@@ -223,6 +223,8 @@ const inputErrorClass = 'border-red-400 dark:border-red-500 focus:border-red-500
                         v-model="form.description"
                         rows="14"
                         placeholder="Brief description — what makes this place special, nearby landmarks, etc."
+                        @focus="clearFieldError('description')"
+                        @blur="validateField('description')"
                         :class="[
                             'mt-1 w-full rounded-md border bg-white dark:bg-gray-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-1 outline-none transition resize-y',
                             errorFor('description')

@@ -20,7 +20,7 @@
         'longitude'          => $listing['longitude'],
         'source_site'        => $listing['source_site'],
         'source_url'         => $listing['source_url'],
-        'contact_phone'      => $listing['contact_phone'],
+        'listing_contact'    => $listing['listing_contact'] ?? null,
         'directions'         => $listing['directions'],
         'contact_type'       => $listing['contact_type'],
         'verification_notes' => $listing['verification_notes'],

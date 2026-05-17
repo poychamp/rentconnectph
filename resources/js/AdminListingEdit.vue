@@ -4,13 +4,11 @@ import AdminSidebar from './components/admin/AdminSidebar.vue';
 import AdminTopBar from './components/admin/AdminTopBar.vue';
 import AdminAddListingFormCard from './components/admin/AdminAddListingFormCard.vue';
 import AdminEditListingPublishBar from './components/admin/AdminEditListingPublishBar.vue';
-import AdminEditListingUnverifiedPublishBar from './components/admin/AdminEditListingUnverifiedPublishBar.vue';
 import AdminEditListingDangerZone from './components/admin/AdminEditListingDangerZone.vue';
 import AdminEditListingRejectZone from './components/admin/AdminEditListingRejectZone.vue';
-import AdminEditListingPrequalCard from './components/admin/AdminEditListingPrequalCard.vue';
-import AdminEditListingCallContextCard from './components/admin/AdminEditListingCallContextCard.vue';
 import AdminEditListingCallsContextCard from './components/admin/AdminEditListingCallsContextCard.vue';
-import AdminEditListingLeadCard from './components/admin/AdminEditListingLeadCard.vue';
+import AdminEditListingContactCard from './components/admin/AdminEditListingContactCard.vue';
+import AdminEditListingSourceCard from './components/admin/AdminEditListingSourceCard.vue';
 
 // Read initial state synchronously at setup so children inherit a fully-populated
 // form on first render. oldInput (validation failure path) wins over listing
@@ -40,22 +38,13 @@ const formData = ref({
     contactTypes: initial?.contactTypes ?? [],
 });
 
-// Slice detection — the unverified-edit page renders extra cards
-// (Pre-qualification, Call context). Driven by URL pathname so it works
-// regardless of how the user landed on the page.
-const isUnverifiedSlice = typeof window !== 'undefined'
-    && window.location.pathname.endsWith('/unverified-edit');
-
-// Persisted prequal state for the read-only badge — comes off the listing payload.
-const prequalStatus = persisted?.prequal_status ?? null;
-
 // Field-officer attribution scalars for the verified-slice banner card. Top-level
 // keys on __INITIAL_EDIT_LISTING__ (not part of the editable form state).
 const assignedToName = initial?.assignedToName ?? null;
 const visitedAt      = initial?.visitedAt      ?? null;
 
 // Origin tracking — picked up from ?from= on the edit URL (e.g.
-// /admin/listings/{uuid}/edit?from=unverified). Round-tripped through the form
+// /admin/listings/{uuid}/edit?from=verified). Round-tripped through the form
 // so the update handler can redirect back to the page the admin was editing
 // from. Survives validation-failure redirect-back via oldInput.from.
 const fromParam = (new URLSearchParams(window.location.search)).get('from');
@@ -77,15 +66,9 @@ const addListingForm = reactive({
     source_site:   source.source_site   ?? '',
     source_url:    source.source_url    ?? '',
     contact_phone: source.contact_phone ?? '',
-    // Pre-qualification + call-context fields. Editable on the unverified
-    // slice via the Pre-qual card (status select) + Call-context card
-    // (directions, contact type, notes, field-officer assignment). Server
-    // doesn't validate or persist these yet — that's the next backend slice.
-    prequal_status:     source.prequal_status     ?? '',
     directions:         source.directions         ?? '',
     contact_type:       source.contact_type       ?? '',
     verification_notes: source.verification_notes ?? '',
-    assigned_to:        source.assigned_to ?? null,
     is_verified:  toBool(source.is_verified),
     is_featured:  toBool(source.is_featured),
     from:         initialFrom,
@@ -94,28 +77,17 @@ const addListingForm = reactive({
 const addListingFormErrors = ref(initial?.errors ?? {});
 const errorCount = computed(() => Object.keys(addListingFormErrors.value).length);
 
-// Client-side validators mirror the server rules per slice. The required set
-// on the unverified slice varies by prequal_status — not_called/no_answer
-// require only title+contact_phone+prequal_status; called_yes (future) will
-// extend with listing details + call-context fields. Format checks always run
-// when a value is provided, regardless of slice. Server is the source of truth.
-function isFieldRequired(field, prequalStatus) {
-    if (!isUnverifiedSlice) {
-        // Verified-slice required set: mirrors server-side rules in
-        // Admin\ListingController::update. beds/baths/sqm are nullable.
-        return ['title', 'listing_type', 'price_monthly', 'barangay', 'latitude', 'longitude', 'photos'].includes(field);
-    }
-    if (['title', 'contact_phone', 'prequal_status'].includes(field)) return true;
-    if (prequalStatus === 'called_yes' && ['directions', 'contact_type'].includes(field)) return true;
-    return false;
+// Verified-slice required set: mirrors server-side rules in
+// Admin\ListingController::update. beds/baths/sqm are nullable.
+function isFieldRequired(field) {
+    return ['title', 'listing_type', 'price_monthly', 'barangay', 'latitude', 'longitude', 'photos'].includes(field);
 }
 
-// Field set validateAll iterates per slice. Verified slice only includes
-// editable inputs — locked calls-team / prequal fields are silent-ignored
+// Field set validateAll iterates — locked calls-team fields are silent-ignored
 // server-side and shouldn't trip client-side validation either.
-const VERIFIED_SLICE_VALIDATABLE = [
+const VALIDATABLE = [
     'title', 'listing_type', 'price_monthly', 'barangay',
-    'beds', 'baths',
+    'beds', 'baths', 'sqm',
     'latitude', 'longitude',
     'photos',
 ];
@@ -123,43 +95,22 @@ const VERIFIED_SLICE_VALIDATABLE = [
 const VALIDATORS = {
     title: (f) => {
         const v = (f.title ?? '').trim();
-        if (!v && isFieldRequired('title', f.prequal_status)) return 'Title is required.';
+        if (!v && isFieldRequired('title')) return 'Title is required.';
         if (v.length > 200) return 'Title is too long (max 200 characters).';
         return null;
     },
-    contact_phone: (f) => {
-        const raw = (f.contact_phone ?? '').trim();
-        if (!raw && isFieldRequired('contact_phone', f.prequal_status)) return 'Contact phone is required.';
-        if (!raw) return null;
-
-        // Mirror App\Support\PhMobile::normalize(). Accepts:
-        //   09XXXXXXXXX (11 digits)
-        //   9XXXXXXXXX  (10 digits)
-        //   639XXXXXXXXX (12 digits)
-        //   +639XXXXXXXXX (with +)
-        const hasPlus = raw.startsWith('+');
-        const digits = raw.replace(/\D/g, '');
-        const isPh12 = digits.length === 12 && digits.startsWith('63') && digits[2] === '9';
-
-        if (hasPlus) return isPh12 ? null : 'Invalid PH mobile number.';
-        if (digits.length === 11 && digits.startsWith('09')) return null;
-        if (isPh12) return null;
-        if (digits.length === 10 && digits.startsWith('9')) return null;
-        return 'Invalid PH mobile number.';
-    },
-    prequal_status: (f) => {
-        if (!f.prequal_status && isFieldRequired('prequal_status', f.prequal_status)) {
-            return 'Pre-qualification status is required.';
-        }
+    description: (f) => {
+        const v = (f.description ?? '').trim();
+        if (v.length > 5000) return 'Description is too long (max 5000 characters).';
         return null;
     },
     listing_type: (f) => {
-        if (!f.listing_type && isFieldRequired('listing_type', f.prequal_status)) return 'Listing type is required.';
+        if (!f.listing_type && isFieldRequired('listing_type')) return 'Listing type is required.';
         return null;
     },
     price_monthly: (f) => {
         const empty = f.price_monthly === null || f.price_monthly === '' || f.price_monthly === undefined;
-        if (empty && isFieldRequired('price_monthly', f.prequal_status)) return 'Monthly rent is required.';
+        if (empty && isFieldRequired('price_monthly')) return 'Monthly rent is required.';
         if (empty) return null;
         const n = Number(f.price_monthly);
         if (!Number.isFinite(n)) return null;
@@ -167,12 +118,12 @@ const VALIDATORS = {
         return null;
     },
     barangay: (f) => {
-        if (!f.barangay && isFieldRequired('barangay', f.prequal_status)) return 'Barangay is required.';
+        if (!f.barangay && isFieldRequired('barangay')) return 'Barangay is required.';
         return null;
     },
     beds: (f) => {
         const empty = f.beds === null || f.beds === '' || f.beds === undefined;
-        if (empty && isFieldRequired('beds', f.prequal_status)) return 'Bedrooms is required.';
+        if (empty && isFieldRequired('beds')) return 'Bedrooms is required.';
         if (empty) return null;
         const n = Number(f.beds);
         if (!Number.isFinite(n)) return null;
@@ -182,7 +133,7 @@ const VALIDATORS = {
     },
     baths: (f) => {
         const empty = f.baths === null || f.baths === '' || f.baths === undefined;
-        if (empty && isFieldRequired('baths', f.prequal_status)) return 'Bathrooms is required.';
+        if (empty && isFieldRequired('baths')) return 'Bathrooms is required.';
         if (empty) return null;
         const n = Number(f.baths);
         if (!Number.isFinite(n)) return null;
@@ -190,9 +141,17 @@ const VALIDATORS = {
         if (n > 20) return 'The baths field must not be greater than 20.';
         return null;
     },
+    sqm: (f) => {
+        const empty = f.sqm === null || f.sqm === '' || f.sqm === undefined;
+        if (empty) return null;
+        const n = Number(f.sqm);
+        if (!Number.isFinite(n)) return null;
+        if (n < 0) return 'Floor area cannot be negative.';
+        return null;
+    },
     latitude: (f) => {
         const empty = f.latitude === null || f.latitude === '' || f.latitude === undefined;
-        if (empty && isFieldRequired('latitude', f.prequal_status)) return 'Latitude is required.';
+        if (empty && isFieldRequired('latitude')) return 'Latitude is required.';
         if (empty) return null;
         const n = Number(f.latitude);
         if (!Number.isFinite(n)) return null;
@@ -201,7 +160,7 @@ const VALIDATORS = {
     },
     longitude: (f) => {
         const empty = f.longitude === null || f.longitude === '' || f.longitude === undefined;
-        if (empty && isFieldRequired('longitude', f.prequal_status)) return 'Longitude is required.';
+        if (empty && isFieldRequired('longitude')) return 'Longitude is required.';
         if (empty) return null;
         const n = Number(f.longitude);
         if (!Number.isFinite(n)) return null;
@@ -210,18 +169,8 @@ const VALIDATORS = {
     },
     photos: (f) => {
         const empty = !Array.isArray(f.photos) || f.photos.length === 0;
-        if (empty && isFieldRequired('photos', f.prequal_status)) return 'At least one photo is required.';
+        if (empty && isFieldRequired('photos')) return 'At least one photo is required.';
         if (Array.isArray(f.photos) && f.photos.length > 20) return 'Maximum 20 photos allowed.';
-        return null;
-    },
-    directions: (f) => {
-        const v = (f.directions ?? '').trim();
-        if (!v && isFieldRequired('directions', f.prequal_status)) return 'Directions are required.';
-        if (v.length > 500) return 'Directions are too long (max 500 characters).';
-        return null;
-    },
-    contact_type: (f) => {
-        if (!f.contact_type && isFieldRequired('contact_type', f.prequal_status)) return 'Contact type is required.';
         return null;
     },
     verification_notes: (f) => {
@@ -251,11 +200,8 @@ function clearFieldError(field) {
 }
 
 function validateAll() {
-    const fields = isUnverifiedSlice
-        ? Object.keys(VALIDATORS)
-        : VERIFIED_SLICE_VALIDATABLE;
     let ok = true;
-    for (const field of fields) {
+    for (const field of VALIDATABLE) {
         if (!validateField(field)) ok = false;
     }
     return ok;
@@ -289,11 +235,10 @@ onMounted(() => {
             />
 
             <main ref="mainRef" class="flex-1 overflow-y-auto px-6 pt-2 pb-6 lg:px-10 lg:pt-3 lg:pb-10">
-                <AdminEditListingLeadCard
-                    v-if="!isUnverifiedSlice"
-                    class="mt-5"
-                    :source-sites="formData.sourceSites"
-                />
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-5">
+                    <AdminEditListingContactCard :listing="persisted" />
+                    <AdminEditListingSourceCard :listing="persisted" :source-sites="formData.sourceSites" />
+                </div>
 
                 <div
                     v-if="errorCount > 0"
@@ -316,44 +261,27 @@ onMounted(() => {
                     </div>
                 </div>
 
-                <template v-if="isUnverifiedSlice">
-                    <AdminEditListingPrequalCard
-                        class="mt-6"
-                        :contact-phone="addListingForm.contact_phone"
-                        :persisted-prequal-status="prequalStatus"
-                    />
-
-                    <AdminEditListingCallContextCard
-                        class="mt-5"
-                        :contact-types="formData.contactTypes"
-                        :field-users="formData.fieldUsers"
-                    />
-                </template>
-
                 <AdminAddListingFormCard
                     class="mt-6"
                     :listing-types="formData.listingTypes"
                     :barangays="formData.barangays"
                     :source-sites="formData.sourceSites"
                     :amenities="formData.amenities"
-                    :read-only-lead="!isUnverifiedSlice"
-                    :hide-lead="!isUnverifiedSlice"
+                    :hide-lead="true"
                 />
 
                 <AdminEditListingCallsContextCard
-                    v-if="!isUnverifiedSlice"
                     class="mt-6"
                     :contact-types="formData.contactTypes"
                     :read-only="true"
                     :verification-notes-editable="true"
                 />
 
-                <AdminEditListingDangerZone v-if="!isUnverifiedSlice" />
+                <AdminEditListingDangerZone />
                 <AdminEditListingRejectZone />
             </main>
 
-            <AdminEditListingUnverifiedPublishBar v-if="isUnverifiedSlice" />
-            <AdminEditListingPublishBar v-else />
+            <AdminEditListingPublishBar />
         </div>
     </div>
 </template>

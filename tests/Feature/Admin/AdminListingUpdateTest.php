@@ -4,6 +4,7 @@ namespace Tests\Feature\Admin;
 
 use App\Models\Amenity;
 use App\Models\Listing;
+use App\Models\ListingContact;
 use App\Models\ListingImage;
 use App\Models\ListingLifecycleEvent;
 use App\Models\User;
@@ -383,8 +384,13 @@ class AdminListingUpdateTest extends TestCase
     public function test_it_silently_ignores_read_only_fields_in_request(): void
     {
         $this->asAdmin();
+        $contact = ListingContact::factory()->create([
+            'phone' => '+639170000000',
+            'name'  => 'Maria Reyes',
+            'notes' => 'Calls-team contact',
+        ]);
         $listing = $this->makeListing(2, [
-            'contact_phone'      => '+639170000000',
+            'listing_contact_id' => $contact->id,
             'source_site'        => 'rent_ph',
             'source_url'         => 'https://rent.ph/orig',
             'contact_type'       => 'owner',
@@ -419,7 +425,7 @@ class AdminListingUpdateTest extends TestCase
         $listing->refresh();
         $this->assertTrue($listing->is_verified);
         $this->assertSame($originalVerifiedAt, $listing->verified_at->format('Y-m-d H:i:s'));
-        $this->assertSame('+639170000000', $listing->contact_phone);
+        $this->assertSame('+639170000000', $listing->listingContact->phone);
         $this->assertSame('rent_ph', $listing->source_site);
         $this->assertSame('https://rent.ph/orig', $listing->source_url);
         $this->assertSame('owner', $listing->contact_type);
@@ -481,6 +487,36 @@ class AdminListingUpdateTest extends TestCase
 
         $response->assertSessionHasErrors([
             'verification_notes' => 'Verification notes are too long (max 2000 characters).',
+        ]);
+    }
+
+    public function test_it_rejects_description_longer_than_5000_characters(): void
+    {
+        $this->asAdmin();
+        $listing = $this->makeListing(2);
+
+        $response = $this->from(route('admin.listings.edit', $listing->uuid))
+            ->put(route('admin.listings.update', $listing->uuid), $this->validPayload($listing, [
+                'description' => str_repeat('x', 5001),
+            ]));
+
+        $response->assertSessionHasErrors([
+            'description' => 'Description is too long (max 5000 characters).',
+        ]);
+    }
+
+    public function test_it_rejects_negative_sqm(): void
+    {
+        $this->asAdmin();
+        $listing = $this->makeListing(2);
+
+        $response = $this->from(route('admin.listings.edit', $listing->uuid))
+            ->put(route('admin.listings.update', $listing->uuid), $this->validPayload($listing, [
+                'sqm' => -1,
+            ]));
+
+        $response->assertSessionHasErrors([
+            'sqm' => 'Floor area cannot be negative.',
         ]);
     }
 

@@ -62,6 +62,7 @@ class ListingController extends Controller
             'images' => fn ($q) => $q->orderBy('sort_order'),
             'amenities',
             'assignedTo',
+            'listingContact',
         ]);
 
         $listingPayload = [
@@ -78,7 +79,13 @@ class ListingController extends Controller
             'latitude'           => $listing->latitude,
             'longitude'          => $listing->longitude,
             'directions'         => $listing->directions,
-            'contact_phone'      => $listing->contact_phone,
+            'listing_contact_id' => $listing->listing_contact_id,
+            'listing_contact'    => $listing->listingContact ? [
+                'uuid'  => $listing->listingContact->uuid,
+                'phone' => $listing->listingContact->phone,
+                'name'  => $listing->listingContact->name,
+                'notes' => $listing->listingContact->notes,
+            ] : null,
             'contact_type'       => $listing->contact_type,
             'source_site'        => $listing->source_site,
             'source_url'         => $listing->source_url,
@@ -711,13 +718,13 @@ class ListingController extends Controller
 
         $validated = $request->validate([
             'title'                => ['required', 'string', 'max:200'],
-            'description'          => ['nullable', 'string'],
+            'description'          => ['nullable', 'string', 'max:5000'],
             'listing_type'         => ['required', 'string', Rule::in(ListingType::toValues())],
             'price_monthly'         => ['required', 'integer', 'min:1'],
             'barangay'             => ['required', 'string', Rule::in(Barangay::toValues())],
             'beds'                 => ['nullable', 'integer', 'min:0', 'max:20'],
             'baths'                => ['nullable', 'integer', 'min:0', 'max:20'],
-            'sqm'                  => ['nullable', 'integer'],
+            'sqm'                  => ['nullable', 'integer', 'min:0'],
             'latitude'             => ['required', 'numeric', 'between:-90,90'],
             'longitude'            => ['required', 'numeric', 'between:-180,180'],
             'amenities'            => ['nullable', 'array', 'max:50'],
@@ -749,6 +756,8 @@ class ListingController extends Controller
             'longitude.required'    => 'Longitude is required.',
             'longitude.between'     => 'Longitude must be between -180 and 180.',
             'verification_notes.max' => 'Verification notes are too long (max 2000 characters).',
+            'description.max'        => 'Description is too long (max 5000 characters).',
+            'sqm.min'                => 'Floor area cannot be negative.',
         ]);
 
         // Validation passed — but Laravel's wildcard validator reorders nested

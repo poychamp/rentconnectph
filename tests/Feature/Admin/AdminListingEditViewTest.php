@@ -8,6 +8,7 @@ use App\Enums\ListingType;
 use App\Enums\SourceSite;
 use App\Models\Amenity;
 use App\Models\Listing;
+use App\Models\ListingContact;
 use App\Models\ListingImage;
 use App\Models\User;
 use Carbon\Carbon;
@@ -91,6 +92,12 @@ class AdminListingEditViewTest extends TestCase
 
         $field = User::factory()->create(['name' => 'Marco Reyes']);
 
+        $contact = ListingContact::factory()->create([
+            'phone' => '+639171234567',
+            'name'  => 'Maria Reyes',
+            'notes' => 'Philhomes broker — speaks Bisaya',
+        ]);
+
         $listing = $this->verifiedListing([
             'title'              => 'Apartment near Capitol',
             'description'        => 'Quiet street, 5 min walk to Capitol.',
@@ -103,7 +110,7 @@ class AdminListingEditViewTest extends TestCase
             'latitude'           => 8.4831,
             'longitude'          => 124.6505,
             'directions'         => 'Past the green gate.',
-            'contact_phone'      => '+639171234567',
+            'listing_contact_id' => $contact->id,
             'contact_type'       => ContactType::owner()->value,
             'source_site'        => SourceSite::rentPh()->value,
             'source_url'         => 'https://rent.ph/property/example',
@@ -144,7 +151,13 @@ class AdminListingEditViewTest extends TestCase
         $this->assertSame('Past the green gate.', $payload['directions']);
 
         // Calls-team-context — present on the verified Edit payload (parity with verify-edit)
-        $this->assertSame('+639171234567',                  $payload['contact_phone']);
+        $this->assertSame($contact->id, $payload['listing_contact_id']);
+        $this->assertSame([
+            'uuid'  => $contact->uuid,
+            'phone' => '+639171234567',
+            'name'  => 'Maria Reyes',
+            'notes' => 'Philhomes broker — speaks Bisaya',
+        ], $payload['listing_contact']);
         $this->assertSame(ContactType::owner()->value,      $payload['contact_type']);
         $this->assertSame(SourceSite::rentPh()->value,      $payload['source_site']);
         $this->assertSame('https://rent.ph/property/example', $payload['source_url']);
