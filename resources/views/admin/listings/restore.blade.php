@@ -21,7 +21,12 @@
         'description'        => $listing->description,
         'latitude'           => $listing->latitude,
         'longitude'          => $listing->longitude,
-        'contact_phone'      => $listing->contact_phone,
+        'listing_contact'    => $listing->listingContact ? [
+            'uuid'  => $listing->listingContact->uuid,
+            'phone' => $listing->listingContact->phone,
+            'name'  => $listing->listingContact->name,
+            'notes' => $listing->listingContact->notes,
+        ] : null,
         'contact_type_label' => $listing->contact_type ? \App\Enums\ContactType::from($listing->contact_type)->label : null,
         'source_site_label'  => $listing->source_site ? \App\Enums\SourceSite::from($listing->source_site)->label : null,
         'source_url'         => $listing->source_url,

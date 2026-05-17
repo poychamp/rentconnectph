@@ -933,6 +933,7 @@ class ListingController extends Controller
             'amenities',
             'latestLifecycleEvent.actor',
             'assignedTo',
+            'listingContact',
         ]);
 
         return view('admin.listings.restore', [
