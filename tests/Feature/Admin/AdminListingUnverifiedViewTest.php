@@ -3,6 +3,7 @@
 namespace Tests\Feature\Admin;
 
 use App\Models\Listing;
+use App\Models\ListingContact;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -349,11 +350,12 @@ class AdminListingUnverifiedViewTest extends TestCase
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
+        $contact = ListingContact::factory()->create(['phone' => '+639171234567']);
         $listing = Listing::factory()->create([
-            'is_verified'   => false,
-            'verified_at'   => null,
-            'queue_status'  => 'unassigned',
-            'contact_phone' => '+639171234567',
+            'is_verified'        => false,
+            'verified_at'        => null,
+            'queue_status'       => 'unassigned',
+            'listing_contact_id' => $contact->id,
         ]);
 
         $response = $this->get(route('admin.unverified-listings.index'));

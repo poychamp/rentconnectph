@@ -22,7 +22,7 @@ class AdminUnverifiedListingResource extends JsonResource
             'barangay_label'       => $this->barangay
                 ? Barangay::from($this->barangay)->label
                 : null,
-            'contact_phone'        => $this->contact_phone,
+            'contact_phone'        => $this->listingContact?->phone,
             'prequal_status'       => $this->prequal_status,
             'prequal_status_label' => $this->prequal_status
                 ? PrequalStatus::from($this->prequal_status)->label

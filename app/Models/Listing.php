@@ -29,7 +29,6 @@ class Listing extends Model
             'is_verified'    => $this->is_verified ? '1' : '0',
             'listed_at'      => $this->listed_at?->getTimestamp(),
             'directions'     => $this->directions,
-            'contact_phone'  => $this->listingContact?->phone,
             'assigned_to'    => $this->assigned_to,
             'queue_status'   => $this->queue_status,
         ];
@@ -40,8 +39,9 @@ class Listing extends Model
         // stores the JSON as-is and tokenizes naturally — `specs` enables
         // natural-language queries like "1 bed", "2 baths", "30 sqm".
         if (config('scout.driver') === 'algolia') {
-            $array['amenities'] = $this->amenities->pluck('name')->implode(' ');
-            $array['specs']     = "{$this->beds} bed {$this->beds} beds {$this->baths} bath {$this->baths} baths {$this->sqm} sqm";
+            $array['contact_phone'] = $this->listingContact?->phone;
+            $array['amenities']     = $this->amenities->pluck('name')->implode(' ');
+            $array['specs']         = "{$this->beds} bed {$this->beds} beds {$this->baths} bath {$this->baths} baths {$this->sqm} sqm";
         }
 
         return $array;
