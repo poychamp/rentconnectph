@@ -134,14 +134,6 @@ const sections = [
                 matches: (path) => path.startsWith('/admin/filtered-inquiries')
                     || path.startsWith('/admin/inquiries'),
             },
-            {
-                name: 'Leads',
-                href: '/admin/leads',
-                icon: 'handshake',
-                requires: 'inquiries.manage',
-                badge: 'pendingLeads',
-                matches: (path) => path.startsWith('/admin/leads'),
-            },
         ],
     },
     {

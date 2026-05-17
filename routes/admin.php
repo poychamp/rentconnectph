@@ -123,21 +123,6 @@ Route::middleware('auth:admin')->group(function () {
 
         Route::put('inquiries/{inquiry:uuid}/reject', [Admin\InquiryController::class, 'reject'])
             ->name('inquiries.reject');
-
-        Route::post('inquiries/{inquiry:uuid}/lead', [Admin\LeadController::class, 'store'])
-            ->name('inquiries.lead.store');
-
-        Route::get('leads', [Admin\LeadController::class, 'index'])
-            ->name('leads.index');
-
-        Route::put('leads/{lead:uuid}/send', [Admin\LeadController::class, 'send'])
-            ->name('leads.send');
-
-        Route::put('leads/{lead:uuid}/lose', [Admin\LeadController::class, 'lose'])
-            ->name('leads.lose');
-
-        Route::put('leads/{lead:uuid}/finalize', [Admin\LeadController::class, 'finalize'])
-            ->name('leads.finalize');
     });
 
     // Vapor's signed S3 URL endpoint — browser calls this to get a pre-signed URL,

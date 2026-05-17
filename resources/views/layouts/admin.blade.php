@@ -44,9 +44,6 @@
             $adminSidebarBadges['filteredInquiries'] = \App\Models\Inquiry::query()
                 ->where('status', \App\Enums\InquiryStatus::new()->value)
                 ->count();
-            // "New leads" = pending only — admin hasn't sent to broker yet.
-            $adminSidebarBadges['pendingLeads'] = \App\Models\Lead::where('status', \App\Enums\LeadStatus::pending()->value)
-                ->count();
         }
     @endphp
 

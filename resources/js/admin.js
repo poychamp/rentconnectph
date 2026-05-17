@@ -30,7 +30,6 @@ if (el) {
         'admin-amenities':          () => import('./AdminAmenities.vue'),
         'admin-filtered-inquiries': () => import('./AdminFilteredInquiries.vue'),
         'admin-inquiries':          () => import('./AdminInquiries.vue'),
-        'admin-leads':              () => import('./AdminLeads.vue'),
         'admin-amenity-create':     () => import('./AdminAmenityCreate.vue'),
         'admin-amenity-edit':       () => import('./AdminAmenityEdit.vue'),
         'admin-deleted-amenities':  () => import('./AdminDeletedAmenities.vue'),
