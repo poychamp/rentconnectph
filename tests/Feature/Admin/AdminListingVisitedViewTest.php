@@ -6,6 +6,7 @@ use App\Enums\Barangay;
 use App\Enums\ListingType;
 use App\Enums\QueueStatus;
 use App\Models\Listing;
+use App\Models\ListingContact;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -192,15 +193,18 @@ class AdminListingVisitedViewTest extends TestCase
         $this->actingAs($admin, 'admin');
 
         $field = User::factory()->create(['name' => 'Marco Reyes']);
+        $contact = ListingContact::factory()->create([
+            'phone' => '+639171234567',
+        ]);
         $listing = $this->visitedListing([
-            'title'         => 'Apartment near Capitol',
-            'type'          => ListingType::apartment()->value,
-            'barangay'      => Barangay::lapasan()->value,
-            'price_monthly' => 12500,
-            'directions'    => 'Past the green gate.',
-            'contact_phone' => '+639171234567',
-            'assigned_to'   => $field->id,
-            'visited_at'    => Carbon::parse('2026-04-30 14:00:00'),
+            'title'              => 'Apartment near Capitol',
+            'type'               => ListingType::apartment()->value,
+            'barangay'           => Barangay::lapasan()->value,
+            'price_monthly'      => 12500,
+            'directions'         => 'Past the green gate.',
+            'listing_contact_id' => $contact->id,
+            'assigned_to'        => $field->id,
+            'visited_at'         => Carbon::parse('2026-04-30 14:00:00'),
         ]);
 
         $payload = $this->get(route('admin.visited-listings.index'))->viewData('visited');

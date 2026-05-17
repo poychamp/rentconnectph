@@ -8,6 +8,7 @@ use App\Enums\ListingType;
 use App\Enums\QueueStatus;
 use App\Enums\SourceSite;
 use App\Models\Listing;
+use App\Models\ListingContact;
 use App\Models\ListingImage;
 use App\Models\ListingLifecycleEvent;
 use App\Models\User;
@@ -59,7 +60,11 @@ class AdminListingVerifyTest extends TestCase
                 'latitude'           => 8.4831,
                 'longitude'          => 124.6505,
                 'directions'         => 'Past the green gate.',
-                'contact_phone'      => '+639171234567',
+                'listing_contact_id' => ListingContact::factory()->create([
+                    'phone' => '+639171234567',
+                    'name'  => 'Maria Reyes',
+                    'notes' => 'Calls-team contact',
+                ])->id,
                 'contact_type'       => ContactType::owner()->value,
                 'source_site'        => SourceSite::rentPh()->value,
                 'source_url'         => 'https://rent.ph/property/example',
@@ -261,7 +266,7 @@ class AdminListingVerifyTest extends TestCase
         // (verification_notes is now admin-overridable per the verify-edit workflow.)
         $this->asAdmin();
         $listing = $this->visitedListing();
-        $originalContactPhone = $listing->contact_phone;
+        $originalContactPhone = $listing->listingContact->phone;
         $originalContactType  = $listing->contact_type;
         $originalSourceSite   = $listing->source_site;
         $originalSourceUrl    = $listing->source_url;
@@ -277,7 +282,7 @@ class AdminListingVerifyTest extends TestCase
         );
 
         $fresh = $listing->fresh();
-        $this->assertSame($originalContactPhone, $fresh->contact_phone);
+        $this->assertSame($originalContactPhone, $fresh->listingContact->phone);
         $this->assertSame($originalContactType, $fresh->contact_type);
         $this->assertSame($originalSourceSite, $fresh->source_site);
         $this->assertSame($originalSourceUrl, $fresh->source_url);

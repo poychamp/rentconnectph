@@ -21,7 +21,7 @@ class AdminVisitedListingResource extends JsonResource
                 : null,
             'price_monthly'    => $this->price_monthly,
             'directions'       => $this->directions,
-            'contact_phone'    => $this->contact_phone,
+            'contact_phone'    => $this->listingContact?->phone,
             'assigned_to_name' => $this->assignedTo?->name,
             'visited_at'       => $this->visited_at?->toIso8601String(),
             'updated_at'       => $this->updated_at->toIso8601String(),

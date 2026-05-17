@@ -4,6 +4,8 @@ import AdminSidebar from './components/admin/AdminSidebar.vue';
 import AdminTopBar from './components/admin/AdminTopBar.vue';
 import AdminAddListingFormCard from './components/admin/AdminAddListingFormCard.vue';
 import AdminVerifyEditListingFieldOfficerCard from './components/admin/AdminVerifyEditListingFieldOfficerCard.vue';
+import AdminVerifyEditListingContactCard from './components/admin/AdminVerifyEditListingContactCard.vue';
+import AdminVerifyEditListingSourceCard from './components/admin/AdminVerifyEditListingSourceCard.vue';
 import AdminVerifyEditListingCallsContextCard from './components/admin/AdminVerifyEditListingCallsContextCard.vue';
 import AdminVerifyEditListingPublishBar from './components/admin/AdminVerifyEditListingPublishBar.vue';
 import AdminVerifyEditListingRejectZone from './components/admin/AdminVerifyEditListingRejectZone.vue';
@@ -240,12 +242,17 @@ onMounted(() => {
                     </div>
                 </div>
 
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                    <AdminVerifyEditListingContactCard :listing="persisted" />
+                    <AdminVerifyEditListingSourceCard :listing="persisted" :source-sites="formData.sourceSites" />
+                </div>
+
                 <AdminAddListingFormCard
                     :listing-types="formData.listingTypes"
                     :barangays="formData.barangays"
                     :source-sites="formData.sourceSites"
                     :amenities="formData.amenities"
-                    :read-only-lead="true"
+                    :hide-lead="true"
                 />
 
                 <AdminVerifyEditListingCallsContextCard

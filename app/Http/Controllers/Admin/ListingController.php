@@ -204,6 +204,7 @@ class ListingController extends Controller
             'images' => fn ($q) => $q->orderBy('sort_order'),
             'amenities',
             'assignedTo',
+            'listingContact',
         ]);
 
         $listingPayload = [
@@ -221,7 +222,13 @@ class ListingController extends Controller
             'longitude'          => $listing->longitude,
             'directions'         => $listing->directions,
             // Calls-team-context — editable on this surface but visually de-emphasized in UI
-            'contact_phone'      => $listing->contact_phone,
+            'listing_contact_id' => $listing->listing_contact_id,
+            'listing_contact'    => $listing->listingContact ? [
+                'uuid'  => $listing->listingContact->uuid,
+                'phone' => $listing->listingContact->phone,
+                'name'  => $listing->listingContact->name,
+                'notes' => $listing->listingContact->notes,
+            ] : null,
             'contact_type'       => $listing->contact_type,
             'source_site'        => $listing->source_site,
             'source_url'         => $listing->source_url,
@@ -1196,14 +1203,14 @@ class ListingController extends Controller
 
         $paginator = $q === ''
             ? Listing::awaitingVerification()
-                ->with('assignedTo')
+                ->with(['assignedTo', 'listingContact'])
                 ->orderBy('visited_at')
                 ->orderBy('id')
                 ->paginate(10)
             : Listing::search($q)
                 ->where('queue_status', QueueStatus::visited()->value)
                 ->where('is_verified', 0)
-                ->query(fn ($builder) => $builder->with('assignedTo'))
+                ->query(fn ($builder) => $builder->with(['assignedTo', 'listingContact']))
                 ->paginate(10);
 
         $visited = AdminVisitedListingResource::collection($paginator)
