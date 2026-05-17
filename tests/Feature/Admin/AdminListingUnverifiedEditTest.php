@@ -3,6 +3,7 @@
 namespace Tests\Feature\Admin;
 
 use App\Models\Listing;
+use App\Models\ListingContact;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -82,9 +83,9 @@ class AdminListingUnverifiedEditTest extends TestCase
     public function test_it_returns_listing_payload_with_queue_and_source_fields(): void
     {
         // Per FRD-023 § 3.9, the unverified slice's `listing` view-var is an
-        // ARRAY (not a Model) with the queue + source + contact fields the
-        // calls-team UX needs. Decoupling from the Model lets the controller
-        // shape the payload conditionally on slice without leaking model state.
+        // ARRAY (not a Model) with the queue + source fields the calls-team
+        // UX needs. Decoupling from the Model lets the controller shape the
+        // payload conditionally on slice without leaking model state.
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
@@ -96,7 +97,6 @@ class AdminListingUnverifiedEditTest extends TestCase
             'queue_status'   => 'unassigned',
             'source_site'    => 'olx',
             'source_url'     => 'https://www.olx.ph/item/sample-12345',
-            'contact_phone'  => '+639171234567',
         ]);
 
         $response = $this->get(route('admin.listings.unverified-edit', [
@@ -108,17 +108,59 @@ class AdminListingUnverifiedEditTest extends TestCase
         $this->assertIsArray($payload, 'Unverified-slice listing payload must be an array, not a Model');
 
         // Core shared fields
-        $this->assertSame($listing->uuid,  $payload['uuid']);
+        $this->assertSame($listing->uuid,   $payload['uuid']);
         $this->assertSame('Spotted on OLX', $payload['title']);
 
         // Queue state
         $this->assertSame('called_yes', $payload['prequal_status']);
         $this->assertSame('unassigned', $payload['queue_status']);
 
-        // Source + contact
-        $this->assertSame('olx',                                   $payload['source_site']);
+        // Source
+        $this->assertSame('olx',                                  $payload['source_site']);
         $this->assertSame('https://www.olx.ph/item/sample-12345', $payload['source_url']);
-        $this->assertSame('+639171234567',                         $payload['contact_phone']);
+    }
+
+    public function test_it_exposes_listing_contact_in_listing_payload(): void
+    {
+        // Per the listing_contacts refactor — contact identity (uuid/phone/name/notes)
+        // lives on a separate `listing_contacts` row, joined via `listing_contact_id`.
+        // The unverified-edit Blade hydrates the Contact card from the nested
+        // `listing_contact` object; `listing_contact_id` is the FK the form sends
+        // back unmodified when no contact change happens.
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        $contact = ListingContact::factory()->create([
+            'phone' => '+639171234567',
+            'name'  => 'Maria Reyes',
+            'notes' => 'Philhomes broker, manages multiple units.',
+        ]);
+
+        $listing = Listing::factory()->create([
+            'is_verified'        => false,
+            'verified_at'        => null,
+            'listing_contact_id' => $contact->id,
+        ]);
+
+        $response = $this->get(route('admin.listings.unverified-edit', [
+            'listing' => $listing->uuid,
+        ]));
+        $response->assertOk();
+
+        $payload = $response->viewData('listing');
+
+        $this->assertSame($contact->id, $payload['listing_contact_id']);
+
+        $this->assertIsArray($payload['listing_contact']);
+        $this->assertEqualsCanonicalizing(
+            ['uuid', 'phone', 'name', 'notes'],
+            array_keys($payload['listing_contact']),
+            'listing_contact must expose uuid/phone/name/notes only'
+        );
+        $this->assertSame($contact->uuid,                              $payload['listing_contact']['uuid']);
+        $this->assertSame('+639171234567',                             $payload['listing_contact']['phone']);
+        $this->assertSame('Maria Reyes',                               $payload['listing_contact']['name']);
+        $this->assertSame('Philhomes broker, manages multiple units.', $payload['listing_contact']['notes']);
     }
 
     public function test_it_exposes_call_context_keys_in_listing_payload(): void

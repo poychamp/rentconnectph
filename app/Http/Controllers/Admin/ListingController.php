@@ -123,27 +123,33 @@ class ListingController extends Controller
         // (or any in-between state) → 404 rather than render the wrong UX.
         abort_if($listing->is_verified, 404);
 
-        $listing->load(['images' => fn ($q) => $q->orderBy('sort_order'), 'amenities']);
+        $listing->load(['images' => fn ($q) => $q->orderBy('sort_order'), 'amenities', 'listingContact']);
 
         // Listing payload as ARRAY (not Model) so the Blade serializes cleanly
         // into __INITIAL_EDIT_LISTING__.listing without dragging Model
         // accessors / hidden attributes through.
         $listingPayload = [
-            'id'             => $listing->id,
-            'uuid'           => $listing->uuid,
-            'title'          => $listing->title,
-            'description'    => $listing->description,
-            'type'           => $listing->type,
-            'price_monthly'  => $listing->price_monthly,
-            'barangay'       => $listing->barangay,
-            'beds'           => $listing->beds,
-            'baths'          => $listing->baths,
-            'sqm'            => $listing->sqm,
-            'latitude'       => $listing->latitude,
-            'longitude'      => $listing->longitude,
+            'id'                 => $listing->id,
+            'uuid'               => $listing->uuid,
+            'title'              => $listing->title,
+            'description'        => $listing->description,
+            'type'               => $listing->type,
+            'price_monthly'      => $listing->price_monthly,
+            'barangay'           => $listing->barangay,
+            'beds'               => $listing->beds,
+            'baths'              => $listing->baths,
+            'sqm'                => $listing->sqm,
+            'latitude'           => $listing->latitude,
+            'longitude'          => $listing->longitude,
             'source_site'        => $listing->source_site,
             'source_url'         => $listing->source_url,
-            'contact_phone'      => $listing->contact_phone,
+            'listing_contact_id' => $listing->listing_contact_id,
+            'listing_contact'    => [
+                'uuid'  => $listing->listingContact?->uuid,
+                'phone' => $listing->listingContact?->phone,
+                'name'  => $listing->listingContact?->name,
+                'notes' => $listing->listingContact?->notes,
+            ],
             'prequal_status'     => $listing->prequal_status,
             'queue_status'       => $listing->queue_status,
             'directions'         => $listing->directions,
@@ -153,7 +159,7 @@ class ListingController extends Controller
             'amenities'          => $listing->amenities->map(fn ($a) => [
                 'id' => $a->id, 'name' => $a->name, 'slug' => $a->slug, 'icon' => $a->icon,
             ])->all(),
-            'images'         => $listing->images->map(fn ($img) => [
+            'images'             => $listing->images->map(fn ($img) => [
                 'id'         => $img->id,
                 'url'        => $img->url,
                 'sort_order' => $img->sort_order,
@@ -442,6 +448,10 @@ class ListingController extends Controller
 
         $existingIds = $listing->images()->pluck('id')->all();
         $isCalledYes = $request->input('prequal_status') === PrequalStatus::calledYes()->value;
+        // Once persisted=called_yes the contact is frozen — validation skips
+        // the contact block AND persistence silently ignores any submitted
+        // contact data (FK + contact's fields untouched).
+        $persistedCalledYes = $listing->prequal_status === PrequalStatus::calledYes()->value;
 
         $rules = [
             'title'                => ['required', 'string', 'max:200'],
@@ -462,11 +472,18 @@ class ListingController extends Controller
             'photos.*.key'         => ['nullable', 'string', 'starts_with:tmp/'],
             'photos.*.name'        => ['nullable', 'string'],
             'photos.*.size'        => ['nullable', 'integer'],
-            'contact_phone'        => ['required', 'string', new PhMobileNumber],
             'source_site'          => ['nullable', 'string', Rule::in(SourceSite::toValues())],
             'source_url'           => ['nullable', 'string', 'url', 'max:2000'],
             'prequal_status'       => ['required', 'string', Rule::in(PrequalStatus::toValues())],
         ];
+
+        if (! $persistedCalledYes) {
+            $rules['contact']       = ['required', 'array'];
+            $rules['contact.uuid']  = ['nullable', 'string', 'uuid', Rule::exists('listing_contacts', 'uuid')];
+            $rules['contact.phone'] = ['required', 'string', new PhMobileNumber];
+            $rules['contact.name']  = ['nullable', 'string', 'max:120'];
+            $rules['contact.notes'] = ['nullable', 'string', 'max:2000'];
+        }
 
         // called_yes adds call-context validation. Other prequal states leave
         // these fields un-validated AND un-persisted (silent-ignore).
@@ -502,7 +519,10 @@ class ListingController extends Controller
             'longitude.between'          => 'Longitude must be between -180 and 180.',
             'source_site.in'             => 'Invalid source site.',
             'source_url.url'             => 'Source URL must be a valid URL.',
-            'contact_phone.required'     => 'Contact phone is required.',
+            'contact.phone.required'     => 'Contact phone is required.',
+            'contact.uuid.exists'        => 'Contact not found.',
+            'contact.name.max'           => 'Contact name must be 120 characters or fewer.',
+            'contact.notes.max'          => 'Contact notes must be 2000 characters or fewer.',
             'directions.required'        => 'Directions are required.',
             'directions.max'             => 'Directions are too long (max 500 characters).',
             'contact_type.required'      => 'Contact type is required.',
@@ -548,7 +568,7 @@ class ListingController extends Controller
         $removedImageIds = array_values(array_diff($existingIds, $submittedExistingIds));
         $removedImageUrls = ListingImage::whereIn('id', $removedImageIds)->pluck('url')->all();
 
-        DB::transaction(function () use ($request, $listing, $validated, $photos, $removedImageIds, $isCalledYes) {
+        DB::transaction(function () use ($request, $listing, $validated, $photos, $removedImageIds, $isCalledYes, $persistedCalledYes) {
             // Slice persistence: lead/listing details + prequal_status always.
             // is_verified, is_featured, verified_at — never touched (security
             // boundary; verification happens later in the lifecycle).
@@ -566,11 +586,28 @@ class ListingController extends Controller
                 'sqm'            => $validated['sqm'] ?? null,
                 'latitude'       => $validated['latitude'] ?? null,
                 'longitude'      => $validated['longitude'] ?? null,
-                'contact_phone'  => PhMobile::normalize($validated['contact_phone']),
                 'source_site'    => $validated['source_site'] ?? null,
                 'source_url'     => $validated['source_url'] ?? null,
                 'prequal_status' => $validated['prequal_status'],
             ];
+
+            // Contact resolution — mirrors store()'s find-or-create:
+            // uuid path attaches existing (phone in payload silently ignored),
+            // else find-or-create by normalized phone. name + notes always
+            // overwrite. Skipped entirely once persisted=called_yes; the
+            // original FK + contact fields stay frozen.
+            if (! $persistedCalledYes) {
+                if (! empty($validated['contact']['uuid'])) {
+                    $contact = ListingContact::where('uuid', $validated['contact']['uuid'])->firstOrFail();
+                } else {
+                    $normalized = PhMobile::normalize($validated['contact']['phone']);
+                    $contact = ListingContact::firstOrNew(['phone' => $normalized]);
+                }
+                $contact->name  = $validated['contact']['name']  ?? null;
+                $contact->notes = $validated['contact']['notes'] ?? null;
+                $contact->save();
+                $updateData['listing_contact_id'] = $contact->id;
+            }
 
             if ($isCalledYes) {
                 $assignedTo = $validated['assigned_to'] ?? null;

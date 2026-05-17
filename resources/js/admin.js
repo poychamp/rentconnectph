@@ -17,6 +17,7 @@ if (el) {
         'admin-dashboard':          () => import('./AdminDashboard.vue'),
         'add-listing':              () => import('./AdminListingCreate.vue'),
         'admin-edit-listing':       () => import('./AdminListingEdit.vue'),
+        'admin-unverified-edit-listing': () => import('./AdminUnverifiedEditListing.vue'),
         'admin-verified-listings':  () => import('./AdminVerifiedListings.vue'),
         'admin-unverified-listings': () => import('./AdminUnverifiedListings.vue'),
         'admin-visited-listings':   () => import('./AdminVisitedListings.vue'),

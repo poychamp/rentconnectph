@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
 @section('title', 'Admin Edit Listing — RentConnectPH')
-@section('page', 'admin-edit-listing')
+@section('page', 'admin-unverified-edit-listing')
 
 @push('scripts')
 @php
@@ -22,7 +22,12 @@
         'longitude'     => $listing['longitude'],
         'source_site'        => $listing['source_site'],
         'source_url'         => $listing['source_url'],
-        'contact_phone'      => $listing['contact_phone'],
+        'contact'            => [
+            'uuid'  => $listing['listing_contact']['uuid'],
+            'phone' => $listing['listing_contact']['phone'],
+            'name'  => $listing['listing_contact']['name'],
+            'notes' => $listing['listing_contact']['notes'],
+        ],
         'prequal_status'     => $listing['prequal_status'],
         'queue_status'       => $listing['queue_status'],
         'directions'         => $listing['directions'],

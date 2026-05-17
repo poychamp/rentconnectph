@@ -4,6 +4,10 @@ import { ref, computed, inject } from 'vue';
 const form = inject('addListingForm');
 const { validateAll } = inject('addListingFormValidate', { validateAll: () => true });
 const scrollFormToTop = inject('scrollFormToTop', () => {});
+// Disable Save while the contact card's find-by-phone lookup is in flight —
+// submitting now would ship a stale uuid/name/notes that the lookup is about
+// to overwrite. Falls back to a never-pending ref on pages that don't provide it.
+const lookupPending = inject('contactPhoneLookupPending', ref(false));
 
 const submitting = ref(false);
 
@@ -45,7 +49,7 @@ function appendHidden(formEl, name, value) {
 }
 
 function save() {
-    if (submitting.value) return;
+    if (submitting.value || lookupPending.value) return;
 
     if (!validateAll()) {
         scrollFormToTop();
@@ -91,11 +95,11 @@ function save() {
 
         <button
             type="button"
-            :disabled="submitting"
+            :disabled="submitting || lookupPending"
             @click="save"
             class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition cursor-pointer disabled:opacity-90 disabled:cursor-not-allowed"
         >
-            <svg v-if="submitting" class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+            <svg v-if="submitting || lookupPending" class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
                 <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-opacity="0.25"/>
                 <path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
             </svg>
@@ -104,7 +108,7 @@ function save() {
                 <polyline points="17 21 17 13 7 13 7 21"/>
                 <polyline points="7 3 7 8 15 8"/>
             </svg>
-            {{ submitting ? 'Saving...' : 'Save changes' }}
+            {{ submitting ? 'Saving...' : (lookupPending ? 'Checking contact…' : 'Save changes') }}
         </button>
     </div>
 </template>

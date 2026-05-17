@@ -4,6 +4,7 @@ namespace Tests\Feature\Admin;
 
 use App\Models\Amenity;
 use App\Models\Listing;
+use App\Models\ListingContact;
 use App\Models\ListingLifecycleEvent;
 use App\Models\User;
 use Carbon\Carbon;
@@ -15,7 +16,7 @@ use Tests\TestCase;
 /**
  * Covers the prequal_status='not_called' slice of the unverified-update
  * endpoint. Admin is updating basic lead details before any call has been
- * made — only `title` and `contact_phone` are required; everything else
+ * made — only `title` and `contact.phone` are required; everything else
  * is nullable. The called_yes / no_answer slices are separate iterations.
  */
 class AdminListingUnverifiedUpdateTest extends TestCase
@@ -51,10 +52,9 @@ class AdminListingUnverifiedUpdateTest extends TestCase
                 'verified_at'    => null,
                 'prequal_status' => 'not_called',
                 'queue_status'   => 'unassigned',
-                'contact_phone'  => '+639171234567',
             ], $state))
             ->create()
-            ->fresh(['images', 'amenities']);
+            ->fresh(['images', 'amenities', 'listingContact']);
     }
 
     protected function seedTmpPhoto(string $key): array
@@ -73,15 +73,21 @@ class AdminListingUnverifiedUpdateTest extends TestCase
     }
 
     /**
-     * Minimal payload for the not_called slice — only title and contact_phone
+     * Minimal payload for the not_called slice — only title and contact.phone
      * are hard-required by the controller; the rest mirrors what the form
      * sends when admin is updating basic lead details before calling.
      */
-    protected function notCalledPayload(Listing $listing, array $overrides = []): array
+    protected function notCalledPayload(Listing $listing, array $overrides = [], array $contactOverrides = []): array
     {
+        $contact = array_merge([
+            'name'  => 'Maria Reyes',
+            'phone' => '+639171234567',
+            'notes' => 'Philhomes broker, manages multiple units.',
+        ], $contactOverrides);
+
         return array_merge([
             'title'          => 'Updated Lead Title',
-            'contact_phone'  => '+639171234567',
+            'contact'        => $contact,
             'prequal_status' => 'not_called',
             'photos'         => $this->existingPhotos($listing),
         ], $overrides);
@@ -93,11 +99,17 @@ class AdminListingUnverifiedUpdateTest extends TestCase
      * verification_notes stay nullable so admin can save mid-call before
      * deciding on a field officer.
      */
-    protected function calledYesPayload(Listing $listing, array $overrides = []): array
+    protected function calledYesPayload(Listing $listing, array $overrides = [], array $contactOverrides = []): array
     {
+        $contact = array_merge([
+            'name'  => 'Maria Reyes',
+            'phone' => '+639171234567',
+            'notes' => 'Philhomes broker, manages multiple units.',
+        ], $contactOverrides);
+
         return array_merge([
             'title'              => 'Updated Lead Title',
-            'contact_phone'      => '+639171234567',
+            'contact'            => $contact,
             'prequal_status'     => 'called_yes',
             'photos'             => $this->existingPhotos($listing),
             'directions'         => 'Past the gate, second left.',
@@ -152,7 +164,7 @@ class AdminListingUnverifiedUpdateTest extends TestCase
     }
 
     // =========================================================================
-    // Required fields when not_called: title + contact_phone only. Listing
+    // Required fields when not_called: title + contact.phone only. Listing
     // specs (beds/baths/sqm/listing_type/barangay/price_monthly), source
     // fields, photos, and call-context fields are all nullable in this state
     // — admin is just updating partial lead details before calling.
@@ -165,7 +177,7 @@ class AdminListingUnverifiedUpdateTest extends TestCase
 
         $response = $this->put(route('admin.listings.unverified-update', $listing->uuid), [
             'title'          => '',
-            'contact_phone'  => '',
+            'contact'        => ['phone' => ''],
             'prequal_status' => 'not_called',
             'photos'         => [],
             // Everything else omitted on purpose — must be nullable here.
@@ -173,7 +185,7 @@ class AdminListingUnverifiedUpdateTest extends TestCase
 
         $response->assertSessionHasErrors([
             'title'         => 'Title is required.',
-            'contact_phone' => 'Contact phone is required.',
+            'contact.phone' => 'Contact phone is required.',
         ]);
 
         $response->assertSessionDoesntHaveErrors([
@@ -236,7 +248,7 @@ class AdminListingUnverifiedUpdateTest extends TestCase
                 ['key' => 'listings/foreign-uuid/cover.jpg', 'name' => 'x', 'size' => 1],
                 ['existing_id' => $listingB->images->first()->id],
             ],
-            'contact_phone'  => 'not-a-phone',
+            'contact'        => ['phone' => 'not-a-phone'],
             'source_site'    => 'made-up-site',
             'source_url'     => 'not-a-url',
             'prequal_status' => 'maybe-called',
@@ -250,7 +262,7 @@ class AdminListingUnverifiedUpdateTest extends TestCase
             'amenities.0'   => "One or more selected amenities don't exist.",
             'photos.0.key'  => 'Invalid photo key.',
             'photos.1.existing_id',
-            'contact_phone',
+            'contact.phone',
             'source_site'   => 'Invalid source site.',
             'source_url'    => 'Source URL must be a valid URL.',
             'prequal_status',
@@ -435,7 +447,7 @@ class AdminListingUnverifiedUpdateTest extends TestCase
     }
 
     // =========================================================================
-    // contact_phone normalized to E.164 — accepts 09171234567, stores
+    // contact.phone normalized to E.164 — accepts 09171234567, stores
     // +639171234567. Mirrors store()'s rule via PhMobile::normalize().
     // =========================================================================
 
@@ -446,10 +458,10 @@ class AdminListingUnverifiedUpdateTest extends TestCase
 
         $this->put(
             route('admin.listings.unverified-update', $listing->uuid),
-            $this->notCalledPayload($listing, ['contact_phone' => '09171234567'])
+            $this->notCalledPayload($listing, [], ['phone' => '09171234567'])
         )->assertSessionHasNoErrors();
 
-        $this->assertSame('+639171234567', $listing->fresh()->contact_phone);
+        $this->assertSame('+639171234567', $listing->fresh()->listingContact->phone);
     }
 
     // =========================================================================
@@ -484,10 +496,9 @@ class AdminListingUnverifiedUpdateTest extends TestCase
                 'longitude'     => 124.6573,
                 'amenities'     => [$newAmenityA->id, $newAmenityB->id],
                 'photos'        => $photos,
-                'contact_phone' => '+639181234567',
                 'source_site'   => 'rent_ph',
                 'source_url'    => 'https://rent.ph/property/sample',
-            ])
+            ], ['phone' => '+639181234567'])
         );
 
         $response->assertRedirect(route('admin.unverified-listings.index'));
@@ -505,7 +516,7 @@ class AdminListingUnverifiedUpdateTest extends TestCase
         $this->assertSame(90,                                $listing->sqm);
         $this->assertEqualsWithDelta(8.4635,                 $listing->latitude,  0.0000001);
         $this->assertEqualsWithDelta(124.6573,               $listing->longitude, 0.0000001);
-        $this->assertSame('+639181234567',                   $listing->contact_phone);
+        $this->assertSame('+639181234567',                   $listing->listingContact->phone);
         $this->assertSame('rent_ph',                         $listing->source_site);
         $this->assertSame('https://rent.ph/property/sample', $listing->source_url);
         $this->assertSame('not_called',                      $listing->prequal_status);
@@ -554,7 +565,7 @@ class AdminListingUnverifiedUpdateTest extends TestCase
     }
 
     // =========================================================================
-    // Required fields when called_yes: title, contact_phone, prequal_status,
+    // Required fields when called_yes: title, contact.phone, prequal_status,
     // directions, contact_type. Field-officer assignment (assigned_to) and
     // verification_notes stay nullable — admin can save mid-call before
     // deciding on a field officer.
@@ -567,7 +578,7 @@ class AdminListingUnverifiedUpdateTest extends TestCase
 
         $response = $this->put(route('admin.listings.unverified-update', $listing->uuid), [
             'title'          => '',
-            'contact_phone'  => '',
+            'contact'        => ['phone' => ''],
             'prequal_status' => 'called_yes',
             'photos'         => $this->existingPhotos($listing),
             // directions, contact_type omitted — should error
@@ -576,7 +587,7 @@ class AdminListingUnverifiedUpdateTest extends TestCase
 
         $response->assertSessionHasErrors([
             'title'         => 'Title is required.',
-            'contact_phone' => 'Contact phone is required.',
+            'contact.phone' => 'Contact phone is required.',
             'directions'    => 'Directions are required.',
             'contact_type'  => 'Contact type is required.',
         ]);
@@ -597,7 +608,7 @@ class AdminListingUnverifiedUpdateTest extends TestCase
 
         $response = $this->put(route('admin.listings.unverified-update', $listing->uuid), [
             'title'              => 'ok',
-            'contact_phone'      => '+639171234567',
+            'contact'            => ['phone' => '+639171234567'],
             'prequal_status'     => 'called_yes',
             'photos'             => $this->existingPhotos($listing),
             'directions'         => str_repeat('x', 501),
@@ -780,7 +791,7 @@ class AdminListingUnverifiedUpdateTest extends TestCase
     }
 
     // =========================================================================
-    // no_answer slice — behaves like not_called (only title + contact_phone
+    // no_answer slice — behaves like not_called (only title + contact.phone
     // required; call-context fields silently ignored). Lock-in already
     // covered by `test_it_rejects_transition_to_not_called_when_listing_was_
     // no_answer` and the called_yes lateral test above.
@@ -793,14 +804,14 @@ class AdminListingUnverifiedUpdateTest extends TestCase
 
         $response = $this->put(route('admin.listings.unverified-update', $listing->uuid), [
             'title'          => '',
-            'contact_phone'  => '',
+            'contact'        => ['phone' => ''],
             'prequal_status' => 'no_answer',
             'photos'         => [],
         ]);
 
         $response->assertSessionHasErrors([
             'title'         => 'Title is required.',
-            'contact_phone' => 'Contact phone is required.',
+            'contact.phone' => 'Contact phone is required.',
         ]);
 
         $response->assertSessionDoesntHaveErrors([
@@ -819,7 +830,7 @@ class AdminListingUnverifiedUpdateTest extends TestCase
             route('admin.listings.unverified-update', $listing->uuid),
             [
                 'title'              => 'Updated Lead Title',
-                'contact_phone'      => '+639171234567',
+                'contact'            => ['phone' => '+639171234567'],
                 'prequal_status'     => 'no_answer',
                 'photos'             => $this->existingPhotos($listing),
                 'directions'         => 'Past the gate.',
@@ -980,5 +991,307 @@ class AdminListingUnverifiedUpdateTest extends TestCase
 
         $listing->refresh();
         $this->assertNull($listing->listed_at);
+    }
+
+    // =========================================================================
+    // Contact — find-or-create (mirror AdminListingStoreTest § Contact)
+    //
+    // When persisted prequal_status ≠ called_yes, the contact section is fully
+    // accepted: uuid path attaches existing (phone in payload silently ignored),
+    // else find-or-create by normalized phone. name + notes always overwrite
+    // from form values. `listings.listing_contact_id` always flips to the
+    // resolved contact's id.
+    //
+    // When persisted prequal_status = called_yes, the contact section is
+    // silently ignored entirely — original FK + contact fields frozen, and
+    // validation is relaxed so the form can submit calledYes-only edits
+    // (e.g. title change) without re-shipping the contact block.
+    // =========================================================================
+
+    public function test_it_creates_new_contact_when_phone_does_not_match_existing(): void
+    {
+        $this->asAdmin();
+        $listing = $this->makeUnverifiedListing();
+        $originalContactId = $listing->listing_contact_id;
+        $beforeCount = ListingContact::count();
+
+        $this->put(
+            route('admin.listings.unverified-update', $listing->uuid),
+            $this->notCalledPayload($listing, [], [
+                'phone' => '+639998887777',
+                'name'  => 'Brand New Name',
+                'notes' => 'Brand new notes.',
+            ])
+        )->assertSessionHasNoErrors();
+
+        $this->assertSame($beforeCount + 1, ListingContact::count());
+        $newContact = ListingContact::where('phone', '+639998887777')->first();
+        $this->assertNotNull($newContact);
+        $this->assertSame('Brand New Name', $newContact->name);
+        $this->assertSame('Brand new notes.', $newContact->notes);
+        $this->assertSame($newContact->id, $listing->fresh()->listing_contact_id);
+        $this->assertNotSame($originalContactId, $listing->fresh()->listing_contact_id);
+    }
+
+    public function test_it_attaches_to_existing_contact_when_phone_matches_and_uuid_missing(): void
+    {
+        $this->asAdmin();
+        $listing = $this->makeUnverifiedListing();
+
+        $existing = ListingContact::factory()->create([
+            'phone' => '+639171234567',
+            'name'  => 'Existing Name',
+            'notes' => 'Existing notes',
+        ]);
+        $beforeCount = ListingContact::count();
+
+        $this->put(
+            route('admin.listings.unverified-update', $listing->uuid),
+            $this->notCalledPayload($listing, [], [
+                'phone' => '09171234567',
+                'name'  => 'Updated Name',
+                'notes' => 'Updated notes',
+            ])
+        )->assertSessionHasNoErrors();
+
+        $this->assertSame($beforeCount, ListingContact::count());
+        $this->assertSame($existing->id, $listing->fresh()->listing_contact_id);
+
+        $existing->refresh();
+        $this->assertSame('Updated Name', $existing->name);
+        $this->assertSame('Updated notes', $existing->notes);
+    }
+
+    public function test_it_attaches_to_existing_contact_via_uuid(): void
+    {
+        $this->asAdmin();
+        $listing = $this->makeUnverifiedListing();
+
+        $existing = ListingContact::factory()->create([
+            'phone' => '+639991111111',
+            'name'  => 'Maria',
+        ]);
+
+        $this->put(
+            route('admin.listings.unverified-update', $listing->uuid),
+            $this->notCalledPayload($listing, [], [
+                'uuid'  => $existing->uuid,
+                'phone' => '+639888888888', // different phone — should be silently ignored
+                'name'  => 'Maria Updated',
+            ])
+        )->assertSessionHasNoErrors();
+
+        $existing->refresh();
+        $this->assertSame('Maria Updated', $existing->name);
+        $this->assertSame('+639991111111', $existing->phone);
+        $this->assertSame($existing->id, $listing->fresh()->listing_contact_id);
+    }
+
+    public function test_it_does_not_update_contact_phone_when_uuid_provided(): void
+    {
+        $this->asAdmin();
+        $listing = $this->makeUnverifiedListing();
+
+        $existing = ListingContact::factory()->create(['phone' => '+639991111111']);
+
+        $this->put(
+            route('admin.listings.unverified-update', $listing->uuid),
+            $this->notCalledPayload($listing, [], [
+                'uuid'  => $existing->uuid,
+                'phone' => '+639888888888',
+            ])
+        )->assertSessionHasNoErrors();
+
+        $existing->refresh();
+        $this->assertSame('+639991111111', $existing->phone);
+        $this->assertSame($existing->id, $listing->fresh()->listing_contact_id);
+    }
+
+    public function test_it_updates_contact_name_when_uuid_provided(): void
+    {
+        $this->asAdmin();
+        $listing = $this->makeUnverifiedListing();
+
+        $existing = ListingContact::factory()->create([
+            'phone' => '+639991111111',
+            'name'  => 'Old Name',
+        ]);
+
+        $this->put(
+            route('admin.listings.unverified-update', $listing->uuid),
+            $this->notCalledPayload($listing, [], [
+                'uuid'  => $existing->uuid,
+                'phone' => '+639991111111',
+                'name'  => 'New Name',
+            ])
+        )->assertSessionHasNoErrors();
+
+        $existing->refresh();
+        $this->assertSame('New Name', $existing->name);
+        $this->assertSame($existing->id, $listing->fresh()->listing_contact_id);
+    }
+
+    public function test_it_updates_contact_notes_when_uuid_provided(): void
+    {
+        $this->asAdmin();
+        $listing = $this->makeUnverifiedListing();
+
+        $existing = ListingContact::factory()->create([
+            'phone' => '+639991111111',
+            'notes' => 'Old notes',
+        ]);
+
+        $this->put(
+            route('admin.listings.unverified-update', $listing->uuid),
+            $this->notCalledPayload($listing, [], [
+                'uuid'  => $existing->uuid,
+                'phone' => '+639991111111',
+                'notes' => 'New notes',
+            ])
+        )->assertSessionHasNoErrors();
+
+        $existing->refresh();
+        $this->assertSame('New notes', $existing->notes);
+        $this->assertSame($existing->id, $listing->fresh()->listing_contact_id);
+    }
+
+    public function test_it_rejects_when_contact_uuid_does_not_match_any_existing(): void
+    {
+        $this->asAdmin();
+        $listing = $this->makeUnverifiedListing();
+
+        $this->put(
+            route('admin.listings.unverified-update', $listing->uuid),
+            $this->notCalledPayload($listing, [], [
+                'uuid' => 'aaaaaaaa-aaaa-7aaa-aaaa-aaaaaaaaaaaa',
+            ])
+        )->assertSessionHasErrors(['contact.uuid' => 'Contact not found.']);
+    }
+
+    public function test_it_accepts_contact_name_when_missing(): void
+    {
+        $this->asAdmin();
+        $listing = $this->makeUnverifiedListing();
+
+        $payload = $this->notCalledPayload($listing);
+        unset($payload['contact']['name']);
+
+        $this->put(route('admin.listings.unverified-update', $listing->uuid), $payload)
+             ->assertSessionHasNoErrors();
+
+        $this->assertNull($listing->fresh()->listingContact->name);
+    }
+
+    public function test_it_accepts_contact_notes_when_missing(): void
+    {
+        $this->asAdmin();
+        $listing = $this->makeUnverifiedListing();
+
+        $payload = $this->notCalledPayload($listing);
+        unset($payload['contact']['notes']);
+
+        $this->put(route('admin.listings.unverified-update', $listing->uuid), $payload)
+             ->assertSessionHasNoErrors();
+
+        $this->assertNull($listing->fresh()->listingContact->notes);
+    }
+
+    public function test_it_rejects_contact_name_too_long(): void
+    {
+        $this->asAdmin();
+        $listing = $this->makeUnverifiedListing();
+
+        $this->put(
+            route('admin.listings.unverified-update', $listing->uuid),
+            $this->notCalledPayload($listing, [], ['name' => str_repeat('a', 121)])
+        )->assertSessionHasErrors(['contact.name' => 'Contact name must be 120 characters or fewer.']);
+    }
+
+    public function test_it_rejects_contact_notes_too_long(): void
+    {
+        $this->asAdmin();
+        $listing = $this->makeUnverifiedListing();
+
+        $this->put(
+            route('admin.listings.unverified-update', $listing->uuid),
+            $this->notCalledPayload($listing, [], ['notes' => str_repeat('a', 2001)])
+        )->assertSessionHasErrors(['contact.notes' => 'Contact notes must be 2000 characters or fewer.']);
+    }
+
+    public function test_it_silently_ignores_contact_section_when_persisted_prequal_status_is_called_yes(): void
+    {
+        // Once called_yes, contact is frozen — submitting different uuid/phone/name/notes
+        // does NOT re-attach a new contact, does NOT overwrite the original contact's
+        // fields. Validation is also relaxed (contact section optional on this slice).
+        $this->asAdmin();
+        $field = $this->makeFieldUser();
+
+        $originalContact = ListingContact::factory()->create([
+            'phone' => '+639111111111',
+            'name'  => 'Frozen Name',
+            'notes' => 'Frozen notes',
+        ]);
+        $strayContact = ListingContact::factory()->create([
+            'phone' => '+639222222222',
+            'name'  => 'Stray Name',
+        ]);
+
+        $listing = $this->makeUnverifiedListing(2, [
+            'prequal_status'     => 'called_yes',
+            'queue_status'       => 'assigned',
+            'assigned_to'        => $field->id,
+            'directions'         => 'Past the gate.',
+            'contact_type'       => 'owner',
+            'listing_contact_id' => $originalContact->id,
+        ]);
+
+        $this->put(
+            route('admin.listings.unverified-update', $listing->uuid),
+            $this->calledYesPayload($listing, ['assigned_to' => $field->id], [
+                'uuid'  => $strayContact->uuid,
+                'phone' => '+639333333333',
+                'name'  => 'Attacker Name',
+                'notes' => 'Attacker notes',
+            ])
+        )->assertSessionHasNoErrors();
+
+        // Listing's contact FK untouched.
+        $this->assertSame($originalContact->id, $listing->fresh()->listing_contact_id);
+
+        // Original contact's fields untouched.
+        $originalContact->refresh();
+        $this->assertSame('Frozen Name', $originalContact->name);
+        $this->assertSame('Frozen notes', $originalContact->notes);
+        $this->assertSame('+639111111111', $originalContact->phone);
+
+        // Stray contact also untouched.
+        $strayContact->refresh();
+        $this->assertSame('Stray Name', $strayContact->name);
+    }
+
+    public function test_it_accepts_missing_contact_section_when_persisted_prequal_status_is_called_yes(): void
+    {
+        // Contact validation is relaxed when locked — admin can submit calledYes update
+        // (e.g. editing title only) without re-sending the contact section.
+        $this->asAdmin();
+        $field = $this->makeFieldUser();
+
+        $originalContact = ListingContact::factory()->create(['phone' => '+639111111111']);
+        $listing = $this->makeUnverifiedListing(2, [
+            'prequal_status'     => 'called_yes',
+            'queue_status'       => 'assigned',
+            'assigned_to'        => $field->id,
+            'directions'         => 'Past the gate.',
+            'contact_type'       => 'owner',
+            'listing_contact_id' => $originalContact->id,
+        ]);
+
+        $payload = $this->calledYesPayload($listing, ['assigned_to' => $field->id]);
+        unset($payload['contact']);
+
+        $this->put(route('admin.listings.unverified-update', $listing->uuid), $payload)
+             ->assertSessionHasNoErrors();
+
+        $this->assertSame($originalContact->id, $listing->fresh()->listing_contact_id);
     }
 }
