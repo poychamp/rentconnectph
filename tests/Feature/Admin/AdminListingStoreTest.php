@@ -5,11 +5,13 @@ namespace Tests\Feature\Admin;
 use App\Enums\SourceSite;
 use App\Models\Amenity;
 use App\Models\Listing;
+use App\Models\ListingContact;
 use App\Models\ListingImage;
 use App\Models\ListingLifecycleEvent;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Tests\SeedDatabaseAfterRefresh;
 use Tests\TestCase;
@@ -39,8 +41,14 @@ class AdminListingStoreTest extends TestCase
         ];
     }
 
-    protected function validPayload(array $overrides = []): array
+    protected function validPayload(array $overrides = [], array $contactOverrides = []): array
     {
+        $contact = array_merge([
+            'name'  => 'Maria Reyes',
+            'phone' => '09171234567',
+            'notes' => 'Philhomes broker, manages multiple units.',
+        ], $contactOverrides);
+
         return array_merge([
             'title'         => 'Modern 2-BR in Pueblo de Oro',
             'description'   => 'Lovely place near the park.',
@@ -54,7 +62,7 @@ class AdminListingStoreTest extends TestCase
             'longitude'     => 124.6411,
             'amenities'     => [],
             'photos'        => [$this->seedTmpPhoto('photo-1')],
-            'contact_phone' => '09171234567',
+            'contact'       => $contact,
             'intent'        => 'publish',
         ], $overrides);
     }
@@ -458,6 +466,11 @@ class AdminListingStoreTest extends TestCase
         $this->assertSame(2, $listing->beds);
         $this->assertSame(1, $listing->baths);
         $this->assertSame(65, $listing->sqm);
+
+        // Contact lives on listing_contacts via FK after refactor
+        $this->assertNotNull($listing->listing_contact_id);
+        $this->assertSame('+639171234567', $listing->listingContact->phone);
+        $this->assertSame('Maria Reyes', $listing->listingContact->name);
     }
 
     public function test_it_creates_listing_as_unverified_with_null_verified_at(): void
@@ -780,11 +793,7 @@ class AdminListingStoreTest extends TestCase
     }
 
     // =========================================================================
-    // Lifecycle audit log (1)
-    // =========================================================================
-
-    // =========================================================================
-    // Validation — contact_phone (required + PH mobile normalization to E.164)
+    // Validation — contact.phone (required + PH mobile normalization to E.164)
     // =========================================================================
 
     public function test_it_rejects_when_contact_phone_missing(): void
@@ -793,10 +802,10 @@ class AdminListingStoreTest extends TestCase
         $this->actingAs($admin, 'admin');
 
         $payload = $this->validPayload();
-        unset($payload['contact_phone']);
+        unset($payload['contact']['phone']);
 
         $this->post(route('admin.listings.store'), $payload)
-             ->assertSessionHasErrors(['contact_phone' => 'Contact phone is required.']);
+             ->assertSessionHasErrors(['contact.phone' => 'Contact phone is required.']);
     }
 
     public function test_it_rejects_when_contact_phone_empty_string(): void
@@ -804,9 +813,9 @@ class AdminListingStoreTest extends TestCase
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
-        $this->post(route('admin.listings.store'), $this->validPayload([
-            'contact_phone' => '',
-        ]))->assertSessionHasErrors(['contact_phone' => 'Contact phone is required.']);
+        $this->post(route('admin.listings.store'), $this->validPayload([], [
+            'phone' => '',
+        ]))->assertSessionHasErrors(['contact.phone' => 'Contact phone is required.']);
     }
 
     public function test_it_normalizes_local_leading_zero_to_e164(): void
@@ -815,11 +824,11 @@ class AdminListingStoreTest extends TestCase
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
-        $this->post(route('admin.listings.store'), $this->validPayload([
-            'contact_phone' => '09171234567',
+        $this->post(route('admin.listings.store'), $this->validPayload([], [
+            'phone' => '09171234567',
         ]))->assertSessionHasNoErrors();
 
-        $this->assertSame('+639171234567', Listing::first()->contact_phone);
+        $this->assertSame('+639171234567', Listing::first()->listingContact->phone);
     }
 
     public function test_it_normalizes_no_country_code_to_e164(): void
@@ -828,11 +837,11 @@ class AdminListingStoreTest extends TestCase
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
-        $this->post(route('admin.listings.store'), $this->validPayload([
-            'contact_phone' => '9171234567',
+        $this->post(route('admin.listings.store'), $this->validPayload([], [
+            'phone' => '9171234567',
         ]))->assertSessionHasNoErrors();
 
-        $this->assertSame('+639171234567', Listing::first()->contact_phone);
+        $this->assertSame('+639171234567', Listing::first()->listingContact->phone);
     }
 
     public function test_it_accepts_already_e164_format(): void
@@ -841,11 +850,11 @@ class AdminListingStoreTest extends TestCase
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
-        $this->post(route('admin.listings.store'), $this->validPayload([
-            'contact_phone' => '+639171234567',
+        $this->post(route('admin.listings.store'), $this->validPayload([], [
+            'phone' => '+639171234567',
         ]))->assertSessionHasNoErrors();
 
-        $this->assertSame('+639171234567', Listing::first()->contact_phone);
+        $this->assertSame('+639171234567', Listing::first()->listingContact->phone);
     }
 
     public function test_it_normalizes_international_without_plus_to_e164(): void
@@ -854,11 +863,11 @@ class AdminListingStoreTest extends TestCase
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
-        $this->post(route('admin.listings.store'), $this->validPayload([
-            'contact_phone' => '639171234567',
+        $this->post(route('admin.listings.store'), $this->validPayload([], [
+            'phone' => '639171234567',
         ]))->assertSessionHasNoErrors();
 
-        $this->assertSame('+639171234567', Listing::first()->contact_phone);
+        $this->assertSame('+639171234567', Listing::first()->listingContact->phone);
     }
 
     public function test_it_strips_spaces_and_dashes_before_validation(): void
@@ -868,11 +877,11 @@ class AdminListingStoreTest extends TestCase
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
-        $this->post(route('admin.listings.store'), $this->validPayload([
-            'contact_phone' => '+63-917 123-4567',
+        $this->post(route('admin.listings.store'), $this->validPayload([], [
+            'phone' => '+63-917 123-4567',
         ]))->assertSessionHasNoErrors();
 
-        $this->assertSame('+639171234567', Listing::first()->contact_phone);
+        $this->assertSame('+639171234567', Listing::first()->listingContact->phone);
     }
 
     public function test_it_rejects_phone_too_short(): void
@@ -880,9 +889,9 @@ class AdminListingStoreTest extends TestCase
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
-        $this->post(route('admin.listings.store'), $this->validPayload([
-            'contact_phone' => '09171234',
-        ]))->assertSessionHasErrors(['contact_phone' => 'Invalid PH mobile number.']);
+        $this->post(route('admin.listings.store'), $this->validPayload([], [
+            'phone' => '09171234',
+        ]))->assertSessionHasErrors(['contact.phone' => 'Invalid PH mobile number.']);
     }
 
     public function test_it_rejects_phone_too_long(): void
@@ -890,9 +899,9 @@ class AdminListingStoreTest extends TestCase
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
-        $this->post(route('admin.listings.store'), $this->validPayload([
-            'contact_phone' => '091712345678',  // 12 digits
-        ]))->assertSessionHasErrors(['contact_phone' => 'Invalid PH mobile number.']);
+        $this->post(route('admin.listings.store'), $this->validPayload([], [
+            'phone' => '091712345678',  // 12 digits
+        ]))->assertSessionHasErrors(['contact.phone' => 'Invalid PH mobile number.']);
     }
 
     public function test_it_rejects_phone_with_letters(): void
@@ -900,9 +909,9 @@ class AdminListingStoreTest extends TestCase
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
-        $this->post(route('admin.listings.store'), $this->validPayload([
-            'contact_phone' => '0917abc4567',
-        ]))->assertSessionHasErrors(['contact_phone' => 'Invalid PH mobile number.']);
+        $this->post(route('admin.listings.store'), $this->validPayload([], [
+            'phone' => '0917abc4567',
+        ]))->assertSessionHasErrors(['contact.phone' => 'Invalid PH mobile number.']);
     }
 
     public function test_it_rejects_landline_number(): void
@@ -912,9 +921,9 @@ class AdminListingStoreTest extends TestCase
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
-        $this->post(route('admin.listings.store'), $this->validPayload([
-            'contact_phone' => '088123456',
-        ]))->assertSessionHasErrors(['contact_phone' => 'Invalid PH mobile number.']);
+        $this->post(route('admin.listings.store'), $this->validPayload([], [
+            'phone' => '088123456',
+        ]))->assertSessionHasErrors(['contact.phone' => 'Invalid PH mobile number.']);
     }
 
     public function test_it_rejects_foreign_number(): void
@@ -923,9 +932,217 @@ class AdminListingStoreTest extends TestCase
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin, 'admin');
 
-        $this->post(route('admin.listings.store'), $this->validPayload([
-            'contact_phone' => '+14155551234',
-        ]))->assertSessionHasErrors(['contact_phone' => 'Invalid PH mobile number.']);
+        $this->post(route('admin.listings.store'), $this->validPayload([], [
+            'phone' => '+14155551234',
+        ]))->assertSessionHasErrors(['contact.phone' => 'Invalid PH mobile number.']);
+    }
+
+    // =========================================================================
+    // Contact — find-or-create (12)
+    // =========================================================================
+
+    public function test_it_creates_new_contact_when_phone_does_not_match_existing(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        $this->assertSame(0, ListingContact::count());
+
+        $this->post(route('admin.listings.store'), $this->validPayload())
+             ->assertSessionHasNoErrors();
+
+        $this->assertSame(1, ListingContact::count());
+        $contact = ListingContact::first();
+        $this->assertSame('+639171234567', $contact->phone);
+        $this->assertSame('Maria Reyes', $contact->name);
+        $this->assertSame('Philhomes broker, manages multiple units.', $contact->notes);
+
+        $listing = Listing::first();
+        $this->assertSame($contact->id, $listing->listing_contact_id);
+    }
+
+    public function test_it_attaches_to_existing_contact_when_phone_matches_and_uuid_missing(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        $existing = ListingContact::factory()->create([
+            'phone' => '+639171234567',
+            'name'  => 'Existing Name',
+            'notes' => 'Existing notes',
+        ]);
+
+        $this->post(route('admin.listings.store'), $this->validPayload([], [
+            'phone' => '09171234567',
+            'name'  => 'Updated Name',
+            'notes' => 'Updated notes',
+        ]))->assertSessionHasNoErrors();
+
+        $this->assertSame(1, ListingContact::count());  // no new row
+        $listing = Listing::first();
+        $this->assertSame($existing->id, $listing->listing_contact_id);
+
+        $existing->refresh();
+        $this->assertSame('Updated Name', $existing->name);
+        $this->assertSame('Updated notes', $existing->notes);
+    }
+
+    public function test_it_attaches_to_existing_contact_via_uuid(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        $existing = ListingContact::factory()->create([
+            'phone' => '+639991111111',
+            'name'  => 'Maria',
+        ]);
+
+        $this->post(route('admin.listings.store'), $this->validPayload([], [
+            'uuid'  => $existing->uuid,
+            'phone' => '+639888888888',  // different phone — should be silently ignored
+            'name'  => 'Maria Updated',
+        ]))->assertSessionHasNoErrors();
+
+        $this->assertSame(1, ListingContact::count());
+        $existing->refresh();
+        $this->assertSame('Maria Updated', $existing->name);
+        $this->assertSame('+639991111111', $existing->phone);  // phone untouched
+
+        $listing = Listing::first();
+        $this->assertSame($existing->id, $listing->listing_contact_id);
+    }
+
+    public function test_it_does_not_update_contact_phone_when_uuid_provided(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        $existing = ListingContact::factory()->create([
+            'phone' => '+639991111111',
+        ]);
+
+        $this->post(route('admin.listings.store'), $this->validPayload([], [
+            'uuid'  => $existing->uuid,
+            'phone' => '+639888888888',
+        ]))->assertSessionHasNoErrors();
+
+        $existing->refresh();
+        $this->assertSame('+639991111111', $existing->phone);
+    }
+
+    public function test_it_updates_contact_name_when_uuid_provided(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        $existing = ListingContact::factory()->create([
+            'phone' => '+639991111111',
+            'name'  => 'Old Name',
+        ]);
+
+        $this->post(route('admin.listings.store'), $this->validPayload([], [
+            'uuid'  => $existing->uuid,
+            'phone' => '+639991111111',
+            'name'  => 'New Name',
+        ]))->assertSessionHasNoErrors();
+
+        $existing->refresh();
+        $this->assertSame('New Name', $existing->name);
+    }
+
+    public function test_it_updates_contact_notes_when_uuid_provided(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        $existing = ListingContact::factory()->create([
+            'phone' => '+639991111111',
+            'notes' => 'Old notes',
+        ]);
+
+        $this->post(route('admin.listings.store'), $this->validPayload([], [
+            'uuid'  => $existing->uuid,
+            'phone' => '+639991111111',
+            'notes' => 'New notes',
+        ]))->assertSessionHasNoErrors();
+
+        $existing->refresh();
+        $this->assertSame('New notes', $existing->notes);
+    }
+
+    public function test_it_rejects_when_contact_uuid_does_not_match_any_existing(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        $this->post(route('admin.listings.store'), $this->validPayload([], [
+            'uuid' => 'aaaaaaaa-aaaa-7aaa-aaaa-aaaaaaaaaaaa',
+        ]))->assertSessionHasErrors(['contact.uuid' => 'Contact not found.']);
+    }
+
+    public function test_it_accepts_contact_name_when_missing(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        $payload = $this->validPayload();
+        unset($payload['contact']['name']);
+
+        $this->post(route('admin.listings.store'), $payload)
+             ->assertSessionHasNoErrors();
+
+        $this->assertNull(ListingContact::first()->name);
+    }
+
+    public function test_it_accepts_contact_notes_when_missing(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        $payload = $this->validPayload();
+        unset($payload['contact']['notes']);
+
+        $this->post(route('admin.listings.store'), $payload)
+             ->assertSessionHasNoErrors();
+
+        $this->assertNull(ListingContact::first()->notes);
+    }
+
+    public function test_it_rejects_contact_name_too_long(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        $this->post(route('admin.listings.store'), $this->validPayload([], [
+            'name' => str_repeat('a', 121),
+        ]))->assertSessionHasErrors(['contact.name' => 'Contact name must be 120 characters or fewer.']);
+    }
+
+    public function test_it_rejects_contact_notes_too_long(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        $this->post(route('admin.listings.store'), $this->validPayload([], [
+            'notes' => str_repeat('a', 2001),
+        ]))->assertSessionHasErrors(['contact.notes' => 'Contact notes must be 2000 characters or fewer.']);
+    }
+
+    public function test_it_persists_contact_phone_on_listing_contacts_not_listings(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        $this->post(route('admin.listings.store'), $this->validPayload())
+             ->assertSessionHasNoErrors();
+
+        $listing = Listing::first();
+        $this->assertNotNull($listing->listingContact);
+        $this->assertSame('+639171234567', $listing->listingContact->phone);
+
+        // Defensive — confirms contact_phone column was dropped from listings.
+        $columns = Schema::getColumnListing('listings');
+        $this->assertNotContains('contact_phone', $columns);
     }
 
     // =========================================================================

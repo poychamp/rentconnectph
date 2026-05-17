@@ -23,7 +23,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->string('source_site', 32)->nullable();
             $table->string('source_url', 2000)->nullable();
-            $table->string('contact_phone', 16);
+            $table->foreignId('listing_contact_id')->nullable()->constrained('listing_contacts')->cascadeOnDelete();
             $table->string('prequal_status', 32)->nullable();
             $table->string('queue_status', 32)->nullable();
             $table->foreignId('assigned_to')->nullable()->constrained('users')->cascadeOnDelete();
@@ -49,7 +49,6 @@ return new class extends Migration
             $table->index(['is_featured', 'is_verified']);
             $table->index(['is_verified', 'verified_at']);
             $table->index('featured_order');
-            $table->index('contact_phone');
             $table->index('prequal_status');
             $table->index('queue_status');
             $table->index('assigned_to');

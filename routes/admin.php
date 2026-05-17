@@ -68,6 +68,9 @@ Route::middleware('auth:admin')->group(function () {
         Route::put('api/listings/featured-sort', [Admin\Api\ListingController::class, 'updateFeaturedOrder'])
             ->name('api.listings.featured-sort');
 
+        Route::get('api/listing-contacts/find-by-phone', [Admin\Api\ListingContactController::class, 'findByPhone'])
+            ->name('api.listing-contacts.find-by-phone');
+
         Route::get('listings/{listing:uuid}/reopen', [Admin\ListingController::class, 'showReopen'])
             ->withTrashed()
             ->name('listings.reopen.show');

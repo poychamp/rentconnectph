@@ -47,7 +47,12 @@ const addListingForm = reactive({
     photos:       Array.isArray(old?.photos)    ? old.photos                : [],
     source_site:   old?.source_site   ?? '',
     source_url:    old?.source_url    ?? '',
-    contact_phone: old?.contact_phone ?? '',
+    contact: {
+        uuid:  old?.contact?.uuid  ?? '',
+        name:  old?.contact?.name  ?? '',
+        phone: old?.contact?.phone ?? '',
+        notes: old?.contact?.notes ?? '',
+    },
     verification_notes: old?.verification_notes ?? '',
 });
 
@@ -56,6 +61,11 @@ const addListingForm = reactive({
 const addListingFormErrors = ref(initial?.errors ?? {});
 
 const errorCount = computed(() => Object.keys(addListingFormErrors.value).length);
+
+// Toggle: flip to `true` to re-enable client-side validation. Server still
+// re-validates as the source of truth either way. Matches the disable pattern
+// used in `AuthProfile.vue` (CLIENT_VALIDATION_ENABLED).
+const CLIENT_VALIDATION_ENABLED = true;
 
 // Client-side validators mirror the server rules in `Admin\ListingController::store()`,
 // minus data-spoofing-shaped checks (enum allowlists `*.in`, photo key path
@@ -132,9 +142,10 @@ const VALIDATORS = {
         return null;
     },
     // Mirrors PhMobile::normalize() in PHP — strip non-digits, classify shape,
-    // return null when canonical +639XXXXXXXXX form is unreachable.
-    contact_phone: (f) => {
-        const v = (f.contact_phone ?? '').trim();
+    // return null when canonical +639XXXXXXXXX form is unreachable. Dotted key
+    // matches the server's nested error shape (errors['contact.phone']).
+    'contact.phone': (f) => {
+        const v = (f.contact?.phone ?? '').trim();
         if (!v) return 'Contact phone is required.';
         const hasPlus = v.startsWith('+');
         const digits  = v.replace(/\D/g, '');
@@ -150,6 +161,16 @@ const VALIDATORS = {
         }
         return canonical === null ? 'Invalid PH mobile number.' : null;
     },
+    'contact.name': (f) => {
+        const v = f.contact?.name ?? '';
+        if (v.length > 120) return 'Contact name must be 120 characters or fewer.';
+        return null;
+    },
+    'contact.notes': (f) => {
+        const v = f.contact?.notes ?? '';
+        if (v.length > 2000) return 'Contact notes must be 2000 characters or fewer.';
+        return null;
+    },
 };
 
 function setFieldError(field, message) {
@@ -160,6 +181,7 @@ function setFieldError(field, message) {
 }
 
 function validateField(field) {
+    if (!CLIENT_VALIDATION_ENABLED) return true;
     const fn = VALIDATORS[field];
     if (!fn) return true;
     const message = fn(addListingForm);
@@ -172,6 +194,7 @@ function clearFieldError(field) {
 }
 
 function validateAll() {
+    if (!CLIENT_VALIDATION_ENABLED) return true;
     let ok = true;
     for (const field of Object.keys(VALIDATORS)) {
         if (!validateField(field)) ok = false;
@@ -236,6 +259,7 @@ onMounted(() => {
                     :source-sites="formData.sourceSites"
                     :amenities="formData.amenities"
                     :show-verification-notes="true"
+                    :show-contact="true"
                 />
             </main>
 

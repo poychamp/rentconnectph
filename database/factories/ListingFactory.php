@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Enums\Barangay;
 use App\Enums\ListingType;
 use App\Models\Listing;
+use App\Models\ListingContact;
 use App\Models\ListingImage;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Arr;
@@ -23,7 +24,7 @@ class ListingFactory extends Factory
             'baths' => fake()->numberBetween(1, 3),
             'sqm' => fake()->numberBetween(12, 200),
             'barangay' => Arr::random(Barangay::toValues()),
-            'contact_phone' => fake()->numerify('+639#########'),
+            'listing_contact_id' => ListingContact::factory(),
             'is_verified' => true,
             'verified_at' => fake()->dateTimeBetween('-30 days', 'now'),
             'listed_at' => fake()->dateTimeBetween('-30 days', 'now'),

@@ -29,7 +29,7 @@ class Listing extends Model
             'is_verified'    => $this->is_verified ? '1' : '0',
             'listed_at'      => $this->listed_at?->getTimestamp(),
             'directions'     => $this->directions,
-            'contact_phone'  => $this->contact_phone,
+            'contact_phone'  => $this->listingContact?->phone,
             'assigned_to'    => $this->assigned_to,
             'queue_status'   => $this->queue_status,
         ];
@@ -60,7 +60,7 @@ class Listing extends Model
         'description',
         'source_site',
         'source_url',
-        'contact_phone',
+        'listing_contact_id',
         'prequal_status',
         'queue_status',
         'assigned_to',
@@ -91,6 +91,11 @@ class Listing extends Model
         'latitude' => 'float',
         'longitude' => 'float',
     ];
+
+    public function listingContact(): BelongsTo
+    {
+        return $this->belongsTo(ListingContact::class);
+    }
 
     public function images(): HasMany
     {

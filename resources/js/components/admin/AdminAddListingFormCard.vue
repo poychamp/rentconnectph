@@ -5,6 +5,7 @@ import AdminAddListingAmenityPills from './AdminAddListingAmenityPills.vue';
 import AdminAddListingPhotoUpload from './AdminAddListingPhotoUpload.vue';
 import AdminAddListingMapPicker from './AdminAddListingMapPicker.vue';
 import AdminAddListingVerificationNotesCard from './AdminAddListingVerificationNotesCard.vue';
+import AdminAddListingContactCard from './AdminAddListingContactCard.vue';
 
 const props = defineProps({
     listingTypes: { type: Array, required: true },
@@ -14,6 +15,7 @@ const props = defineProps({
     readOnlyLead: { type: Boolean, default: false },
     hideLead:     { type: Boolean, default: false },
     showVerificationNotes: { type: Boolean, default: false },
+    showContact:  { type: Boolean, default: false },
 });
 
 const form = inject('addListingForm');
@@ -33,8 +35,70 @@ const inputErrorClass = 'border-red-400 dark:border-red-500 focus:border-red-500
 
 <template>
     <div class="space-y-5">
-        <!-- LEAD: owner contact + source (full width, first) -->
-        <div v-if="!hideLead" class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm p-6 space-y-5">
+        <!-- NEW LAYOUT: Contact (left) + Source (right) side by side when showContact -->
+        <div v-if="showContact" class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <AdminAddListingContactCard />
+
+            <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm p-6 space-y-5">
+                <div>
+                    <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">Source</h3>
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Where this listing was originally found.
+                    </p>
+                </div>
+
+                <div>
+                    <label for="source-site" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Source site
+                    </label>
+                    <select
+                        id="source-site"
+                        v-model="form.source_site"
+                        @focus="clearFieldError('source_site')"
+                        @change="validateField('source_site')"
+                        @blur="validateField('source_site')"
+                        :class="[
+                            'mt-1 w-full rounded-md border bg-white dark:bg-gray-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white focus:ring-1 outline-none transition',
+                            errorFor('source_site')
+                                ? inputErrorClass
+                                : 'border-gray-200 dark:border-gray-700 focus:border-orange-500 focus:ring-orange-500',
+                        ]"
+                    >
+                        <option value="">— None —</option>
+                        <option v-for="s in sourceSites" :key="s.value" :value="s.value">{{ s.label }}</option>
+                    </select>
+                    <p v-if="errorFor('source_site')" class="mt-1 text-xs text-red-600 dark:text-red-400">
+                        {{ errorFor('source_site') }}
+                    </p>
+                </div>
+
+                <div>
+                    <label for="source-url" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Source URL
+                    </label>
+                    <input
+                        id="source-url"
+                        v-model="form.source_url"
+                        type="url"
+                        placeholder="https://www.olx.ph/..."
+                        @focus="clearFieldError('source_url')"
+                        @blur="validateField('source_url')"
+                        :class="[
+                            'mt-1 w-full rounded-md border bg-white dark:bg-gray-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:ring-1 outline-none transition',
+                            errorFor('source_url')
+                                ? inputErrorClass
+                                : 'border-gray-200 dark:border-gray-700 focus:border-orange-500 focus:ring-orange-500',
+                        ]"
+                    >
+                    <p v-if="errorFor('source_url')" class="mt-1 text-xs text-red-600 dark:text-red-400">
+                        {{ errorFor('source_url') }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- LEGACY LEAD: owner contact + source (full width, first) — used when showContact is false -->
+        <div v-if="!hideLead && !showContact" class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm p-6 space-y-5">
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                     <label for="contact-phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -63,11 +127,11 @@ const inputErrorClass = 'border-red-400 dark:border-red-500 focus:border-red-500
                 </div>
 
                 <div>
-                    <label for="source-site" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <label for="source-site-legacy" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Source site
                     </label>
                     <select
-                        id="source-site"
+                        id="source-site-legacy"
                         v-model="form.source_site"
                         :disabled="readOnlyLead"
                         @focus="clearFieldError('source_site')"
@@ -91,11 +155,11 @@ const inputErrorClass = 'border-red-400 dark:border-red-500 focus:border-red-500
                 </div>
 
                 <div>
-                    <label for="source-url" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <label for="source-url-legacy" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Source URL
                     </label>
                     <input
-                        id="source-url"
+                        id="source-url-legacy"
                         v-model="form.source_url"
                         type="url"
                         placeholder="https://www.olx.ph/..."

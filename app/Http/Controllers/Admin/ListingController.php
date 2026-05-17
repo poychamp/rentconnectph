@@ -22,6 +22,7 @@ use App\Http\Resources\AdminVerifiedListingResource;
 use App\Http\Resources\AdminVisitedListingResource;
 use App\Models\Amenity;
 use App\Models\Listing;
+use App\Models\ListingContact;
 use App\Models\ListingImage;
 use App\Models\ListingLifecycleEvent;
 use Carbon\Carbon;
@@ -964,7 +965,11 @@ class ListingController extends Controller
             'photos.*.size' => ['nullable', 'integer'],
             'source_site'   => ['nullable', 'string', Rule::in(SourceSite::toValues())],
             'source_url'    => ['nullable', 'string', 'url', 'max:2000'],
-            'contact_phone' => ['required', 'string', new PhMobileNumber],
+            'contact'       => ['required', 'array'],
+            'contact.uuid'  => ['nullable', 'string', 'uuid', Rule::exists('listing_contacts', 'uuid')],
+            'contact.phone' => ['required', 'string', new PhMobileNumber],
+            'contact.name'  => ['nullable', 'string', 'max:120'],
+            'contact.notes' => ['nullable', 'string', 'max:2000'],
             'verification_notes' => ['nullable', 'string', 'max:2000'],
             'intent'        => ['nullable', 'string', 'in:publish,publish-and-add-another'],
         ], [
@@ -983,7 +988,10 @@ class ListingController extends Controller
             'source_site.in'        => 'Invalid source site.',
             'source_url.url'        => 'Source URL must be a valid URL.',
             'source_url.max'        => 'Source URL is too long (max 2000 characters).',
-            'contact_phone.required' => 'Contact phone is required.',
+            'contact.phone.required' => 'Contact phone is required.',
+            'contact.uuid.exists'   => 'Contact not found.',
+            'contact.name.max'      => 'Contact name must be 120 characters or fewer.',
+            'contact.notes.max'     => 'Contact notes must be 2000 characters or fewer.',
             'verification_notes.max' => 'Verification notes must be 2000 characters or fewer.',
         ]);
 
@@ -991,6 +999,20 @@ class ListingController extends Controller
         $photos = $validated['photos'] ?? [];
 
         $listing = DB::transaction(function () use ($request, $validated, $photos) {
+            // Find-or-create the ListingContact. If uuid present, identify by uuid
+            // and don't touch the phone (silent ignore for any phone in the payload).
+            // Otherwise, find-or-create by normalized phone.
+            if (! empty($validated['contact']['uuid'])) {
+                $contact = ListingContact::where('uuid', $validated['contact']['uuid'])->firstOrFail();
+            } else {
+                $normalizedPhone = PhMobile::normalize($validated['contact']['phone']);
+                $contact = ListingContact::firstOrNew(['phone' => $normalizedPhone]);
+                $contact->phone = $normalizedPhone;
+            }
+            $contact->name  = $validated['contact']['name'] ?? null;
+            $contact->notes = $validated['contact']['notes'] ?? null;
+            $contact->save();
+
             $listing = Listing::create([
                 'title'          => $validated['title'],
                 'description'    => $validated['description'] ?? null,
@@ -1004,7 +1026,7 @@ class ListingController extends Controller
                 'longitude'      => $validated['longitude'] ?? null,
                 'source_site'    => $validated['source_site'] ?? null,
                 'source_url'     => $validated['source_url'] ?? null,
-                'contact_phone'  => PhMobile::normalize($validated['contact_phone']),
+                'listing_contact_id' => $contact->id,
                 'verification_notes' => $validated['verification_notes'] ?? null,
                 'prequal_status' => PrequalStatus::notCalled()->value,
                 'queue_status'   => QueueStatus::unassigned()->value,
