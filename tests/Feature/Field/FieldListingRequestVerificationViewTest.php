@@ -9,6 +9,7 @@ use App\Enums\QueueStatus;
 use App\Enums\SourceSite;
 use App\Models\Amenity;
 use App\Models\Listing;
+use App\Models\ListingContact;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -96,6 +97,12 @@ class FieldListingRequestVerificationViewTest extends TestCase
             'sort_order' => 1,
         ]);
 
+        $contact = ListingContact::factory()->create([
+            'phone' => '+639171234567',
+            'name'  => 'Maria Reyes',
+            'notes' => 'Philhomes broker — speaks Bisaya',
+        ]);
+
         $listing = $this->readyListingFor($marco, [
             'title'              => 'Apartment near Capitol University',
             'type'               => ListingType::apartment()->value,
@@ -109,7 +116,7 @@ class FieldListingRequestVerificationViewTest extends TestCase
             'latitude'           => 8.4831,
             'longitude'          => 124.6505,
             'verification_notes' => 'Pre-visit notes.',
-            'contact_phone'      => '+639171234567',
+            'listing_contact_id' => $contact->id,
             'contact_type'       => ContactType::owner()->value,
             'source_site'        => SourceSite::olx()->value,
             'source_url'         => 'https://olx.ph/test',
@@ -133,7 +140,13 @@ class FieldListingRequestVerificationViewTest extends TestCase
         $this->assertSame('Quiet building.', $payload['description']);
         $this->assertSame('Past the green gate.', $payload['directions']);
         $this->assertSame('Pre-visit notes.', $payload['verification_notes']);
-        $this->assertSame('+639171234567', $payload['contact_phone']);
+        $this->assertSame($contact->id, $payload['listing_contact_id']);
+        $this->assertSame([
+            'uuid'  => $contact->uuid,
+            'phone' => '+639171234567',
+            'name'  => 'Maria Reyes',
+            'notes' => 'Philhomes broker — speaks Bisaya',
+        ], $payload['listing_contact']);
         $this->assertSame(ContactType::owner()->label, $payload['contact_type_label']);
         $this->assertSame(SourceSite::olx()->label, $payload['source_site_label']);
         $this->assertSame('https://olx.ph/test', $payload['source_url']);

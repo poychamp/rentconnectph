@@ -10,6 +10,7 @@ use App\Enums\QueueStatus;
 use App\Enums\SourceSite;
 use App\Models\Amenity;
 use App\Models\Listing;
+use App\Models\ListingContact;
 use App\Models\ListingLifecycleEvent;
 use App\Models\User;
 use Carbon\Carbon;
@@ -46,7 +47,11 @@ class FieldListingUpdateTest extends TestCase
                 'assigned_to'        => $officer->id,
                 'assigned_at'        => Carbon::parse('2026-04-20 10:00:00'),
                 'prequal_status'     => PrequalStatus::calledYes()->value,
-                'contact_phone'      => '+639171234567',
+                'listing_contact_id' => ListingContact::factory()->create([
+                    'phone' => '+639171234567',
+                    'name'  => 'Maria Reyes',
+                    'notes' => 'Calls-team contact',
+                ])->id,
                 'contact_type'       => ContactType::owner()->value,
                 'source_site'        => SourceSite::olx()->value,
                 'source_url'         => 'https://olx.ph/original',
@@ -398,7 +403,7 @@ class FieldListingUpdateTest extends TestCase
         );
 
         $listing->refresh();
-        $this->assertSame('+639171234567',                   $listing->contact_phone);
+        $this->assertSame('+639171234567',                   $listing->listingContact->phone);
         $this->assertSame(ContactType::owner()->value,       $listing->contact_type);
         $this->assertSame(SourceSite::olx()->value,          $listing->source_site);
         $this->assertSame('https://olx.ph/original',         $listing->source_url);

@@ -9,6 +9,7 @@ use App\Enums\QueueStatus;
 use App\Enums\SourceSite;
 use App\Models\Amenity;
 use App\Models\Listing;
+use App\Models\ListingContact;
 use App\Models\ListingImage;
 use App\Models\User;
 use Carbon\Carbon;
@@ -16,7 +17,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\SeedDatabaseAfterRefresh;
 use Tests\TestCase;
 
-class FieldListingEditTest extends TestCase
+class FieldListingEditViewTest extends TestCase
 {
     use RefreshDatabase, SeedDatabaseAfterRefresh;
 
@@ -95,20 +96,26 @@ class FieldListingEditTest extends TestCase
             'sort_order' => 1,
         ]);
 
+        $contact = ListingContact::factory()->create([
+            'phone' => '+639171234567',
+            'name'  => 'Maria Reyes',
+            'notes' => 'Philhomes broker — speaks Bisaya',
+        ]);
+
         $listing = $this->assignedListingFor($marco, [
-            'title'         => 'Test Detail Listing',
-            'type'          => ListingType::apartment()->value,
-            'barangay'      => Barangay::lapasan()->value,
-            'price_monthly' => 12500,
-            'beds'          => 2,
-            'baths'         => 1,
-            'sqm'           => 38,
-            'description'   => 'Quiet building, near Capitol University.',
-            'directions'    => 'Look for the green gate beside the sari-sari store.',
-            'contact_phone' => '+639171234567',
-            'contact_type'  => ContactType::owner()->value,
-            'source_site'   => SourceSite::olx()->value,
-            'source_url'    => 'https://olx.ph/test-detail',
+            'title'              => 'Test Detail Listing',
+            'type'               => ListingType::apartment()->value,
+            'barangay'           => Barangay::lapasan()->value,
+            'price_monthly'      => 12500,
+            'beds'               => 2,
+            'baths'              => 1,
+            'sqm'                => 38,
+            'description'        => 'Quiet building, near Capitol University.',
+            'directions'         => 'Look for the green gate beside the sari-sari store.',
+            'listing_contact_id' => $contact->id,
+            'contact_type'       => ContactType::owner()->value,
+            'source_site'        => SourceSite::olx()->value,
+            'source_url'         => 'https://olx.ph/test-detail',
         ]);
 
         $img = ListingImage::create([
@@ -134,7 +141,13 @@ class FieldListingEditTest extends TestCase
         $this->assertSame(38, $payload['sqm']);
         $this->assertSame('Quiet building, near Capitol University.', $payload['description']);
         $this->assertSame('Look for the green gate beside the sari-sari store.', $payload['directions']);
-        $this->assertSame('+639171234567', $payload['contact_phone']);
+        $this->assertSame($contact->id, $payload['listing_contact_id']);
+        $this->assertSame([
+            'uuid'  => $contact->uuid,
+            'phone' => '+639171234567',
+            'name'  => 'Maria Reyes',
+            'notes' => 'Philhomes broker — speaks Bisaya',
+        ], $payload['listing_contact']);
         $this->assertSame(ContactType::owner()->label, $payload['contact_type_label']);
         $this->assertSame(SourceSite::olx()->label, $payload['source_site_label']);
         $this->assertSame('https://olx.ph/test-detail', $payload['source_url']);

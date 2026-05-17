@@ -79,6 +79,7 @@ class ListingController extends Controller
             ['images' => fn ($q) => $q->orderBy('sort_order')],
             'displayImage',
             'amenities',
+            'listingContact',
         );
 
         return view('field.listings.edit', [
@@ -273,6 +274,7 @@ class ListingController extends Controller
             ['images' => fn ($q) => $q->orderBy('sort_order')],
             'displayImage',
             'amenities',
+            'listingContact',
         );
 
         return view('field.listings.request-verification', [

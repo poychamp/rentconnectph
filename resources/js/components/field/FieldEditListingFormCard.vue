@@ -2,6 +2,8 @@
 import { computed, inject, ref } from 'vue';
 import FieldEditListingMapPicker from './FieldEditListingMapPicker.vue';
 import FieldEditListingPhotoUpload from './FieldEditListingPhotoUpload.vue';
+import FieldEditListingContactCard from './FieldEditListingContactCard.vue';
+import FieldEditListingSourceCard from './FieldEditListingSourceCard.vue';
 
 const props = defineProps({
     listing:      { type: Object, required: true },
@@ -39,44 +41,10 @@ const lockedClass = 'mt-1 w-full rounded-md border border-gray-200 dark:border-g
 
 <template>
     <div class="space-y-5">
-        <!-- LEAD: contact_phone (read-only) + source_site + source_url -->
-        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm p-6">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div>
-                    <label for="contact-phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Contact phone</label>
-                    <input
-                        id="contact-phone"
-                        :value="listing.contact_phone"
-                        readonly
-                        type="tel"
-                        :class="lockedClass"
-                    >
-                </div>
-
-                <div>
-                    <label for="source-site" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Source site</label>
-                    <select
-                        id="source-site"
-                        :value="listing.source_site"
-                        disabled
-                        :class="lockedClass"
-                    >
-                        <option value="">— None —</option>
-                        <option v-for="s in sourceSites" :key="s.value" :value="s.value">{{ s.label }}</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label for="source-url" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Source URL</label>
-                    <input
-                        id="source-url"
-                        :value="listing.source_url"
-                        readonly
-                        type="url"
-                        :class="lockedClass"
-                    >
-                </div>
-            </div>
+        <!-- LEAD: Contact (left) + Source (right) — read-only, calls-team-locked -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <FieldEditListingContactCard :listing="listing" />
+            <FieldEditListingSourceCard :listing="listing" :source-sites="sourceSites" />
         </div>
 
         <!-- CONTACT TYPE + DIRECTIONS + NOTES: full width, below contact details -->
