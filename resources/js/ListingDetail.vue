@@ -129,7 +129,7 @@ onBeforeUnmount(() => {
                 @click="openInquireModal"
                 class="w-full inline-flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-xl px-5 py-3 text-sm transition cursor-pointer"
             >
-                Inquire Now
+                Get Contact
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round" /></svg>
             </button>
         </div>

@@ -200,7 +200,7 @@ watch(showModal, (open) => {
                         @click="submit"
                         class="flex-1 px-4 py-2 rounded-md bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium cursor-pointer"
                     >
-                        Submit inquiry
+                        Get Contact
                     </button>
                 </div>
             </div>

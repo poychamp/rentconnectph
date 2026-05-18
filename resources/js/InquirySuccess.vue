@@ -92,13 +92,13 @@ async function copyPhone() {
                         </svg>
                     </div>
                     <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                        Thanks — we got your inquiry
+                        You're all set
                     </h1>
                     <p v-if="listing?.title" class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
                         Here's how to reach out about <span class="font-semibold text-gray-900 dark:text-white">{{ listing.title }}</span>.
                     </p>
                     <p v-else class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                        We got your inquiry.
+                        Head back to a listing to get started.
                     </p>
                 </div>
 
