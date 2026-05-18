@@ -67,10 +67,10 @@ onBeforeUnmount(() => {
                         1. About RentConnectPH
                     </h2>
                     <p>
-                        RentConnectPH is an online rental-listing platform serving Cagayan de Oro, Philippines. The Platform allows prospective renters to browse verified rental listings submitted by property owners, send inquiries, and coordinate viewings. Lease closings on the Platform are handled by Marco V. Reyes, PRC-licensed real estate broker (PRB Lic. #0028451, PAREB-CDO Chapter), who drafts and witnesses every lease executed through the Platform.
+                        RentConnectPH is an online rental-listing platform serving Cagayan de Oro, Philippines. The Platform allows prospective renters to browse verified rental listings submitted by property owners, submit inquiries, and receive the owner's contact details to coordinate viewings and lease arrangements directly.
                     </p>
                     <p>
-                        RentConnectPH is not a real estate broker, agent, or party to any lease agreement. The Platform connects renters with property owners and provides supporting services around inquiry handling and lease closing.
+                        RentConnectPH is not a real estate broker, agent, or party to any lease agreement. The Platform connects renters with property owners; viewings, terms, and lease execution are handled between the parties directly.
                     </p>
                 </section>
 
@@ -90,7 +90,7 @@ onBeforeUnmount(() => {
                         3. Accounts
                     </h2>
                     <p>
-                        Some features of the Platform require an account (for example, administrators, calls team members, field officers, and the closing broker). You are responsible for:
+                        Some features of the Platform require an account (for example, administrators and field officers). You are responsible for:
                     </p>
                     <ul class="list-disc pl-6 space-y-1.5">
                         <li>Providing accurate and current information when registering.</li>
@@ -126,7 +126,7 @@ onBeforeUnmount(() => {
                         5. Inquiries and viewings
                     </h2>
                     <p>
-                        When you submit an inquiry on a listing, our calls team may contact you to qualify the inquiry and coordinate a viewing with the property owner. The exact address of the property and the property owner's direct contact information are disclosed only after a viewing has been scheduled, in accordance with our renter-privacy practices.
+                        When you submit an inquiry on a listing, you will receive the property owner's contact details (name, mobile number, and any notes the owner provided) on the confirmation page. You may then reach out to the property owner directly to schedule a viewing and discuss terms.
                     </p>
                     <p>
                         We do not guarantee a response from any property owner, the availability of any specific property, or the success of any viewing.
@@ -136,10 +136,10 @@ onBeforeUnmount(() => {
                 <!-- 6. Closings -->
                 <section class="space-y-4">
                     <h2 class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
-                        6. Lease closings
+                        6. Lease agreements
                     </h2>
                     <p>
-                        Lease agreements arranged through the Platform are drafted, witnessed, and executed by Marco V. Reyes, our PRC-licensed closing broker. Renters and property owners remain the contracting parties to the lease. RentConnectPH is not a party to the lease and is not responsible for the parties' performance under it. Disputes arising under a lease should be resolved between the parties, with the assistance of the closing broker where appropriate.
+                        Lease agreements are entered into directly between renters and property owners. RentConnectPH is not a party to any lease and is not responsible for the parties' performance under it. Disputes arising under a lease should be resolved between the parties.
                     </p>
                 </section>
 
