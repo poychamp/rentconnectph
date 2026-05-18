@@ -25,7 +25,6 @@ class FieldListingResource extends JsonResource
             'baths'                => $this->baths,
             'sqm'                  => $this->sqm,
             'directions'           => $this->directions,
-            'contact_phone'        => $this->contact_phone,
             'contact_type_label'   => $this->contact_type
                 ? ContactType::from($this->contact_type)->label
                 : null,

@@ -141,7 +141,6 @@ class ListingQueuedFetchTest extends TestCase
         $listing = $this->assignedListingFor($marco, [
             'title'                => 'Test Listing',
             'directions'           => 'Near Gaisano City',
-            'contact_phone'        => '+639171234567',
             'contact_type'         => ContactType::owner()->value,
             'source_site'          => SourceSite::olx()->value,
             'source_url'           => 'https://olx.ph/test',
@@ -163,7 +162,6 @@ class ListingQueuedFetchTest extends TestCase
         $this->assertSame($listing->baths, $row['baths']);
         $this->assertSame($listing->sqm, $row['sqm']);
         $this->assertSame('Near Gaisano City', $row['directions']);
-        $this->assertSame('+639171234567', $row['contact_phone']);
         $this->assertSame('Owner', $row['contact_type_label']);
         $this->assertSame('OLX', $row['source_site_label']);
         $this->assertSame('https://olx.ph/test', $row['source_url']);

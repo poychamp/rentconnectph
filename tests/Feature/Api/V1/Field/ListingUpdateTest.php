@@ -60,7 +60,6 @@ class ListingUpdateTest extends TestCase
                 'assigned_to'        => $officer->id,
                 'assigned_at'        => Carbon::parse('2026-04-20 10:00:00'),
                 'prequal_status'     => PrequalStatus::calledYes()->value,
-                'contact_phone'      => '+639171234567',
                 'contact_type'       => ContactType::owner()->value,
                 'source_site'        => SourceSite::olx()->value,
                 'source_url'         => 'https://olx.ph/original',
@@ -649,6 +648,7 @@ class ListingUpdateTest extends TestCase
     {
         $marco   = $this->actAsFieldOfficer();
         $listing = $this->assignedListingFor($marco);
+        $originalPhone = $listing->listingContact->phone;
 
         $this->patchJson(
             route('api.v1.field.listings.update', $listing->uuid),
@@ -662,7 +662,7 @@ class ListingUpdateTest extends TestCase
         )->assertOk();
 
         $listing->refresh();
-        $this->assertSame('+639171234567',                   $listing->contact_phone);
+        $this->assertSame($originalPhone,                    $listing->listingContact->phone);
         $this->assertSame(ContactType::owner()->value,       $listing->contact_type);
         $this->assertSame(SourceSite::olx()->value,          $listing->source_site);
         $this->assertSame('https://olx.ph/original',         $listing->source_url);

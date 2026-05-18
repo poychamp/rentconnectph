@@ -10,6 +10,7 @@ use App\Enums\QueueStatus;
 use App\Enums\SourceSite;
 use App\Models\Amenity;
 use App\Models\Listing;
+use App\Models\ListingContact;
 use App\Models\ListingImage;
 use App\Models\User;
 use Carbon\Carbon;
@@ -162,6 +163,11 @@ class ListingShowFetchTest extends TestCase
     public function test_it_returns_resource_shape_with_raw_values_and_labels(): void
     {
         $marco   = $this->actAsFieldOfficer();
+        $contact = ListingContact::factory()->create([
+            'phone' => '+639171234567',
+            'name'  => 'Juan Dela Cruz',
+            'notes' => 'Text first before calling.',
+        ]);
         $listing = $this->assignedListingFor($marco, [
             'title'                => 'Test Listing',
             'type'                 => ListingType::apartment()->value,
@@ -175,7 +181,7 @@ class ListingShowFetchTest extends TestCase
             'description'          => 'A nice place.',
             'directions'           => 'Near Gaisano City',
             'verification_notes'  => 'Visited 2026-04-20.',
-            'contact_phone'        => '+639171234567',
+            'listing_contact_id'   => $contact->id,
             'contact_type'         => ContactType::owner()->value,
             'source_site'          => SourceSite::olx()->value,
             'source_url'           => 'https://olx.ph/test',
@@ -222,7 +228,9 @@ class ListingShowFetchTest extends TestCase
         $this->assertSame('Visited 2026-04-20.', $row['verification_notes']);
 
         // Contact.
-        $this->assertSame('+639171234567', $row['contact_phone']);
+        $this->assertSame('+639171234567', $row['listing_contact']['phone']);
+        $this->assertSame('Juan Dela Cruz', $row['listing_contact']['name']);
+        $this->assertSame('Text first before calling.', $row['listing_contact']['notes']);
         $this->assertSame('https://olx.ph/test', $row['source_url']);
 
         // Lifecycle state (additive vs FieldListingResource — Android needs these).

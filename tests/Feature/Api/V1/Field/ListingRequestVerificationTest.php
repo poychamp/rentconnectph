@@ -64,7 +64,6 @@ class ListingRequestVerificationTest extends TestCase
                 'latitude'           => 8.4831,
                 'longitude'          => 124.6505,
                 'prequal_status'     => PrequalStatus::calledYes()->value,
-                'contact_phone'      => '+639171234567',
                 'contact_type'       => ContactType::owner()->value,
                 'source_site'        => SourceSite::olx()->value,
                 'source_url'         => 'https://olx.ph/original',
@@ -805,6 +804,7 @@ class ListingRequestVerificationTest extends TestCase
     {
         $marco   = $this->actAsFieldOfficer();
         $listing = $this->readyListingFor($marco);
+        $originalPhone = $listing->listingContact->phone;
 
         $this->patchJson(
             route('api.v1.field.listings.request-verification', $listing->uuid),
@@ -818,7 +818,7 @@ class ListingRequestVerificationTest extends TestCase
         )->assertOk();
 
         $listing->refresh();
-        $this->assertSame('+639171234567',                   $listing->contact_phone);
+        $this->assertSame($originalPhone,                    $listing->listingContact->phone);
         $this->assertSame(ContactType::owner()->value,       $listing->contact_type);
         $this->assertSame(SourceSite::olx()->value,          $listing->source_site);
         $this->assertSame('https://olx.ph/original',         $listing->source_url);
