@@ -96,13 +96,13 @@ onBeforeUnmount(() => {
                         </h3>
                         <ul class="list-disc pl-6 space-y-1.5">
                             <li>Property information you provide (title, type, monthly rent, bedrooms, bathrooms, floor area, address, barangay, description, photographs, and amenities).</li>
-                            <li>Your contact details (name, mobile number) so our team can coordinate inquiries and viewings on your behalf.</li>
+                            <li>Your contact details (name, mobile number, and any notes you provide) which are displayed to renters who submit an inquiry on your listing.</li>
                         </ul>
                     </div>
 
                     <div class="space-y-2">
                         <h3 class="text-base md:text-lg font-semibold text-gray-900 dark:text-white">
-                            From platform users (admins, field officers, calls team)
+                            From platform users (admins, field officers)
                         </h3>
                         <ul class="list-disc pl-6 space-y-1.5">
                             <li>Account credentials (name, email, hashed password).</li>
@@ -146,9 +146,7 @@ onBeforeUnmount(() => {
                     </p>
                     <ul class="list-disc pl-6 space-y-1.5">
                         <li>To display verified rental listings to the public.</li>
-                        <li>To receive and qualify inquiries from prospective renters through our internal calls team.</li>
-                        <li>To coordinate property viewings between renters and property owners.</li>
-                        <li>To facilitate lease closings, which are handled exclusively by Marco V. Reyes, PRC-licensed real estate broker (PRB Lic. #0028451, PAREB-CDO Chapter), who drafts and witnesses every lease.</li>
+                        <li>To enable renters to contact property owners directly by displaying owner contact details on the inquiry success page after an inquiry is submitted.</li>
                         <li>To manage user accounts, authenticate platform users, and maintain records of activity for accountability and audit.</li>
                         <li>To monitor performance, detect errors, and analyze traffic patterns across both the website and the mobile applications.</li>
                         <li>To respond to support, contact, and data-subject requests.</li>
@@ -166,8 +164,7 @@ onBeforeUnmount(() => {
                         We share personal information only as described below. We do not sell your personal information.
                     </p>
                     <ul class="list-disc pl-6 space-y-1.5">
-                        <li><span class="font-semibold text-gray-900 dark:text-white">Property owners:</span> once an inquiry has been qualified by our calls team, we share the renter's name and mobile number with the relevant property owner so they can schedule a viewing.</li>
-                        <li><span class="font-semibold text-gray-900 dark:text-white">Closing broker:</span> at the closing stage, we share the necessary contact and transaction details with Marco V. Reyes for the purpose of drafting and executing the lease.</li>
+                        <li><span class="font-semibold text-gray-900 dark:text-white">Renters:</span> when you submit an inquiry on a listing, we display the property owner's contact details (name, mobile number, and any notes the owner provided) to you. We do not push inquiring renters' details to property owners — renters reach out to owners directly.</li>
                         <li><span class="font-semibold text-gray-900 dark:text-white">Service providers:</span> we rely on trusted third parties to host and operate the Platform, including Amazon Web Services (cloud hosting, storage, and infrastructure logging via AWS CloudWatch), Algolia (search indexing), Google LLC (Google Analytics for usage measurement), and email-delivery services. These providers process data on our instructions and under confidentiality obligations.</li>
                         <li><span class="font-semibold text-gray-900 dark:text-white">Legal and regulatory:</span> we may disclose information when required by law, court order, or government authority, or when necessary to protect our rights or the safety of any person.</li>
                     </ul>
@@ -192,7 +189,7 @@ onBeforeUnmount(() => {
                         We retain personal information only as long as necessary to fulfill the purposes set out in this Policy, including any legal, accounting, or reporting requirements.
                     </p>
                     <ul class="list-disc pl-6 space-y-1.5">
-                        <li><span class="font-semibold text-gray-900 dark:text-white">Inquiry records:</span> retained while the lead is active and for a reasonable period afterward for follow-up and audit.</li>
+                        <li><span class="font-semibold text-gray-900 dark:text-white">Inquiry records:</span> retained for audit and analytics purposes for a reasonable period after submission.</li>
                         <li><span class="font-semibold text-gray-900 dark:text-white">Account data:</span> retained while your account is active and for a reasonable period after deactivation.</li>
                         <li><span class="font-semibold text-gray-900 dark:text-white">Listings:</span> deactivated and rejected listings are retained in our records for audit purposes.</li>
                         <li><span class="font-semibold text-gray-900 dark:text-white">Server and analytics logs:</span> retained for a reasonable period consistent with operational, security, and performance-monitoring needs.</li>
