@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Barangay;
+use App\Enums\ContactType;
 use App\Models\Inquiry;
 use App\Models\Listing;
 use App\Models\Renter;
@@ -27,7 +29,10 @@ class InquiryController extends Controller
             'phone.required'        => 'Phone is required.',
         ]);
 
-        $listing = Listing::where('uuid', $validated['listing_uuid'])->verified()->first();
+        $listing = Listing::where('uuid', $validated['listing_uuid'])
+            ->verified()
+            ->with('listingContact')
+            ->first();
         abort_unless($listing, 404);
 
         $normalizedPhone = PhMobile::normalize($validated['phone']);
@@ -45,13 +50,22 @@ class InquiryController extends Controller
         });
 
         return redirect()->route('inquiries.success')
-            ->with('inquiry.listing_title', $listing->title);
+            ->with('inquiry.listing', [
+                'title' => $listing->title,
+                'barangay' => Barangay::from($listing->barangay)->label,
+                'contact_type_label' => $listing->contact_type ? ContactType::from($listing->contact_type)->label : null,
+                'listing_contact' => [
+                    'phone' => $listing->listingContact?->phone,
+                    'name' => $listing->listingContact?->name,
+                    'notes' => $listing->listingContact?->notes,
+                ],
+            ]);
     }
 
     public function success(): View
     {
         return view('inquiries.success', [
-            'listingTitle' => session('inquiry.listing_title'),
+            'listing' => session('inquiry.listing'),
         ]);
     }
 }

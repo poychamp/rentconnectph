@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Inquiry;
 use App\Models\Listing;
+use App\Models\ListingContact;
 use App\Models\Renter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\RateLimiter;
@@ -397,6 +398,109 @@ class ListingInquireTest extends TestCase
 
         $this->post(route('inquiries.store'), $this->validPayload($listing));
 
-        $this->assertSame('Beachfront Condo', session('inquiry.listing_title'));
+        $this->assertSame('Beachfront Condo', session('inquiry.listing.title'));
+    }
+
+    public function test_it_flashes_listing_barangay_to_session_on_success(): void
+    {
+        $listing = Listing::factory()->verified()->create([
+            'barangay' => 'pueblo_de_oro',
+        ]);
+
+        $this->post(route('inquiries.store'), $this->validPayload($listing));
+
+        $this->assertSame('Pueblo de Oro', session('inquiry.listing.barangay'));
+    }
+
+    public function test_it_flashes_contact_phone_to_session_on_success(): void
+    {
+        $contact = ListingContact::factory()->create([
+            'phone' => '+639175551234',
+        ]);
+        $listing = Listing::factory()->verified()->create([
+            'listing_contact_id' => $contact->id,
+        ]);
+
+        $this->post(route('inquiries.store'), $this->validPayload($listing));
+
+        $this->assertSame('+639175551234', session('inquiry.listing.listing_contact.phone'));
+    }
+
+    public function test_it_flashes_contact_name_to_session_on_success(): void
+    {
+        $contact = ListingContact::factory()->create([
+            'name' => 'Juan Dela Cruz',
+        ]);
+        $listing = Listing::factory()->verified()->create([
+            'listing_contact_id' => $contact->id,
+        ]);
+
+        $this->post(route('inquiries.store'), $this->validPayload($listing));
+
+        $this->assertSame('Juan Dela Cruz', session('inquiry.listing.listing_contact.name'));
+    }
+
+    public function test_it_flashes_null_contact_name_when_listing_contact_has_no_name(): void
+    {
+        $contact = ListingContact::factory()->create([
+            'name' => null,
+        ]);
+        $listing = Listing::factory()->verified()->create([
+            'listing_contact_id' => $contact->id,
+        ]);
+
+        $this->post(route('inquiries.store'), $this->validPayload($listing));
+
+        $this->assertNull(session('inquiry.listing.listing_contact.name'));
+    }
+
+    public function test_it_flashes_contact_notes_to_session_on_success(): void
+    {
+        $contact = ListingContact::factory()->create([
+            'notes' => 'Text first before calling. Available 3-5pm.',
+        ]);
+        $listing = Listing::factory()->verified()->create([
+            'listing_contact_id' => $contact->id,
+        ]);
+
+        $this->post(route('inquiries.store'), $this->validPayload($listing));
+
+        $this->assertSame('Text first before calling. Available 3-5pm.', session('inquiry.listing.listing_contact.notes'));
+    }
+
+    public function test_it_flashes_null_contact_notes_when_listing_contact_has_no_notes(): void
+    {
+        $contact = ListingContact::factory()->create([
+            'notes' => null,
+        ]);
+        $listing = Listing::factory()->verified()->create([
+            'listing_contact_id' => $contact->id,
+        ]);
+
+        $this->post(route('inquiries.store'), $this->validPayload($listing));
+
+        $this->assertNull(session('inquiry.listing.listing_contact.notes'));
+    }
+
+    public function test_it_flashes_contact_type_label_to_session_on_success(): void
+    {
+        $listing = Listing::factory()->verified()->create([
+            'contact_type' => 'owner',
+        ]);
+
+        $this->post(route('inquiries.store'), $this->validPayload($listing));
+
+        $this->assertSame('Owner', session('inquiry.listing.contact_type_label'));
+    }
+
+    public function test_it_flashes_null_contact_type_when_listing_has_no_contact_type(): void
+    {
+        $listing = Listing::factory()->verified()->create([
+            'contact_type' => null,
+        ]);
+
+        $this->post(route('inquiries.store'), $this->validPayload($listing));
+
+        $this->assertNull(session('inquiry.listing.contact_type_label'));
     }
 }

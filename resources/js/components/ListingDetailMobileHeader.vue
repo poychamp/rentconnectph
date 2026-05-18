@@ -10,7 +10,7 @@ defineEmits(['back']);
             <button
                 @click="$emit('back')"
                 aria-label="Back"
-                class="w-9 h-9 grid place-items-center rounded-full text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                class="w-9 h-9 grid place-items-center rounded-full text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition cursor-pointer"
             >
                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round" />

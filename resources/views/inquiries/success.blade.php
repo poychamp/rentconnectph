@@ -5,8 +5,8 @@
 
 @push('scripts')
 <script>
-    window.__INITIAL_SUCCESS__ = {
-        listingTitle: @json($listingTitle ?? null),
+    window.__INITIAL_INQUIRY_SUCCESS__ = {
+        listing: @json($listing ?? null),
     };
 </script>
 @endpush
