@@ -19,7 +19,7 @@
                 <span aria-hidden="true" class="text-gray-300 dark:text-gray-700">·</span>
                 <a href="/terms" class="hover:text-orange-600 dark:hover:text-orange-400">Terms</a>
                 <span aria-hidden="true" class="text-gray-300 dark:text-gray-700">·</span>
-                <p>© 2026 RentConnectPH · PRC License 0023491 · Cagayan de Oro</p>
+                <p>© 2026 RentConnectPH · Cagayan de Oro · Philippines</p>
             </div>
         </div>
     </footer>
