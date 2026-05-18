@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\Api\V1\Public;
 
-use App\Enums\InquiryStatus;
 use App\Models\Inquiry;
 use App\Models\Listing;
+use App\Models\ListingContact;
 use App\Models\Renter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\RateLimiter;
@@ -177,7 +177,6 @@ class InquirySubmitTest extends TestCase
         $inquiry = Inquiry::first();
         $this->assertSame($renter->id, $inquiry->renter_id);
         $this->assertSame($listing->id, $inquiry->listing_id);
-        $this->assertSame(InquiryStatus::new()->value, $inquiry->status);
     }
 
     public function test_it_normalizes_local_format_to_e164(): void
@@ -268,17 +267,6 @@ class InquirySubmitTest extends TestCase
     //                      Security — payload boundaries
     // === ============================================================ ===
 
-    public function test_it_silently_ignores_status_in_request_payload(): void
-    {
-        $listing = Listing::factory()->verified()->create();
-
-        $this->postJson($this->url($listing), $this->validPayload([
-            'status' => InquiryStatus::rejected()->value,
-        ]));
-
-        $this->assertSame(InquiryStatus::new()->value, Inquiry::sole()->status);
-    }
-
     public function test_it_silently_ignores_is_qualified_in_request_payload(): void
     {
         $listing = Listing::factory()->verified()->create();
@@ -315,12 +303,34 @@ class InquirySubmitTest extends TestCase
 
     public function test_it_returns_exact_success_envelope(): void
     {
-        $listing = Listing::factory()->verified()->create();
+        $contact = ListingContact::factory()->create([
+            'phone' => '+639171234567',
+            'name'  => 'Juan Dela Cruz',
+            'notes' => 'Text first before calling.',
+        ]);
+        $listing = Listing::factory()->verified()->create([
+            'title'              => 'Beachfront Condo',
+            'barangay'           => 'pueblo_de_oro',
+            'contact_type'       => 'owner',
+            'listing_contact_id' => $contact->id,
+        ]);
 
         $response = $this->postJson($this->url($listing), $this->validPayload());
 
         $response->assertOk();
-        $response->assertExactJson(['success' => true]);
+        $response->assertExactJson([
+            'success' => true,
+            'listing' => [
+                'title'              => 'Beachfront Condo',
+                'barangay'           => 'Pueblo de Oro',
+                'contact_type_label' => 'Owner',
+                'listing_contact'    => [
+                    'phone' => '+639171234567',
+                    'name'  => 'Juan Dela Cruz',
+                    'notes' => 'Text first before calling.',
+                ],
+            ],
+        ]);
     }
 
     // === ============================================================ ===

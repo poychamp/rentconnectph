@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Enums\InquiryStatus;
+use App\Enums\Barangay;
+use App\Enums\ContactType;
 use App\Http\Controllers\Controller;
 use App\Models\Inquiry;
 use App\Models\Listing;
@@ -39,10 +40,27 @@ class InquiryController extends Controller
             Inquiry::create([
                 'renter_id'  => $renter->id,
                 'listing_id' => $listing->id,
-                'status'     => InquiryStatus::new()->value,
             ]);
         });
 
-        return response()->json(['success' => true]);
+        $listing->loadMissing('listingContact');
+
+        // Deliberate deviation from CLAUDE.md's `{success: true}`-only API-write rule:
+        // mobile clients have no separate success GET page and need the listing's
+        // contact details to render their next screen. Web flashes these to session
+        // for /inquiries-success; API ships them inline on the response body.
+        return response()->json([
+            'success' => true,
+            'listing' => [
+                'title'              => $listing->title,
+                'barangay'           => Barangay::from($listing->barangay)->label,
+                'contact_type_label' => $listing->contact_type ? ContactType::from($listing->contact_type)->label : null,
+                'listing_contact'    => [
+                    'phone' => $listing->listingContact?->phone,
+                    'name'  => $listing->listingContact?->name,
+                    'notes' => $listing->listingContact?->notes,
+                ],
+            ],
+        ]);
     }
 }

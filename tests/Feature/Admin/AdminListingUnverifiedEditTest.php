@@ -259,8 +259,8 @@ class AdminListingUnverifiedEditTest extends TestCase
         $values = array_column($contactTypes, 'value');
         $labels = array_column($contactTypes, 'label');
 
-        $this->assertSame(['owner', 'authorized_rep', 'broker', 'caretaker', 'others'], $values);
-        $this->assertSame(['Owner', 'Authorized Rep', 'Broker', 'Caretaker', 'Others'], $labels);
+        $this->assertSame(['owner', 'authorized_rep', 'broker', 'caretaker', 'co_owner', 'family_member', 'agent', 'property_manager', 'others'], $values);
+        $this->assertSame(['Owner', 'Authorized Rep', 'Broker', 'Caretaker', 'Co-Owner', 'Family Member', 'Agent', 'Property Manager', 'Others'], $labels);
     }
 
     public function test_it_includes_source_sites_enum_list(): void

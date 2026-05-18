@@ -4,6 +4,7 @@ namespace Tests\Feature\Api\V1\Public;
 
 use App\Models\Amenity;
 use App\Models\Listing;
+use App\Models\ListingContact;
 use App\Models\ListingImage;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -173,11 +174,13 @@ class ListingDetailFetchTest extends TestCase
 
     public function test_it_excludes_contact_phone_for_renter_privacy(): void
     {
-        $listing = $this->verifiedListing(['contact_phone' => '09171234567']);
+        $contact = ListingContact::factory()->create(['phone' => '+639171234567']);
+        $listing = $this->verifiedListing(['listing_contact_id' => $contact->id]);
 
         $payload = $this->getJson($this->endpoint($listing->uuid))->json('listing');
 
         $this->assertArrayNotHasKey('contact_phone', $payload);
-        $this->assertStringNotContainsString('09171234567', json_encode($payload));
+        $this->assertArrayNotHasKey('listing_contact', $payload);
+        $this->assertStringNotContainsString('+639171234567', json_encode($payload));
     }
 }
