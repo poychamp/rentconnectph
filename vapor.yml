@@ -5,11 +5,24 @@ environments:
   production:
     memory: 1024
     cli-memory: 512
+    timeout: 30
     runtime: 'php-8.4:al2023'
+    database: rentconnectph-production-db
+    storage: rentconnectph-production-uploads
+    domain:
+      - rentconnectph.com
+      - www.rentconnectph.com
     build:
       - 'composer install --no-dev'
-      - 'php artisan event:cache'
-      # - 'npm ci && npm run build && rm -rf node_modules'
+      - 'php artisan view:clear'
+      - 'php artisan config:clear'
+      - 'php artisan event:clear'
+      - 'php artisan route:clear'
+      - 'php artisan optimize'
+      - 'php artisan view:cache'
+      - 'npm ci --legacy-peer-deps && npm run build && rm -rf node_modules'
+    deploy:
+      - 'php artisan migrate --force'
   staging:
     memory: 1024
     cli-memory: 512
