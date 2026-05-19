@@ -43,4 +43,21 @@ return [
 
     'redirect_robots_txt' => false,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Favicon redirect
+    |--------------------------------------------------------------------------
+    |
+    | Vapor's `RedirectStaticAssets` middleware 302-redirects `/favicon.ico`
+    | to the asset URL (a CloudFront `*.cloudfront.net` host) by default.
+    | Google's favicon-in-SERP rule requires the favicon to live on the same
+    | host as the page that references it — a cross-domain redirect gets
+    | rejected and no favicon shows in search results. Disabling the redirect
+    | routes the request through `ServeStaticAssets` instead, which fetches
+    | from S3 server-side and serves the bytes inline at the apex.
+    |
+    */
+
+    'redirect_favicon' => false,
+
 ];
