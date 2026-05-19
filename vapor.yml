@@ -3,7 +3,7 @@ name: RentConnectPH
 
 environments:
   production:
-    memory: 1024
+    memory: 1769
     cli-memory: 512
     timeout: 30
     runtime: 'php-8.4:al2023'
