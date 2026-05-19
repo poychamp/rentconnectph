@@ -81,10 +81,12 @@ class ListingController extends Controller
             'directions'         => $listing->directions,
             'listing_contact_id' => $listing->listing_contact_id,
             'listing_contact'    => $listing->listingContact ? [
-                'uuid'  => $listing->listingContact->uuid,
-                'phone' => $listing->listingContact->phone,
-                'name'  => $listing->listingContact->name,
-                'notes' => $listing->listingContact->notes,
+                'uuid'          => $listing->listingContact->uuid,
+                'phone'         => $listing->listingContact->phone,
+                'name'          => $listing->listingContact->name,
+                'notes'         => $listing->listingContact->notes,
+                'is_show_name'  => $listing->listingContact->is_show_name,
+                'is_show_notes' => $listing->listingContact->is_show_notes,
             ] : null,
             'contact_type'       => $listing->contact_type,
             'source_site'        => $listing->source_site,
@@ -152,10 +154,12 @@ class ListingController extends Controller
             'source_url'         => $listing->source_url,
             'listing_contact_id' => $listing->listing_contact_id,
             'listing_contact'    => [
-                'uuid'  => $listing->listingContact?->uuid,
-                'phone' => $listing->listingContact?->phone,
-                'name'  => $listing->listingContact?->name,
-                'notes' => $listing->listingContact?->notes,
+                'uuid'          => $listing->listingContact?->uuid,
+                'phone'         => $listing->listingContact?->phone,
+                'name'          => $listing->listingContact?->name,
+                'notes'         => $listing->listingContact?->notes,
+                'is_show_name'  => $listing->listingContact?->is_show_name,
+                'is_show_notes' => $listing->listingContact?->is_show_notes,
             ],
             'prequal_status'     => $listing->prequal_status,
             'queue_status'       => $listing->queue_status,
@@ -497,6 +501,8 @@ class ListingController extends Controller
             $rules['contact.phone'] = ['required', 'string', new PhMobileNumber];
             $rules['contact.name']  = ['nullable', 'string', 'max:120'];
             $rules['contact.notes'] = ['nullable', 'string', 'max:2000'];
+            $rules['contact.is_show_name']  = ['nullable', 'boolean'];
+            $rules['contact.is_show_notes'] = ['nullable', 'boolean'];
         }
 
         // called_yes adds call-context validation. Other prequal states leave
@@ -537,6 +543,8 @@ class ListingController extends Controller
             'contact.uuid.exists'        => 'Contact not found.',
             'contact.name.max'           => 'Contact name must be 120 characters or fewer.',
             'contact.notes.max'          => 'Contact notes must be 2000 characters or fewer.',
+            'contact.is_show_name.boolean'  => 'Show name must be true or false.',
+            'contact.is_show_notes.boolean' => 'Show notes must be true or false.',
             'directions.required'        => 'Directions are required.',
             'directions.max'             => 'Directions are too long (max 500 characters).',
             'contact_type.required'      => 'Contact type is required.',
@@ -619,6 +627,8 @@ class ListingController extends Controller
                 }
                 $contact->name  = $validated['contact']['name']  ?? null;
                 $contact->notes = $validated['contact']['notes'] ?? null;
+                $contact->is_show_name  = $validated['contact']['is_show_name']  ?? false;
+                $contact->is_show_notes = $validated['contact']['is_show_notes'] ?? false;
                 $contact->save();
                 $updateData['listing_contact_id'] = $contact->id;
             }
@@ -1024,6 +1034,8 @@ class ListingController extends Controller
             'contact.phone' => ['required', 'string', new PhMobileNumber],
             'contact.name'  => ['nullable', 'string', 'max:120'],
             'contact.notes' => ['nullable', 'string', 'max:2000'],
+            'contact.is_show_name'  => ['nullable', 'boolean'],
+            'contact.is_show_notes' => ['nullable', 'boolean'],
             'verification_notes' => ['nullable', 'string', 'max:2000'],
             'intent'        => ['nullable', 'string', 'in:publish,publish-and-add-another'],
         ], [
@@ -1046,6 +1058,8 @@ class ListingController extends Controller
             'contact.uuid.exists'   => 'Contact not found.',
             'contact.name.max'      => 'Contact name must be 120 characters or fewer.',
             'contact.notes.max'     => 'Contact notes must be 2000 characters or fewer.',
+            'contact.is_show_name.boolean'  => 'Show name must be true or false.',
+            'contact.is_show_notes.boolean' => 'Show notes must be true or false.',
             'verification_notes.max' => 'Verification notes must be 2000 characters or fewer.',
         ]);
 
@@ -1065,6 +1079,8 @@ class ListingController extends Controller
             }
             $contact->name  = $validated['contact']['name'] ?? null;
             $contact->notes = $validated['contact']['notes'] ?? null;
+            $contact->is_show_name  = $validated['contact']['is_show_name']  ?? false;
+            $contact->is_show_notes = $validated['contact']['is_show_notes'] ?? false;
             $contact->save();
 
             $listing = Listing::create([

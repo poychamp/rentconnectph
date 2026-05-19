@@ -16,6 +16,13 @@ class ListingContact extends Model
         'name',
         'phone',
         'notes',
+        'is_show_name',
+        'is_show_notes',
+    ];
+
+    protected $casts = [
+        'is_show_name'  => 'boolean',
+        'is_show_notes' => 'boolean',
     ];
 
     public function listings(): HasMany

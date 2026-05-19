@@ -52,6 +52,8 @@ const addListingForm = reactive({
         name:  old?.contact?.name  ?? '',
         phone: old?.contact?.phone ?? '',
         notes: old?.contact?.notes ?? '',
+        is_show_name:  old?.contact?.is_show_name  ?? true,
+        is_show_notes: old?.contact?.is_show_notes ?? true,
     },
     verification_notes: old?.verification_notes ?? '',
 });

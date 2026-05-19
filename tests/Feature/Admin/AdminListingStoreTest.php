@@ -1145,6 +1145,83 @@ class AdminListingStoreTest extends TestCase
         $this->assertNotContains('contact_phone', $columns);
     }
 
+    public function test_it_defaults_is_show_flags_to_false_when_omitted(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        // validPayload() omits is_show_name + is_show_notes — controller defaults to false.
+        $this->post(route('admin.listings.store'), $this->validPayload())
+             ->assertSessionHasNoErrors();
+
+        $contact = ListingContact::first();
+        $this->assertFalse($contact->is_show_name);
+        $this->assertFalse($contact->is_show_notes);
+    }
+
+    public function test_it_persists_is_show_name_when_explicitly_false(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        $this->post(route('admin.listings.store'), $this->validPayload([], [
+            'is_show_name' => false,
+        ]))->assertSessionHasNoErrors();
+
+        $contact = ListingContact::first();
+        $this->assertFalse($contact->is_show_name);
+        $this->assertFalse($contact->is_show_notes);
+    }
+
+    public function test_it_persists_is_show_notes_when_explicitly_false(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        $this->post(route('admin.listings.store'), $this->validPayload([], [
+            'is_show_notes' => false,
+        ]))->assertSessionHasNoErrors();
+
+        $contact = ListingContact::first();
+        $this->assertFalse($contact->is_show_notes);
+        $this->assertFalse($contact->is_show_name);
+    }
+
+    public function test_it_updates_is_show_flags_when_uuid_provided(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        $existing = ListingContact::factory()->create([
+            'phone' => '+639991111111',
+        ]);
+
+        $this->post(route('admin.listings.store'), $this->validPayload([], [
+            'uuid'          => $existing->uuid,
+            'phone'         => '+639991111111',
+            'is_show_name'  => false,
+            'is_show_notes' => false,
+        ]))->assertSessionHasNoErrors();
+
+        $existing->refresh();
+        $this->assertFalse($existing->is_show_name);
+        $this->assertFalse($existing->is_show_notes);
+    }
+
+    public function test_it_rejects_non_boolean_is_show_flags(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        $this->post(route('admin.listings.store'), $this->validPayload([], [
+            'is_show_name'  => 'yes please',
+            'is_show_notes' => 'absolutely',
+        ]))->assertSessionHasErrors([
+            'contact.is_show_name'  => 'Show name must be true or false.',
+            'contact.is_show_notes' => 'Show notes must be true or false.',
+        ]);
+    }
+
     // =========================================================================
     // Lifecycle audit log (1)
     // =========================================================================

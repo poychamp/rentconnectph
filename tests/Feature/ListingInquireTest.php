@@ -529,6 +529,36 @@ class ListingInquireTest extends TestCase
         $this->assertNull(session('inquiry.listing.listing_contact.notes'));
     }
 
+    public function test_it_flashes_null_contact_name_when_is_show_name_is_false(): void
+    {
+        $contact = ListingContact::factory()->create([
+            'name'         => 'Juan Dela Cruz',
+            'is_show_name' => false,
+        ]);
+        $listing = Listing::factory()->verified()->create([
+            'listing_contact_id' => $contact->id,
+        ]);
+
+        $this->post(route('inquiries.store'), $this->validPayload($listing));
+
+        $this->assertNull(session('inquiry.listing.listing_contact.name'));
+    }
+
+    public function test_it_flashes_null_contact_notes_when_is_show_notes_is_false(): void
+    {
+        $contact = ListingContact::factory()->create([
+            'notes'         => 'Text first before calling.',
+            'is_show_notes' => false,
+        ]);
+        $listing = Listing::factory()->verified()->create([
+            'listing_contact_id' => $contact->id,
+        ]);
+
+        $this->post(route('inquiries.store'), $this->validPayload($listing));
+
+        $this->assertNull(session('inquiry.listing.listing_contact.notes'));
+    }
+
     public function test_it_flashes_contact_type_label_to_session_on_success(): void
     {
         $listing = Listing::factory()->verified()->create([

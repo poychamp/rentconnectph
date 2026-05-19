@@ -634,4 +634,32 @@ class AdminListingUpdateTest extends TestCase
         $listing->refresh();
         $this->assertSame($originalListedAt, $listing->listed_at->format('Y-m-d H:i:s'));
     }
+
+    public function test_it_silently_ignores_contact_visibility_flags(): void
+    {
+        // is_show_name + is_show_notes flagged in attacker payload (flat or nested)
+        // must be silently dropped — verified-slice update doesn't register
+        // contact.* rules and the update array doesn't include them.
+        $this->asAdmin();
+        $listing = $this->makeListing();
+
+        $this->assertTrue($listing->listingContact->is_show_name);
+        $this->assertTrue($listing->listingContact->is_show_notes);
+
+        $this->put(
+            route('admin.listings.update', $listing->uuid),
+            $this->validPayload($listing, [
+                'is_show_name'  => false,
+                'is_show_notes' => false,
+                'contact' => [
+                    'is_show_name'  => false,
+                    'is_show_notes' => false,
+                ],
+            ]),
+        )->assertSessionHasNoErrors();
+
+        $fresh = $listing->fresh();
+        $this->assertTrue($fresh->listingContact->is_show_name);
+        $this->assertTrue($fresh->listingContact->is_show_notes);
+    }
 }

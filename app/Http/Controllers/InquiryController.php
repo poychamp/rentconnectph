@@ -56,8 +56,8 @@ class InquiryController extends Controller
                 'contact_type_label' => $listing->contact_type ? ContactType::from($listing->contact_type)->label : null,
                 'listing_contact' => [
                     'phone' => $listing->listingContact?->phone,
-                    'name' => $listing->listingContact?->name,
-                    'notes' => $listing->listingContact?->notes,
+                    'name'  => $listing->listingContact?->is_show_name  ? $listing->listingContact->name  : null,
+                    'notes' => $listing->listingContact?->is_show_notes ? $listing->listingContact->notes : null,
                 ],
             ]);
     }

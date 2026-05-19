@@ -1218,6 +1218,119 @@ class AdminListingUnverifiedUpdateTest extends TestCase
         )->assertSessionHasErrors(['contact.notes' => 'Contact notes must be 2000 characters or fewer.']);
     }
 
+    public function test_it_defaults_is_show_flags_to_false_when_omitted_on_unlocked_slice(): void
+    {
+        $this->asAdmin();
+        $listing = $this->makeUnverifiedListing();
+
+        // notCalledPayload omits is_show_name + is_show_notes — controller defaults to false.
+        $this->put(
+            route('admin.listings.unverified-update', $listing->uuid),
+            $this->notCalledPayload($listing)
+        )->assertSessionHasNoErrors();
+
+        $contact = $listing->fresh()->listingContact;
+        $this->assertFalse($contact->is_show_name);
+        $this->assertFalse($contact->is_show_notes);
+    }
+
+    public function test_it_persists_is_show_flags_when_explicitly_set_on_unlocked_slice(): void
+    {
+        $this->asAdmin();
+        $listing = $this->makeUnverifiedListing();
+
+        $this->put(
+            route('admin.listings.unverified-update', $listing->uuid),
+            $this->notCalledPayload($listing, [], [
+                'is_show_name'  => true,
+                'is_show_notes' => false,
+            ])
+        )->assertSessionHasNoErrors();
+
+        $contact = $listing->fresh()->listingContact;
+        $this->assertTrue($contact->is_show_name);
+        $this->assertFalse($contact->is_show_notes);
+    }
+
+    public function test_it_updates_is_show_flags_when_uuid_provided_on_unlocked_slice(): void
+    {
+        $this->asAdmin();
+        $listing = $this->makeUnverifiedListing();
+
+        $existing = ListingContact::factory()->create([
+            'phone'         => '+639991111111',
+            'is_show_name'  => true,
+            'is_show_notes' => true,
+        ]);
+
+        $this->put(
+            route('admin.listings.unverified-update', $listing->uuid),
+            $this->notCalledPayload($listing, [], [
+                'uuid'          => $existing->uuid,
+                'phone'         => '+639991111111',
+                'is_show_name'  => false,
+                'is_show_notes' => false,
+            ])
+        )->assertSessionHasNoErrors();
+
+        $existing->refresh();
+        $this->assertFalse($existing->is_show_name);
+        $this->assertFalse($existing->is_show_notes);
+    }
+
+    public function test_it_rejects_non_boolean_is_show_flags_on_unlocked_slice(): void
+    {
+        $this->asAdmin();
+        $listing = $this->makeUnverifiedListing();
+
+        $this->put(
+            route('admin.listings.unverified-update', $listing->uuid),
+            $this->notCalledPayload($listing, [], [
+                'is_show_name'  => 'yes please',
+                'is_show_notes' => 'absolutely',
+            ])
+        )->assertSessionHasErrors([
+            'contact.is_show_name'  => 'Show name must be true or false.',
+            'contact.is_show_notes' => 'Show notes must be true or false.',
+        ]);
+    }
+
+    public function test_it_silently_ignores_is_show_flags_when_persisted_prequal_status_is_called_yes(): void
+    {
+        // Lock parity with name/notes/phone — once called_yes, the contact section is
+        // frozen and submitted is_show_* values are silently dropped.
+        $this->asAdmin();
+        $field = $this->makeFieldUser();
+
+        $originalContact = ListingContact::factory()->create([
+            'phone'         => '+639111111111',
+            'name'          => 'Frozen Name',
+            'is_show_name'  => true,
+            'is_show_notes' => true,
+        ]);
+
+        $listing = $this->makeUnverifiedListing(2, [
+            'prequal_status'     => 'called_yes',
+            'queue_status'       => 'assigned',
+            'assigned_to'        => $field->id,
+            'directions'         => 'Past the gate.',
+            'contact_type'       => 'owner',
+            'listing_contact_id' => $originalContact->id,
+        ]);
+
+        $this->put(
+            route('admin.listings.unverified-update', $listing->uuid),
+            $this->calledYesPayload($listing, ['assigned_to' => $field->id], [
+                'is_show_name'  => false,
+                'is_show_notes' => false,
+            ])
+        )->assertSessionHasNoErrors();
+
+        $originalContact->refresh();
+        $this->assertTrue($originalContact->is_show_name);
+        $this->assertTrue($originalContact->is_show_notes);
+    }
+
     public function test_it_silently_ignores_contact_section_when_persisted_prequal_status_is_called_yes(): void
     {
         // Once called_yes, contact is frozen — submitting different uuid/phone/name/notes

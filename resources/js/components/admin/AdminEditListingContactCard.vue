@@ -58,6 +58,15 @@ const displayPhone = computed(() => {
                 type="text"
                 :class="lockedInputClass"
             >
+            <label class="mt-2 inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-not-allowed">
+                <input
+                    type="checkbox"
+                    :checked="!!listing.listing_contact?.is_show_name"
+                    disabled
+                    class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-orange-500 focus:ring-orange-500 opacity-60 cursor-not-allowed"
+                >
+                Show name to renters
+            </label>
         </div>
 
         <div>
@@ -69,6 +78,15 @@ const displayPhone = computed(() => {
                 rows="3"
                 :class="[lockedInputClass, 'resize-y']"
             ></textarea>
+            <label class="mt-2 inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-not-allowed">
+                <input
+                    type="checkbox"
+                    :checked="!!listing.listing_contact?.is_show_notes"
+                    disabled
+                    class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-orange-500 focus:ring-orange-500 opacity-60 cursor-not-allowed"
+                >
+                Show notes to renters
+            </label>
         </div>
     </div>
 </template>

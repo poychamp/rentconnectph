@@ -50,10 +50,12 @@ class AdminApiListingContactsFindByPhoneTest extends TestCase
              ->assertOk()
              ->assertExactJson([
                  'contact' => [
-                     'uuid'  => $contact->uuid,
-                     'name'  => 'Maria Reyes',
-                     'phone' => '+639171234567',
-                     'notes' => 'Philhomes broker',
+                     'uuid'          => $contact->uuid,
+                     'name'          => 'Maria Reyes',
+                     'phone'         => '+639171234567',
+                     'notes'         => 'Philhomes broker',
+                     'is_show_name'  => true,
+                     'is_show_notes' => true,
                  ],
              ]);
     }

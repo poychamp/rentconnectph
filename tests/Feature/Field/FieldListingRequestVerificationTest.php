@@ -479,4 +479,36 @@ class FieldListingRequestVerificationTest extends TestCase
             $this->validPayload($listing),
         )->assertRedirect(route('field.priority.index'));
     }
+
+    // =========================================================================
+    // Security boundary — admin-locked fields silently ignored.
+    // =========================================================================
+
+    public function test_it_silently_ignores_contact_visibility_flags_in_the_request(): void
+    {
+        // is_show_name + is_show_notes are admin-only — field officers can't flip
+        // them via the request-verification flow either. Sent via flat or nested
+        // shape should be silently dropped by the validated-allowlist pattern.
+        $marco = $this->asMarco();
+        $listing = $this->readyListingFor($marco);
+
+        $this->assertTrue($listing->listingContact->is_show_name);
+        $this->assertTrue($listing->listingContact->is_show_notes);
+
+        $this->put(
+            route('field.listings.request-verification', $listing->uuid),
+            $this->validPayload($listing, [
+                'is_show_name'  => false,
+                'is_show_notes' => false,
+                'contact' => [
+                    'is_show_name'  => false,
+                    'is_show_notes' => false,
+                ],
+            ])
+        )->assertSessionHasNoErrors();
+
+        $listing->refresh();
+        $this->assertTrue($listing->listingContact->is_show_name);
+        $this->assertTrue($listing->listingContact->is_show_notes);
+    }
 }

@@ -58,6 +58,8 @@ const addListingForm = reactive({
         phone: source.contact?.phone ?? '',
         name:  source.contact?.name  ?? '',
         notes: source.contact?.notes ?? '',
+        is_show_name:  source.contact?.is_show_name  ?? true,
+        is_show_notes: source.contact?.is_show_notes ?? true,
     },
     // Pre-qualification + call-context fields. Editable via the Pre-qual card
     // (status select) + Call-context card (directions, contact type, notes,

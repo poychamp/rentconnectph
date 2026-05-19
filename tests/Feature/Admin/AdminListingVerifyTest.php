@@ -288,6 +288,34 @@ class AdminListingVerifyTest extends TestCase
         $this->assertSame($originalSourceUrl, $fresh->source_url);
     }
 
+    public function test_it_silently_ignores_contact_visibility_flags(): void
+    {
+        // is_show_name + is_show_notes flagged in attacker payload (flat or nested)
+        // must be silently dropped — the validated-allowlist doesn't register
+        // contact.* rules and the update array doesn't include them. Defense-in-depth.
+        $this->asAdmin();
+        $listing = $this->visitedListing();
+
+        $this->assertTrue($listing->listingContact->is_show_name);
+        $this->assertTrue($listing->listingContact->is_show_notes);
+
+        $this->put(
+            route('admin.listings.verify', $listing->uuid),
+            $this->validPayload($listing, [
+                'is_show_name'  => false,
+                'is_show_notes' => false,
+                'contact' => [
+                    'is_show_name'  => false,
+                    'is_show_notes' => false,
+                ],
+            ]),
+        )->assertSessionHasNoErrors();
+
+        $fresh = $listing->fresh();
+        $this->assertTrue($fresh->listingContact->is_show_name);
+        $this->assertTrue($fresh->listingContact->is_show_notes);
+    }
+
     public function test_it_allows_admin_to_override_verification_notes_on_verify(): void
     {
         // verification_notes was historically calls-team-captured (and previously

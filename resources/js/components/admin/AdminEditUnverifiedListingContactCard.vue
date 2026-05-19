@@ -47,9 +47,11 @@ async function onPhoneBlur() {
         const contact = res.data?.contact;
 
         if (contact) {
-            form.contact.uuid  = contact.uuid;
-            form.contact.name  = contact.name  ?? '';
-            form.contact.notes = contact.notes ?? '';
+            form.contact.uuid          = contact.uuid;
+            form.contact.name          = contact.name          ?? '';
+            form.contact.notes         = contact.notes         ?? '';
+            form.contact.is_show_name  = contact.is_show_name  ?? false;
+            form.contact.is_show_notes = contact.is_show_notes ?? false;
             matchedName.value  = contact.name;
             lookupStatus.value = 'found';
         } else {
@@ -141,6 +143,15 @@ async function onPhoneBlur() {
             <p v-if="!isLocked && errorFor('contact.name')" class="mt-1 text-xs text-red-600 dark:text-red-400">
                 {{ errorFor('contact.name') }}
             </p>
+            <label class="mt-2 inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300" :class="isLocked ? 'cursor-not-allowed' : 'cursor-pointer'">
+                <input
+                    type="checkbox"
+                    v-model="form.contact.is_show_name"
+                    :disabled="isLocked"
+                    class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-orange-500 focus:ring-orange-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                Show name to renters
+            </label>
         </div>
 
         <div>
@@ -167,6 +178,15 @@ async function onPhoneBlur() {
             <p v-if="!isLocked && errorFor('contact.notes')" class="mt-1 text-xs text-red-600 dark:text-red-400">
                 {{ errorFor('contact.notes') }}
             </p>
+            <label class="mt-2 inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300" :class="isLocked ? 'cursor-not-allowed' : 'cursor-pointer'">
+                <input
+                    type="checkbox"
+                    v-model="form.contact.is_show_notes"
+                    :disabled="isLocked"
+                    class="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-orange-500 focus:ring-orange-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                Show notes to renters
+            </label>
         </div>
     </div>
 </template>

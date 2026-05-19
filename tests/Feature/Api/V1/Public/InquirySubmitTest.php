@@ -343,6 +343,38 @@ class InquirySubmitTest extends TestCase
         ]);
     }
 
+    public function test_it_returns_null_contact_name_when_is_show_name_is_false(): void
+    {
+        $contact = ListingContact::factory()->create([
+            'name'         => 'Juan Dela Cruz',
+            'is_show_name' => false,
+        ]);
+        $listing = Listing::factory()->verified()->create([
+            'listing_contact_id' => $contact->id,
+        ]);
+
+        $response = $this->postJson($this->url($listing), $this->validPayload());
+
+        $response->assertOk();
+        $response->assertJsonPath('listing.listing_contact.name', null);
+    }
+
+    public function test_it_returns_null_contact_notes_when_is_show_notes_is_false(): void
+    {
+        $contact = ListingContact::factory()->create([
+            'notes'         => 'Text first before calling.',
+            'is_show_notes' => false,
+        ]);
+        $listing = Listing::factory()->verified()->create([
+            'listing_contact_id' => $contact->id,
+        ]);
+
+        $response = $this->postJson($this->url($listing), $this->validPayload());
+
+        $response->assertOk();
+        $response->assertJsonPath('listing.listing_contact.notes', null);
+    }
+
     // === ============================================================ ===
     //                  Throttle — separate from web limiter
     // === ============================================================ ===

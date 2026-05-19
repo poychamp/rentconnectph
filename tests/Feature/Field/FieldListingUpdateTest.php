@@ -410,6 +410,37 @@ class FieldListingUpdateTest extends TestCase
         $this->assertSame(PrequalStatus::calledYes()->value, $listing->prequal_status);
     }
 
+    public function test_it_silently_ignores_contact_visibility_flags_in_the_request(): void
+    {
+        // is_show_name + is_show_notes are admin-only — field officers can't flip
+        // them. Sent via either shape (flat or nested under contact) should be
+        // silently dropped by the field controller's validated-allowlist pattern.
+        $marco = $this->asMarco();
+        $listing = $this->assignedListingFor($marco);
+
+        // Sanity: factory-created contact has both flags at DB default (true).
+        $this->assertTrue($listing->listingContact->is_show_name);
+        $this->assertTrue($listing->listingContact->is_show_notes);
+
+        $this->put(
+            route('field.listings.update', $listing->uuid),
+            $this->validPayload($listing, [
+                // Flat shape attacker payload
+                'is_show_name'  => false,
+                'is_show_notes' => false,
+                // Nested-under-contact attacker payload
+                'contact' => [
+                    'is_show_name'  => false,
+                    'is_show_notes' => false,
+                ],
+            ])
+        )->assertSessionHasNoErrors();
+
+        $listing->refresh();
+        $this->assertTrue($listing->listingContact->is_show_name);
+        $this->assertTrue($listing->listingContact->is_show_notes);
+    }
+
     // =========================================================================
     // Field-officer-editable carve-out — verification_notes was historically
     // calls-team-locked but is now overridable by the field officer because

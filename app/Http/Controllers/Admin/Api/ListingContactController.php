@@ -21,10 +21,12 @@ class ListingContactController extends Controller
 
         return response()->json([
             'contact' => $contact ? [
-                'uuid'  => $contact->uuid,
-                'name'  => $contact->name,
-                'phone' => $contact->phone,
-                'notes' => $contact->notes,
+                'uuid'          => $contact->uuid,
+                'name'          => $contact->name,
+                'phone'         => $contact->phone,
+                'notes'         => $contact->notes,
+                'is_show_name'  => $contact->is_show_name,
+                'is_show_notes' => $contact->is_show_notes,
             ] : null,
         ]);
     }

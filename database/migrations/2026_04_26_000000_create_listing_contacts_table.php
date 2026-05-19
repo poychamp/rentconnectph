@@ -14,6 +14,8 @@ return new class extends Migration
             $table->string('name', 120)->nullable();
             $table->string('phone', 32)->index();
             $table->text('notes')->nullable();
+            $table->boolean('is_show_name')->default(true);
+            $table->boolean('is_show_notes')->default(true);
             $table->timestamps();
             $table->softDeletes();
         });
