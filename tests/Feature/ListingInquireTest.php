@@ -20,7 +20,10 @@ class ListingInquireTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        RateLimiter::clear('inquiry-submit:127.0.0.1');
+        RateLimiter::clear($this->throttleKey('inquiry-submit', 'phone:+639171234567'));
+        RateLimiter::clear($this->throttleKey('inquiry-submit', 'ip:127.0.0.1'));
+        RateLimiter::clear($this->throttleKey('api-inquiry-submit', 'phone:+639171234567'));
+        RateLimiter::clear($this->throttleKey('api-inquiry-submit', 'ip:127.0.0.1'));
     }
 
     private function validPayload(Listing $listing, array $overrides = []): array
@@ -30,6 +33,14 @@ class ListingInquireTest extends TestCase
             'name'         => 'Maria Cruz',
             'phone'        => '09171234567',
         ], $overrides);
+    }
+
+    // Laravel's ThrottleRequests middleware md5-hashes the cache key as
+    // md5($limiterName . $limit->key) before storing. Tests pre-filling the
+    // bucket must match that derivation.
+    private function throttleKey(string $limiter, string $byKey): string
+    {
+        return md5($limiter.$byKey);
     }
 
     // ---------------------------------------------------------------------
@@ -339,17 +350,53 @@ class ListingInquireTest extends TestCase
     // Throttling + CSRF
     // ---------------------------------------------------------------------
 
-    public function test_it_throttles_after_five_submissions_in_an_hour(): void
+    public function test_it_throttles_when_phone_bucket_hits_cap(): void
     {
         $listing = Listing::factory()->verified()->create();
 
-        for ($i = 0; $i < 5; $i++) {
-            $response = $this->post(route('inquiries.store'), $this->validPayload($listing));
-            $response->assertRedirect(route('inquiries.success'));
+        // Pre-fill the phone bucket to its hourly cap of 8.
+        // Default validPayload phone "09171234567" normalizes to "+639171234567".
+        for ($i = 0; $i < 8; $i++) {
+            RateLimiter::hit($this->throttleKey('inquiry-submit', 'phone:+639171234567'), 3600);
         }
 
-        $sixth = $this->post(route('inquiries.store'), $this->validPayload($listing));
-        $sixth->assertStatus(429);
+        $response = $this->post(route('inquiries.store'), $this->validPayload($listing));
+
+        $response->assertStatus(429);
+        $this->assertSame(0, Inquiry::count());
+    }
+
+    public function test_it_throttles_when_ip_bucket_hits_cap(): void
+    {
+        $listing = Listing::factory()->verified()->create();
+
+        // Pre-fill the IP bucket to its hourly cap of 30.
+        // Tests run from 127.0.0.1 by default.
+        for ($i = 0; $i < 30; $i++) {
+            RateLimiter::hit($this->throttleKey('inquiry-submit', 'ip:127.0.0.1'), 3600);
+        }
+
+        $response = $this->post(route('inquiries.store'), $this->validPayload($listing));
+
+        $response->assertStatus(429);
+        $this->assertSame(0, Inquiry::count());
+    }
+
+    public function test_it_isolates_from_api_inquiry_submit_bucket(): void
+    {
+        $listing = Listing::factory()->verified()->create();
+
+        // Burn the OTHER surface's buckets to cap. Web inquiry submit must NOT
+        // be affected — per the per-surface throttle-isolation convention.
+        for ($i = 0; $i < 30; $i++) {
+            RateLimiter::hit($this->throttleKey('api-inquiry-submit', 'phone:+639171234567'), 3600);
+            RateLimiter::hit($this->throttleKey('api-inquiry-submit', 'ip:127.0.0.1'), 3600);
+        }
+
+        $response = $this->post(route('inquiries.store'), $this->validPayload($listing));
+
+        $response->assertRedirect(route('inquiries.success'));
+        $this->assertSame(1, Inquiry::count());
     }
 
     public function test_it_requires_csrf_token(): void

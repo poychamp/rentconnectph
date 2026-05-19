@@ -8,6 +8,7 @@ use App\Models\Listing;
 use App\Models\Renter;
 use App\Observers\ListingObserver;
 use App\Observers\RenterObserver;
+use App\Support\PhMobile;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -38,11 +39,21 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('uploadFiles', fn ($user) => $user !== null);
 
         RateLimiter::for('inquiry-submit', function (Request $request) {
-            return Limit::perHour(5)->by($request->ip());
+            $phone = PhMobile::normalize((string) $request->input('phone', ''));
+
+            return [
+                Limit::perHour(8)->by('phone:'.$phone),
+                Limit::perHour(30)->by('ip:'.$request->ip()),
+            ];
         });
 
         RateLimiter::for('api-inquiry-submit', function (Request $request) {
-            return Limit::perHour(5)->by($request->ip());
+            $phone = PhMobile::normalize((string) $request->input('phone', ''));
+
+            return [
+                Limit::perHour(8)->by('phone:'.$phone),
+                Limit::perHour(30)->by('ip:'.$request->ip()),
+            ];
         });
 
         RateLimiter::for('api-contact-send', function (Request $request) {
