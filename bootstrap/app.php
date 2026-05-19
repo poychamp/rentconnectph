@@ -40,6 +40,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'ability' => \Laravel\Sanctum\Http\Middleware\CheckForAnyAbility::class,
         ]);
 
+        $middleware->prependToGroup('web', \App\Http\Middleware\RedirectWwwToApex::class);
+
         $middleware->prependToGroup('api', \App\Http\Middleware\AddApiVersionHeaders::class);
         $middleware->appendToGroup('api', \App\Http\Middleware\RequireJsonHeaders::class);
 

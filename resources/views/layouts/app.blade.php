@@ -6,6 +6,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="description" content="@yield('description', 'RentConnectPH connects renters with verified property owners across Cagayan de Oro. Browse apartments, condos, houses, and bedspaces with transparent pricing.')">
 
+    <link rel="canonical" href="{{ rtrim(config('app.url'), '/') . request()->getRequestUri() }}">
+
     <meta property="og:site_name" content="RentConnectPH">
     <meta property="og:locale" content="en_PH">
     <meta property="og:type" content="@yield('og_type', 'website')">
@@ -40,7 +42,6 @@
     <script>
         window.__ASSETS__ = {
             hero: "{{ asset('img/cdo-hero.webp') }}",
-            mapboxToken: "{{ config('services.mapbox.token') }}",
             googleMapsEnabled: {{ config('services.google_maps.api_key') ? 'true' : 'false' }},
         };
     </script>
