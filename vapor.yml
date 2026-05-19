@@ -9,9 +9,7 @@ environments:
     runtime: 'php-8.4:al2023'
     database: rentconnectph-production-db
     storage: rentconnectph-production-uploads
-    domain:
-      - rentconnectph.com
-      - www.rentconnectph.com
+    domain: rentconnectph.com
     build:
       - 'composer install --no-dev'
       - 'php artisan view:clear'
