@@ -28,4 +28,19 @@ return [
         'web-app-manifest-512x512.png',
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Robots.txt redirect
+    |--------------------------------------------------------------------------
+    |
+    | Vapor's `RedirectStaticAssets` middleware 302-redirects `/robots.txt`
+    | to the asset URL by default. We serve robots.txt via a Laravel route
+    | (App\Http\Controllers\RobotsController) so the response is dynamic
+    | (e.g. sitemap URL built from APP_URL). Disable the redirect so the
+    | request reaches the route handler instead of bouncing to S3.
+    |
+    */
+
+    'redirect_robots_txt' => false,
+
 ];
