@@ -6,7 +6,10 @@ class RobotsController extends Controller
 {
     public function index()
     {
-        $body = "User-agent: *\n"
+        $body = "User-agent: facebookexternalhit\n"
+            . "Allow: /\n"
+            . "\n"
+            . "User-agent: *\n"
             . "Disallow: /auth/login\n"
             . "Disallow: /forgot-password\n"
             . "Disallow: /reset-password/\n"
