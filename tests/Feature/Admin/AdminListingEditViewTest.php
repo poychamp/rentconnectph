@@ -153,10 +153,12 @@ class AdminListingEditViewTest extends TestCase
         // Calls-team-context — present on the verified Edit payload (parity with verify-edit)
         $this->assertSame($contact->id, $payload['listing_contact_id']);
         $this->assertSame([
-            'uuid'  => $contact->uuid,
-            'phone' => '+639171234567',
-            'name'  => 'Maria Reyes',
-            'notes' => 'Philhomes broker — speaks Bisaya',
+            'uuid'          => $contact->uuid,
+            'phone'         => '+639171234567',
+            'name'          => 'Maria Reyes',
+            'notes'         => 'Philhomes broker — speaks Bisaya',
+            'is_show_name'  => true,
+            'is_show_notes' => true,
         ], $payload['listing_contact']);
         $this->assertSame(ContactType::owner()->value,      $payload['contact_type']);
         $this->assertSame(SourceSite::rentPh()->value,      $payload['source_site']);

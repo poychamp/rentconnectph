@@ -153,9 +153,9 @@ class AdminListingUnverifiedEditTest extends TestCase
 
         $this->assertIsArray($payload['listing_contact']);
         $this->assertEqualsCanonicalizing(
-            ['uuid', 'phone', 'name', 'notes'],
+            ['uuid', 'phone', 'name', 'notes', 'is_show_name', 'is_show_notes'],
             array_keys($payload['listing_contact']),
-            'listing_contact must expose uuid/phone/name/notes only'
+            'listing_contact must expose uuid/phone/name/notes/is_show_name/is_show_notes only'
         );
         $this->assertSame($contact->uuid,                              $payload['listing_contact']['uuid']);
         $this->assertSame('+639171234567',                             $payload['listing_contact']['phone']);

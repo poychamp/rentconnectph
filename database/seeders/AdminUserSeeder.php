@@ -13,17 +13,31 @@ class AdminUserSeeder extends Seeder
 {
     public function run(): void
     {
-        $email = env('SUPER_ADMIN_EMAIL', 'admin@rentconnect.ph');
-        $password = env('SUPER_ADMIN_PASSWORD');
+        $this->seedSuperAdmin(
+            env('SUPER_ADMIN_EMAIL', 'admin@rentconnect.ph'),
+            env('SUPER_ADMIN_PASSWORD'),
+            'Super Admin',
+            'SUPER_ADMIN_PASSWORD',
+        );
 
-        if (blank($password)) {
-            $this->command?->warn('SUPER_ADMIN_PASSWORD not set — skipping admin user seed.');
+        $this->seedSuperAdmin(
+            env('SUPER_ADMIN_TWO_EMAIL'),
+            env('SUPER_ADMIN_TWO_PASSWORD'),
+            'Super Admin Two',
+            'SUPER_ADMIN_TWO_PASSWORD',
+        );
+    }
+
+    private function seedSuperAdmin(?string $email, ?string $password, string $name, string $envKeyLabel): void
+    {
+        if (blank($email) || blank($password)) {
+            $this->command?->warn("{$envKeyLabel} (or matching email) not set — skipping admin user seed.");
             return;
         }
 
         $user = User::firstOrCreate(
             ['email' => $email],
-            ['name' => 'Super Admin', 'password' => Hash::make($password)],
+            ['name' => $name, 'password' => Hash::make($password)],
         );
 
         $role = Role::where('name', AppRole::superAdmin()->value)
