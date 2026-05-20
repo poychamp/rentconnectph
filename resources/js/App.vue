@@ -6,6 +6,7 @@ import ListingTypeFilter from './components/ListingTypeFilter.vue';
 import ListingsSection from './components/ListingsSection.vue';
 import Footer from './components/Footer.vue';
 import BottomNav from './components/BottomNav.vue';
+import GetTheAppSection from './components/GetTheAppSection.vue';
 
 const home = window.__INITIAL_HOME__ || { featured: [], recently: [], listingTypes: [], barangays: [] };
 const featured = ref(home.featured);
@@ -37,6 +38,7 @@ const barangays = ref(home.barangays);
                 show-view-all
             />
         </main>
+        <GetTheAppSection />
         <Footer />
         <BottomNav />
     </div>
