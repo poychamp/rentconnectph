@@ -1,8 +1,6 @@
 <script setup>
 import { nextTick, ref } from 'vue';
-import Navbar from './components/Navbar.vue';
-import Footer from './components/Footer.vue';
-import BottomNav from './components/BottomNav.vue';
+import DarkModeToggle from './components/DarkModeToggle.vue';
 
 const initial = window.__INITIAL_FORGOT_PASSWORD__ ?? { errors: null, oldInput: null, success: null };
 const serverErrors = initial.errors ?? {};
@@ -68,76 +66,81 @@ function submit() {
 </script>
 
 <template>
-    <div class="min-h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 pb-20 md:pb-0 flex flex-col">
-        <Navbar />
+    <div class="min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-gray-50 dark:bg-gray-950 relative">
+        <!-- Floating dark mode toggle -->
+        <div class="absolute top-4 right-4">
+            <DarkModeToggle />
+        </div>
 
-        <main class="flex-1 px-4 py-8 md:py-16">
-            <div class="max-w-md mx-auto">
-                <div class="text-center mb-8">
-                    <div class="mx-auto w-16 h-16 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-4">
-                        <svg class="w-8 h-8 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                        </svg>
-                    </div>
-                    <h1 class="text-2xl font-bold mb-2">Forgot your password?</h1>
-                    <p class="text-gray-600 dark:text-gray-400 text-sm">
-                        Enter your email and we'll send you a reset link.
-                    </p>
-                </div>
+        <!-- Logo -->
+        <a href="/" class="flex items-center gap-3 mb-6">
+            <span class="relative inline-flex items-center justify-center w-12 h-12 rounded-md bg-orange-500 text-white">
+                <svg class="w-7 h-7" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 2 12h3v8h6v-6h2v6h6v-8h3z"/></svg>
+                <span class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-gray-900 grid place-items-center">
+                    <svg class="w-3 h-3 text-white" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M16.7 5.3a1 1 0 0 1 0 1.4l-7.5 7.5a1 1 0 0 1-1.4 0L3.3 9.7a1 1 0 1 1 1.4-1.4l3.8 3.8 6.8-6.8a1 1 0 0 1 1.4 0Z" clip-rule="evenodd"/>
+                    </svg>
+                </span>
+            </span>
+            <span class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">
+                RentConnect<span class="text-orange-500">PH</span>
+            </span>
+        </a>
 
-                <div
-                    v-if="flashSuccess"
-                    class="mb-6 p-4 rounded-md bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-sm text-emerald-700 dark:text-emerald-300"
-                >
-                    {{ flashSuccess }}
-                </div>
+        <!-- Card -->
+        <div class="w-full max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm p-8">
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Forgot your password?</h1>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Enter your email and we'll send you a reset link.
+            </p>
 
-                <form
-                    v-if="!flashSuccess"
-                    ref="formEl"
-                    method="POST"
-                    action="/forgot-password"
-                    @submit.prevent="submit"
-                    novalidate
-                >
-                    <input type="hidden" name="_token" :value="csrfToken">
-                    <button type="submit" class="hidden" tabindex="-1" aria-hidden="true"></button>
-
-                    <div class="space-y-4">
-                        <div>
-                            <label for="email" class="block text-sm font-medium mb-1">Email</label>
-                            <input
-                                id="email" ref="emailRef" name="email" type="text"
-                                v-model="form.email"
-                                @blur="validateField('email')"
-                                @focus="clearFieldError('email')"
-                                inputmode="email"
-                                autocomplete="email"
-                                class="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500"
-                            >
-                            <p v-if="errorFor('email')" class="mt-1 text-xs text-red-600 dark:text-red-400">{{ errorFor('email') }}</p>
-                        </div>
-
-                        <button
-                            type="button"
-                            @click="submit"
-                            class="w-full px-6 py-3 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition cursor-pointer"
-                        >
-                            Send reset link
-                        </button>
-                    </div>
-                </form>
-
-                <div class="mt-6 text-center text-sm">
-                    <a href="/auth/login" class="text-orange-600 dark:text-orange-400 hover:underline">
-                        Back to sign in
-                    </a>
-                </div>
+            <div
+                v-if="flashSuccess"
+                class="mt-6 p-4 rounded-md bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-sm text-emerald-700 dark:text-emerald-300"
+            >
+                {{ flashSuccess }}
             </div>
-        </main>
 
-        <Footer />
-        <BottomNav />
+            <form
+                v-if="!flashSuccess"
+                ref="formEl"
+                method="POST"
+                action="/forgot-password"
+                @submit.prevent="submit"
+                class="mt-6 space-y-4"
+                novalidate
+            >
+                <input type="hidden" name="_token" :value="csrfToken">
+                <button type="submit" class="hidden" tabindex="-1" aria-hidden="true"></button>
+
+                <div>
+                    <label for="email" class="block text-sm font-medium mb-1">Email</label>
+                    <input
+                        id="email" ref="emailRef" name="email" type="text"
+                        v-model="form.email"
+                        @blur="validateField('email')"
+                        @focus="clearFieldError('email')"
+                        inputmode="email"
+                        autocomplete="email"
+                        class="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500"
+                    >
+                    <p v-if="errorFor('email')" class="mt-1 text-xs text-red-600 dark:text-red-400">{{ errorFor('email') }}</p>
+                </div>
+
+                <button
+                    type="button"
+                    @click="submit"
+                    class="w-full px-6 py-3 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition cursor-pointer"
+                >
+                    Send reset link
+                </button>
+            </form>
+
+            <div class="mt-6 text-center text-sm">
+                <a href="/auth/login" class="font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors cursor-pointer">
+                    Back to sign in
+                </a>
+            </div>
+        </div>
     </div>
 </template>

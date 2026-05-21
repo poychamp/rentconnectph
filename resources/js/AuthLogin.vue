@@ -1,6 +1,5 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import AdminLogo from './components/admin/AdminLogo.vue';
 import AdminDarkModeToggle from './components/admin/AdminDarkModeToggle.vue';
 
 const showPassword = ref(false);
@@ -36,10 +35,19 @@ function onSubmit() {
 
         <!-- Header -->
         <div class="flex flex-col items-center mb-6">
-            <AdminLogo size="lg" />
-            <span class="mt-3 text-xs uppercase tracking-widest text-gray-500 dark:text-gray-400">
-                Admin Central
-            </span>
+            <a href="/" class="flex items-center gap-3">
+                <span class="relative inline-flex items-center justify-center w-12 h-12 rounded-md bg-orange-500 text-white">
+                    <svg class="w-7 h-7" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 2 12h3v8h6v-6h2v6h6v-8h3z"/></svg>
+                    <span class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-gray-900 grid place-items-center">
+                        <svg class="w-3 h-3 text-white" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M16.7 5.3a1 1 0 0 1 0 1.4l-7.5 7.5a1 1 0 0 1-1.4 0L3.3 9.7a1 1 0 1 1 1.4-1.4l3.8 3.8 6.8-6.8a1 1 0 0 1 1.4 0Z" clip-rule="evenodd"/>
+                        </svg>
+                    </span>
+                </span>
+                <span class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">
+                    RentConnect<span class="text-orange-500">PH</span>
+                </span>
+            </a>
         </div>
 
         <!-- Card -->
@@ -68,7 +76,7 @@ function onSubmit() {
                         @input="oldEmail = $event.target.value"
                         placeholder="you@rentconnect.ph"
                         autocomplete="email"
-                        :class="['mt-1 w-full rounded-md border px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition', inputErrorClass]"
+                        :class="['mt-1 w-full rounded-md border px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition', inputErrorClass]"
                     >
                 </div>
 
@@ -83,12 +91,12 @@ function onSubmit() {
                             :type="showPassword ? 'text' : 'password'"
                             name="password"
                             autocomplete="current-password"
-                            :class="['w-full rounded-md border px-3.5 py-2.5 pr-11 text-sm text-gray-900 dark:text-white focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition', inputErrorClass]"
+                            :class="['w-full rounded-md border px-3 py-2 pr-11 text-sm text-gray-900 dark:text-white focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition', inputErrorClass]"
                         >
                         <button
                             type="button"
                             @click="showPassword = !showPassword"
-                            class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                            class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
                             tabindex="-1"
                             :title="showPassword ? 'Hide password' : 'Show password'"
                         >
@@ -134,7 +142,7 @@ function onSubmit() {
                     type="submit"
                     :disabled="submitting"
                     :class="[
-                        'w-full rounded-md bg-orange-500 hover:bg-orange-600 text-white font-medium py-2.5 transition flex items-center justify-center gap-2',
+                        'w-full rounded-md bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 transition flex items-center justify-center gap-2 cursor-pointer',
                         submitting && 'cursor-not-allowed opacity-90',
                     ]"
                 >
@@ -147,7 +155,5 @@ function onSubmit() {
             </form>
         </div>
 
-        <!-- Version stamp -->
-        <p class="mt-6 text-xs text-gray-400 dark:text-gray-500">v0.4.2 · build 2026.04.26</p>
     </div>
 </template>
