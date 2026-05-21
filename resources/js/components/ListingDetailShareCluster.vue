@@ -157,12 +157,12 @@ onBeforeUnmount(() => {
                             readonly
                             :value="shareUrl"
                             @focus="$event.target.select()"
-                            class="flex-1 min-w-0 px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            class="flex-1 min-w-0 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg outline-none"
                         >
                         <button
                             type="button"
                             @click="copyAgain"
-                            class="inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium rounded-lg transition cursor-pointer shrink-0"
+                            class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg transition-colors cursor-pointer shrink-0"
                             :class="copied
                                 ? 'bg-emerald-500 text-white'
                                 : 'bg-orange-500 hover:bg-orange-600 text-white'"

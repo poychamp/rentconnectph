@@ -20,7 +20,7 @@ const barangays = ref(home.barangays);
         <Navbar />
         <HeroSection :barangays="barangays" />
         <ListingTypeFilter :listing-types="listingTypes" />
-        <main class="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 space-y-12 mt-8">
+        <main class="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 space-y-12 mt-4 md:mt-8">
             <template v-if="featured.length > 0">
                 <ListingsSection
                     title="Featured Listings"

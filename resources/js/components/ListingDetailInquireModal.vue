@@ -128,7 +128,7 @@ watch(showModal, (open) => {
                 <div data-inquire-modal-body class="flex-1 overflow-y-auto px-4 py-4">
                     <div
                         v-if="serverBannerError"
-                        class="mb-4 p-3 rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-700 dark:text-red-300"
+                        class="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-700 dark:text-red-300"
                     >
                         {{ serverBannerError }}
                     </div>
@@ -159,7 +159,7 @@ watch(showModal, (open) => {
                                     @blur="validateField('name')"
                                     @focus="clearFieldError('name')"
                                     autocomplete="name"
-                                    class="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md px-3 py-2 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500"
+                                    class="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white outline-none"
                                 >
                                 <p v-if="errorFor('name')" class="mt-1 text-xs text-red-600 dark:text-red-400">{{ errorFor('name') }}</p>
                             </div>
@@ -175,7 +175,7 @@ watch(showModal, (open) => {
                                     inputmode="tel"
                                     autocomplete="tel"
                                     placeholder="0917 123 4567"
-                                    class="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md px-3 py-2 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-orange-500"
+                                    class="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white outline-none"
                                 >
                                 <p v-if="errorFor('phone')" class="mt-1 text-xs text-red-600 dark:text-red-400">{{ errorFor('phone') }}</p>
                             </div>
@@ -191,14 +191,14 @@ watch(showModal, (open) => {
                     <button
                         type="button"
                         @click="close"
-                        class="flex-1 px-4 py-2 rounded-md border border-gray-300 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
+                        class="flex-1 inline-flex items-center justify-center gap-1 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-600/50 dark:border-gray-300/50 text-gray-600 dark:text-gray-300 text-sm font-medium py-2 px-4 rounded-lg transition-colors cursor-pointer"
                     >
                         Cancel
                     </button>
                     <button
                         type="button"
                         @click="submit"
-                        class="flex-1 px-4 py-2 rounded-md bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium cursor-pointer"
+                        class="flex-1 px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white text-sm font-semibold transition-colors cursor-pointer"
                     >
                         Get Contact
                     </button>

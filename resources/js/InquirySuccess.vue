@@ -117,7 +117,7 @@ async function copyPhone() {
                             <button
                                 type="button"
                                 @click="copyPhone"
-                                class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-orange-500 text-orange-500 text-sm font-semibold transition-opacity duration-[80ms] ease-out active:opacity-50"
+                                class="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg border border-orange-500 bg-transparent hover:bg-orange-50 dark:hover:bg-orange-950 text-orange-500 text-sm font-semibold transition duration-[80ms] ease-out active:opacity-50 cursor-pointer"
                             >
                                 <svg v-if="!copied" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
@@ -130,7 +130,7 @@ async function copyPhone() {
                             </button>
                             <a
                                 :href="`tel:${listing.listing_contact.phone}`"
-                                class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-orange-500 text-white text-sm font-semibold transition-opacity duration-[80ms] ease-out active:opacity-50"
+                                class="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white text-sm font-semibold transition-colors cursor-pointer"
                             >
                                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
@@ -172,7 +172,7 @@ async function copyPhone() {
                     <a
                         href="#"
                         @click.prevent="goBack"
-                        class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition cursor-pointer"
+                        class="inline-flex items-center gap-1 text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors cursor-pointer"
                     >
                         ← Back to listing
                     </a>

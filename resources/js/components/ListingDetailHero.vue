@@ -78,7 +78,7 @@ watch(activeIndex, async () => {
                 v-if="images.length > 1"
                 @click="prev"
                 aria-label="Previous image"
-                class="absolute top-1/2 -translate-y-1/2 left-2 md:left-3 w-7 h-7 md:w-10 md:h-10 rounded-full bg-black/40 hover:bg-black/60 text-white inline-flex items-center justify-center transition"
+                class="absolute top-1/2 -translate-y-1/2 left-2 md:left-3 w-7 h-7 md:w-10 md:h-10 rounded-full bg-black/40 hover:bg-black/60 text-white inline-flex items-center justify-center transition cursor-pointer"
             >
                 <svg class="w-4 h-4 md:w-5 md:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg>
             </button>
@@ -86,7 +86,7 @@ watch(activeIndex, async () => {
                 v-if="images.length > 1"
                 @click="next"
                 aria-label="Next image"
-                class="absolute top-1/2 -translate-y-1/2 right-2 md:right-3 w-7 h-7 md:w-10 md:h-10 rounded-full bg-black/40 hover:bg-black/60 text-white inline-flex items-center justify-center transition"
+                class="absolute top-1/2 -translate-y-1/2 right-2 md:right-3 w-7 h-7 md:w-10 md:h-10 rounded-full bg-black/40 hover:bg-black/60 text-white inline-flex items-center justify-center transition cursor-pointer"
             >
                 <svg class="w-4 h-4 md:w-5 md:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg>
             </button>
@@ -100,7 +100,7 @@ watch(activeIndex, async () => {
                     @click="activeIndex = i"
                     :aria-label="`Show image ${i + 1}`"
                     :class="[
-                        'rounded-full transition',
+                        'rounded-full transition cursor-pointer',
                         i === activeIndex ? 'w-6 h-2 bg-white' : 'w-2 h-2 bg-white/60 hover:bg-white/80',
                     ]"
                 ></button>
@@ -119,7 +119,7 @@ watch(activeIndex, async () => {
                 :key="img.id"
                 @click="activeIndex = i"
                 :class="[
-                    'shrink-0 w-16 h-11 md:w-24 md:h-16 rounded-lg overflow-hidden border-2 transition',
+                    'shrink-0 w-16 h-11 md:w-24 md:h-16 rounded-lg overflow-hidden border-2 transition cursor-pointer',
                     i === activeIndex
                         ? 'border-orange-500'
                         : 'border-transparent opacity-70 hover:opacity-100',

@@ -1,5 +1,5 @@
 <template>
-    <footer class="hidden md:flex border-t border-gray-100 dark:border-gray-800 mt-16 bg-white dark:bg-gray-900">
+    <footer class="hidden md:flex border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
         <div class="max-w-7xl mx-auto w-full px-4 md:px-6 lg:px-8 py-6 md:py-8 flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
             <a href="/" class="flex items-center gap-2">
                 <span class="relative inline-flex items-center justify-center w-8 h-8 rounded-md bg-orange-500 text-white">

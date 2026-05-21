@@ -95,11 +95,11 @@ onBeforeUnmount(() => {
             <ListingDetailMobileHeader @back="goBack" />
         </div>
 
-        <main class="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 mt-4 md:mt-8 pb-24 md:pb-0">
+        <main class="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 mt-4 md:mt-8 pb-24 md:pb-16">
             <a
                 href="#"
                 @click.prevent="goBack"
-                class="hidden md:inline-flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 mb-4"
+                class="hidden md:inline-flex items-center gap-1 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors cursor-pointer mb-4"
             >
                 ← Back to listings
             </a>

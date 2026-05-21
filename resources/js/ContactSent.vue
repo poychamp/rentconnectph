@@ -18,23 +18,23 @@ import BottomNav from './components/BottomNav.vue';
                     </div>
                 </div>
 
-                <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-3">
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
                     Message on its way
                 </h1>
-                <p class="text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">
+                <p class="text-sm md:text-base text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
                     Thanks for reaching out — we'll get back to you when we can.
                 </p>
 
                 <div class="flex flex-col sm:flex-row gap-3 justify-center">
                     <a
                         href="/"
-                        class="inline-block px-6 py-3 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm font-medium transition"
+                        class="w-full sm:w-auto inline-flex items-center justify-center gap-1 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-600/50 dark:border-gray-300/50 text-gray-600 dark:text-gray-300 text-sm font-semibold py-3 px-5 rounded-xl transition-colors cursor-pointer"
                     >
                         Back to home
                     </a>
                     <a
                         href="/search"
-                        class="inline-block px-6 py-3 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition"
+                        class="w-full sm:w-auto inline-flex items-center justify-center gap-1 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white text-sm font-medium px-6 py-3 rounded-xl transition-colors cursor-pointer"
                     >
                         Browse listings
                     </a>
