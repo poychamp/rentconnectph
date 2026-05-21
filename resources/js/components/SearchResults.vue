@@ -53,7 +53,7 @@ const pageItems = computed(() => {
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Try widening your search or clear filters.</p>
                 <a
                     href="/search"
-                    class="mt-4 inline-flex items-center justify-center px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium"
+                    class="mt-4 inline-flex items-center justify-center gap-1 bg-transparent hover:bg-orange-50 dark:hover:bg-orange-950 border border-orange-500 text-orange-500 text-sm font-semibold px-4 py-2 rounded-lg transition duration-[80ms] ease-out active:opacity-50 cursor-pointer"
                 >
                     Clear all filters
                 </a>

@@ -12,7 +12,7 @@ defineProps({
 
 <template>
     <section>
-        <div class="flex items-end justify-between gap-4 mb-4">
+        <div class="flex items-center justify-between gap-4 mb-4">
             <div>
                 <h2 class="text-xl md:text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{{ title }}</h2>
                 <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -23,7 +23,7 @@ defineProps({
             <a
                 v-if="showViewAll"
                 href="/search"
-                class="shrink-0 text-sm font-medium text-orange-500 hover:text-orange-600"
+                class="shrink-0 inline-flex items-center justify-center gap-1 bg-transparent hover:bg-orange-50 dark:hover:bg-orange-950 border border-orange-500 text-orange-500 text-xs font-semibold px-3 py-1.5 rounded-lg transition duration-[80ms] ease-out active:opacity-50 cursor-pointer"
             >
                 View all →
             </a>
