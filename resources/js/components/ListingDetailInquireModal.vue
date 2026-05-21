@@ -104,13 +104,13 @@ watch(showModal, (open) => {
     <Teleport to="body">
         <div
             v-if="showModal"
-            class="fixed inset-0 z-50 flex items-end md:items-start md:pt-24 justify-center"
+            class="fixed inset-0 z-50 flex items-center justify-center px-4"
             role="dialog"
             aria-modal="true"
         >
             <div class="absolute inset-0 bg-black/50" @click="close"></div>
 
-            <div class="relative bg-white dark:bg-gray-900 rounded-t-2xl md:rounded-2xl w-full md:w-[28rem] max-h-[90vh] md:max-h-[80vh] overflow-hidden flex flex-col shadow-xl">
+            <div class="relative bg-white dark:bg-gray-900 rounded-2xl w-full md:w-[28rem] max-h-[85vh] md:max-h-[80vh] overflow-hidden flex flex-col shadow-xl">
                 <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-800 shrink-0">
                     <h3 class="text-base font-semibold text-gray-900 dark:text-white">
                         Inquire about this listing
@@ -187,20 +187,13 @@ watch(showModal, (open) => {
                     </form>
                 </div>
 
-                <div class="px-4 py-3 border-t border-gray-200 dark:border-gray-800 shrink-0 flex gap-2">
-                    <button
-                        type="button"
-                        @click="close"
-                        class="flex-1 inline-flex items-center justify-center gap-1 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-600/50 dark:border-gray-300/50 text-gray-600 dark:text-gray-300 text-sm font-medium py-2 px-4 rounded-lg transition-colors cursor-pointer"
-                    >
-                        Cancel
-                    </button>
+                <div class="px-4 py-3 border-t border-gray-200 dark:border-gray-800 shrink-0">
                     <button
                         type="button"
                         @click="submit"
-                        class="flex-1 px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white text-sm font-semibold transition-colors cursor-pointer"
+                        class="w-full px-4 py-3 rounded-lg bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white text-sm font-semibold transition-colors cursor-pointer"
                     >
-                        Get Contact
+                        Submit inquiry
                     </button>
                 </div>
             </div>

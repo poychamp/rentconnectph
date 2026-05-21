@@ -71,10 +71,10 @@ onBeforeUnmount(() => {
                 :href="`https://www.google.com/maps/search/?api=1&query=${listing.latitude},${listing.longitude}`"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="mt-4 inline-flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3 rounded-xl border border-orange-500 bg-transparent hover:bg-orange-50 dark:hover:bg-orange-950 text-orange-500 text-sm font-semibold transition duration-[80ms] ease-out active:opacity-50"
+                class="mt-4 inline-flex items-center justify-center gap-2 w-1/2 sm:w-auto px-3 py-1.5 rounded-lg border border-orange-500 bg-transparent hover:bg-orange-50 dark:hover:bg-orange-950 text-orange-500 text-xs font-semibold transition duration-[80ms] ease-out active:opacity-50"
             >
                 <svg
-                    class="w-4 h-4"
+                    class="w-3.5 h-3.5"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -87,7 +87,7 @@ onBeforeUnmount(() => {
                 </svg>
                 Open in Google Maps
                 <svg
-                    class="w-3.5 h-3.5 opacity-80"
+                    class="w-3 h-3 opacity-80"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"

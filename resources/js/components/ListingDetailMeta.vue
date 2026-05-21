@@ -56,7 +56,7 @@ const verifiedDateLabel = computed(() => {
             <span class="text-sm text-gray-500 dark:text-gray-400">{{ listing.type_label }}</span>
         </div>
 
-        <div class="mt-5 flex items-center gap-4 text-sm text-gray-700 dark:text-gray-300 border-t border-gray-100 dark:border-gray-800 pt-4">
+        <div class="mt-5 hidden md:flex items-center gap-4 text-sm text-gray-700 dark:text-gray-300 border-t border-gray-100 dark:border-gray-800 pt-4">
             <span v-if="listing.beds" class="inline-flex items-center gap-1">
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14a3 3 0 1 1 0-6 3 3 0 0 1 0 6Zm14-4h-9v4H4V8H2v10h2v-2h16v2h2V12a2 2 0 0 0-1-1.73Z"/></svg>
                 {{ listing.beds }} beds

@@ -117,7 +117,7 @@ function closePanel() {
         <Teleport to="body">
             <div
                 v-if="showPanel"
-                class="fixed inset-0 z-50 flex items-end md:items-start md:pt-24 justify-center"
+                class="fixed inset-0 z-50 flex items-start pt-12 md:pt-24 justify-center px-4"
                 role="dialog"
                 aria-modal="true"
                 aria-label="Budget filter"
@@ -128,7 +128,7 @@ function closePanel() {
                 ></div>
 
                 <div
-                    class="relative w-full md:w-[28rem] bg-white dark:bg-gray-900 rounded-t-2xl md:rounded-2xl shadow-2xl border-t md:border md:border-gray-200 dark:border-gray-800 max-h-[80vh] overflow-y-auto"
+                    class="relative w-full md:w-[28rem] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 max-h-[80vh] overflow-y-auto"
                 >
                     <div class="flex items-center justify-between px-5 pt-4 pb-3">
                         <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Budget</h3>
