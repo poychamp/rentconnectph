@@ -157,7 +157,7 @@ const iconPaths = {
                                 <button
                                     type="button"
                                     @click="confirmDelete"
-                                    class="px-4 py-2 rounded-md bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold transition cursor-pointer"
+                                    class="px-4 py-2 rounded-md bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white text-sm font-semibold transition cursor-pointer"
                                 >
                                     Delete Amenity
                                 </button>

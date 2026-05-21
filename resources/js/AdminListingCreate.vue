@@ -234,10 +234,10 @@ onMounted(() => {
         <div class="flex-1 flex flex-col min-w-0">
             <AdminTopBar title="Add Listing" />
 
-            <main ref="mainRef" class="flex-1 overflow-y-auto px-6 pt-2 pb-6 lg:px-10 lg:pt-3 lg:pb-10">
+            <main ref="mainRef" class="flex-1 overflow-y-auto p-6 lg:p-8">
                 <div
                     v-if="errorCount > 0"
-                    class="rounded-md border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/30 px-4 py-3 flex items-start gap-3"
+                    class="mb-6 rounded-md border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/30 px-4 py-3 flex items-start gap-3"
                     role="alert"
                 >
                     <svg class="w-5 h-5 text-red-500 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -255,7 +255,6 @@ onMounted(() => {
                 </div>
 
                 <AdminAddListingFormCard
-                    class="mt-6"
                     :listing-types="formData.listingTypes"
                     :barangays="formData.barangays"
                     :source-sites="formData.sourceSites"

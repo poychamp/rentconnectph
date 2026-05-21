@@ -258,7 +258,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
                         type="button"
                         @click="confirm"
                         :disabled="!canConfirm"
-                        class="px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white text-sm font-medium transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center gap-2"
+                        class="px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-sm font-medium transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center gap-2"
                     >
                         <svg v-if="submitting" class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
                             <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-opacity="0.25"/>

@@ -234,8 +234,8 @@ onMounted(() => {
                 subtitle="Update listing details, photos, amenities, and verification state"
             />
 
-            <main ref="mainRef" class="flex-1 overflow-y-auto px-6 pt-2 pb-6 lg:px-10 lg:pt-3 lg:pb-10">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-5">
+            <main ref="mainRef" class="flex-1 overflow-y-auto p-6 lg:p-8">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
                     <AdminEditListingContactCard :listing="persisted" />
                     <AdminEditListingSourceCard :listing="persisted" :source-sites="formData.sourceSites" />
                 </div>

@@ -212,7 +212,7 @@ onMounted(() => {
                 subtitle="Review the field officer's submission and approve for public listing"
             />
 
-            <main ref="mainRef" class="flex-1 overflow-y-auto px-6 pt-3 pb-6 lg:px-10 lg:pt-3 lg:pb-10 space-y-5">
+            <main ref="mainRef" class="flex-1 overflow-y-auto p-6 lg:p-8 space-y-5">
                 <AdminVerifyEditListingFieldOfficerCard
                     :assigned-to-name="persisted?.assigned_to_name"
                     :visited-at="persisted?.visited_at"

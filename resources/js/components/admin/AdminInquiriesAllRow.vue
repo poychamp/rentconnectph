@@ -330,7 +330,7 @@ onMounted(() => {
                 <button
                     type="button"
                     @click="openLeadModal"
-                    class="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-md bg-emerald-500 hover:bg-emerald-600 text-white transition cursor-pointer"
+                    class="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-md bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white transition cursor-pointer"
                 >
                     <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M5 12l5 5L20 7" />
@@ -412,7 +412,7 @@ onMounted(() => {
                             <button
                                 type="button"
                                 @click="submitLead"
-                                class="px-4 py-2 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition cursor-pointer"
+                                class="px-4 py-2 rounded-md bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-sm font-semibold transition cursor-pointer"
                             >
                                 Confirm Lead
                             </button>

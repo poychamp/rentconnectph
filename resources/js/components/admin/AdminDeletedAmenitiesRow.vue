@@ -140,7 +140,7 @@ function confirmRestore() {
                     <button
                         type="button"
                         @click="confirmRestore"
-                        class="px-4 py-2 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition cursor-pointer"
+                        class="px-4 py-2 rounded-md bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-sm font-semibold transition cursor-pointer"
                     >
                         Restore Amenity
                     </button>

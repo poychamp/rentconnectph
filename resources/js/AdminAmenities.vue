@@ -73,7 +73,7 @@ function onReorder(newOrder) {
                     </div>
                     <a
                         href="/admin/amenities/create"
-                        class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-orange-500 text-white text-sm font-semibold hover:bg-orange-600 transition cursor-pointer"
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-orange-500 text-white text-sm font-semibold hover:bg-orange-600 active:bg-orange-700 transition cursor-pointer"
                     >
                         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M12 5v14M5 12h14" />

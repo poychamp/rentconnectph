@@ -24,7 +24,7 @@ onMounted(() => {
         <AdminSidebar :user="user" />
         <div class="flex-1 flex flex-col min-w-0">
             <AdminTopBar title="Dashboard" subtitle="Operations overview" />
-            <main class="flex-1 p-6 lg:p-10">
+            <main class="flex-1 p-6 lg:p-8">
                 <AdminGreeting />
             </main>
         </div>

@@ -189,7 +189,7 @@ watch(() => form.value.name, (next) => {
             </a>
             <button
                 type="submit"
-                class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-orange-500 text-white text-sm font-semibold hover:bg-orange-600 transition cursor-pointer"
+                class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-orange-500 text-white text-sm font-semibold hover:bg-orange-600 active:bg-orange-700 transition cursor-pointer"
             >
                 {{ submitLabel }}
             </button>
