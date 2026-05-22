@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, inject } from 'vue';
 import ListingCard from './ListingCard.vue';
 
 const props = defineProps({
@@ -7,6 +7,8 @@ const props = defineProps({
     pagination:       { type: Object,  required: true },
     hasActiveFilters: { type: Boolean, default: false },
 });
+
+const navigatePage = inject('search-navigate-page', null);
 
 const hasResults = computed(() => props.listings.length > 0);
 const hasPrev    = computed(() => props.pagination.current_page > 1);
@@ -17,6 +19,15 @@ function buildHref(page) {
     const params = new URLSearchParams(window.location.search);
     params.set('page', String(page));
     return `?${params.toString()}`;
+}
+
+// Intercept plain left-clicks for AJAX nav; let modifier-clicks fall through
+// to the browser (open in new tab, etc.) by using the anchor's href.
+function onPageClick(event, page) {
+    if (!navigatePage) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+    event.preventDefault();
+    navigatePage(page);
 }
 
 const prevHref = computed(() => buildHref(props.pagination.current_page - 1));
@@ -75,6 +86,7 @@ const pageItems = computed(() => {
             class="mt-10 flex items-center justify-center gap-1.5 text-sm flex-wrap">
             <a v-if="hasPrev"
                 :href="prevHref"
+                @click="onPageClick($event, pagination.current_page - 1)"
                 aria-label="Previous page"
                 class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800">
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
@@ -91,6 +103,7 @@ const pageItems = computed(() => {
                 </span>
                 <a v-else-if="item !== pagination.current_page"
                     :href="buildHref(item)"
+                    @click="onPageClick($event, item)"
                     :aria-label="`Page ${item}`"
                     class="inline-flex items-center justify-center min-w-9 h-9 px-3 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 font-medium">
                     {{ item }}
@@ -104,6 +117,7 @@ const pageItems = computed(() => {
 
             <a v-if="hasNext"
                 :href="nextHref"
+                @click="onPageClick($event, pagination.current_page + 1)"
                 aria-label="Next page"
                 class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800">
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>

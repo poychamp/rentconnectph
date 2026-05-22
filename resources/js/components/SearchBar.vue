@@ -9,6 +9,7 @@ const props = defineProps({
 
 const submit = inject('search-submit', () => {});
 const live = inject('search-live', null);
+const skipNextDebounce = inject('search-skip-next-debounce', null);
 
 const areas = computed(() => props.barangays);
 
@@ -28,6 +29,13 @@ function clearDebounce() {
 }
 
 function scheduleSubmit() {
+    // Parent (Search.vue) flips this when it programmatically rewrites `live`
+    // during popstate — without the skip the debounce would re-submit the URL
+    // the user just navigated away from.
+    if (skipNextDebounce?.value) {
+        skipNextDebounce.value = false;
+        return;
+    }
     clearDebounce();
     debounceTimer = setTimeout(() => {
         debounceTimer = null;

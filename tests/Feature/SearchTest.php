@@ -7,6 +7,7 @@ use App\Enums\ListingType;
 use App\Models\Listing;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Arr;
 use Tests\SeedDatabaseAfterRefresh;
 use Tests\TestCase;
 
@@ -55,13 +56,13 @@ class SearchTest extends TestCase
         $payload = $response->viewData('search');
 
         $this->assertEqualsCanonicalizing(
-            ['listings', 'pagination', 'listingTypes', 'barangays', 'filters'],
+            ['data', 'links', 'meta', 'filters', 'catalogs'],
             array_keys($payload)
         );
 
-        $this->assertCount(4, $payload['listings']);
+        $this->assertCount(4, $payload['data']);
 
-        $first = $payload['listings'][0];
+        $first = $payload['data'][0];
         $this->assertEqualsCanonicalizing(
             ['id', 'uuid', 'title', 'type', 'type_label', 'price_monthly', 'beds', 'baths', 'sqm', 'barangay', 'barangay_label', 'image', 'image_count', 'section'],
             array_keys($first)
@@ -70,12 +71,12 @@ class SearchTest extends TestCase
         $this->assertSame('Apartment',     $first['type_label']);
         $this->assertSame('Pueblo de Oro', $first['barangay_label']);
 
-        foreach ($payload['listings'] as $row) {
+        foreach ($payload['data'] as $row) {
             $this->assertNotNull($row['image']);
             $this->assertGreaterThan(0, $row['image_count']);
         }
 
-        $returnedIds = array_map(fn ($r) => $r['id'], $payload['listings']);
+        $returnedIds = array_map(fn ($r) => $r['id'], $payload['data']);
         $this->assertSame(
             [$verifiedIds[2], $verifiedIds[0], $verifiedIds[3], $verifiedIds[1]],
             $returnedIds,
@@ -86,24 +87,38 @@ class SearchTest extends TestCase
             $this->assertContains($id, $verifiedIds);
         }
 
+        // meta carries the 6 canonical pagination keys (plus Laravel's path + inner links — not pinned).
+        // Key order matches Laravel's ResourceCollection::paginationInformation() output.
         $this->assertSame([
             'current_page' => 1,
+            'from'         => 1,
             'last_page'    => 1,
             'per_page'     => 24,
-            'total'        => 4,
-            'from'         => 1,
             'to'           => 4,
-        ], $payload['pagination']);
+            'total'        => 4,
+        ], Arr::only($payload['meta'], ['current_page', 'from', 'last_page', 'per_page', 'to', 'total']));
 
-        $this->assertCount(count(ListingType::toValues()), $payload['listingTypes']);
-        foreach ($payload['listingTypes'] as $type) {
+        // Top-level links is Laravel's pagination link block
+        $this->assertEqualsCanonicalizing(
+            ['first', 'last', 'prev', 'next'],
+            array_keys($payload['links'])
+        );
+
+        // Catalogs nested under catalogs key, snake_case
+        $this->assertEqualsCanonicalizing(
+            ['listing_types', 'barangays'],
+            array_keys($payload['catalogs'])
+        );
+
+        $this->assertCount(count(ListingType::toValues()), $payload['catalogs']['listing_types']);
+        foreach ($payload['catalogs']['listing_types'] as $type) {
             $this->assertEqualsCanonicalizing(['value', 'label'], array_keys($type));
             $this->assertContains($type['value'], ListingType::toValues());
             $this->assertSame(ListingType::from($type['value'])->label, $type['label']);
         }
 
-        $this->assertCount(count(Barangay::toValues()), $payload['barangays']);
-        foreach ($payload['barangays'] as $brgy) {
+        $this->assertCount(count(Barangay::toValues()), $payload['catalogs']['barangays']);
+        foreach ($payload['catalogs']['barangays'] as $brgy) {
             $this->assertEqualsCanonicalizing(['value', 'label'], array_keys($brgy));
             $this->assertContains($brgy['value'], Barangay::toValues());
             $this->assertSame(Barangay::from($brgy['value'])->label, $brgy['label']);
@@ -122,16 +137,16 @@ class SearchTest extends TestCase
 
         $payload = $response->viewData('search');
 
-        $this->assertCount(24, $payload['listings']);
+        $this->assertCount(24, $payload['data']);
 
         $this->assertSame([
             'current_page' => 1,
+            'from'         => 1,
             'last_page'    => 2,
             'per_page'     => 24,
-            'total'        => 30,
-            'from'         => 1,
             'to'           => 24,
-        ], $payload['pagination']);
+            'total'        => 30,
+        ], Arr::only($payload['meta'], ['current_page', 'from', 'last_page', 'per_page', 'to', 'total']));
     }
 
     public function test_it_filters_by_type_supporting_multi_select_via_csv(): void
@@ -164,31 +179,31 @@ class SearchTest extends TestCase
         $response = $this->get(route('search', ['type' => 'apartment']));
         $response->assertOk();
         $payload = $response->viewData('search');
-        $this->assertCount(3, $payload['listings']);
-        foreach ($payload['listings'] as $row) {
+        $this->assertCount(3, $payload['data']);
+        foreach ($payload['data'] as $row) {
             $this->assertSame('apartment', $row['type']);
         }
         $this->assertSame(['apartment'], $payload['filters']['type'],
             'filters.type must be an array of one when single type is requested');
-        $this->assertSame(3, $payload['pagination']['total']);
+        $this->assertSame(3, $payload['meta']['total']);
 
         // (b) Multi-select via CSV — apartments + studios via OR semantics
         $response = $this->get(route('search', ['type' => 'apartment,studio']));
         $response->assertOk();
         $payload = $response->viewData('search');
-        $this->assertCount(4, $payload['listings'], 'Multi-type CSV must include rows of every requested type');
-        foreach ($payload['listings'] as $row) {
+        $this->assertCount(4, $payload['data'], 'Multi-type CSV must include rows of every requested type');
+        foreach ($payload['data'] as $row) {
             $this->assertContains($row['type'], ['apartment', 'studio']);
         }
         $this->assertEqualsCanonicalizing(['apartment', 'studio'], $payload['filters']['type']);
-        $this->assertSame(4, $payload['pagination']['total']);
+        $this->assertSame(4, $payload['meta']['total']);
 
         // (c) Partial-invalid CSV — invalid value silently dropped, valid kept
         $response = $this->get(route('search', ['type' => 'apartment,mansion']));
         $response->assertOk();
         $payload = $response->viewData('search');
-        $this->assertCount(3, $payload['listings']);
-        foreach ($payload['listings'] as $row) {
+        $this->assertCount(3, $payload['data']);
+        foreach ($payload['data'] as $row) {
             $this->assertSame('apartment', $row['type']);
         }
         $this->assertSame(['apartment'], $payload['filters']['type'],
@@ -198,7 +213,7 @@ class SearchTest extends TestCase
         $response = $this->get(route('search', ['type' => 'apartment,apartment,studio']));
         $response->assertOk();
         $payload = $response->viewData('search');
-        $this->assertCount(4, $payload['listings']);
+        $this->assertCount(4, $payload['data']);
         $this->assertEqualsCanonicalizing(['apartment', 'studio'], $payload['filters']['type']);
     }
 
@@ -223,8 +238,8 @@ class SearchTest extends TestCase
 
         $payload = $response->viewData('search');
 
-        $this->assertCount(4, $payload['listings']);
-        foreach ($payload['listings'] as $row) {
+        $this->assertCount(4, $payload['data']);
+        foreach ($payload['data'] as $row) {
             $this->assertSame('pueblo_de_oro', $row['barangay']);
         }
         $this->assertSame('pueblo_de_oro', $payload['filters']['area']);
@@ -249,8 +264,8 @@ class SearchTest extends TestCase
         $response = $this->get('/search?q=&type=apartment');
         $response->assertOk();
         $payload = $response->viewData('search');
-        $this->assertCount(3, $payload['listings']);
-        foreach ($payload['listings'] as $row) {
+        $this->assertCount(3, $payload['data']);
+        foreach ($payload['data'] as $row) {
             $this->assertSame('apartment', $row['type']);
         }
         $this->assertSame('', $payload['filters']['q'],
@@ -261,8 +276,8 @@ class SearchTest extends TestCase
         $response = $this->get('/search?q=' . urlencode('   ') . '&type=apartment');
         $response->assertOk();
         $payload = $response->viewData('search');
-        $this->assertCount(3, $payload['listings']);
-        foreach ($payload['listings'] as $row) {
+        $this->assertCount(3, $payload['data']);
+        foreach ($payload['data'] as $row) {
             $this->assertSame('apartment', $row['type']);
         }
         $this->assertSame('', $payload['filters']['q'],
@@ -273,7 +288,7 @@ class SearchTest extends TestCase
         $response = $this->get('/search?q=&type=apartment,condo');
         $response->assertOk();
         $payload = $response->viewData('search');
-        $this->assertCount(5, $payload['listings']);
+        $this->assertCount(5, $payload['data']);
         $this->assertSame('', $payload['filters']['q']);
         $this->assertEqualsCanonicalizing(['apartment', 'condo'], $payload['filters']['type']);
     }
@@ -302,7 +317,7 @@ class SearchTest extends TestCase
         $response->assertOk();
 
         $payload = $response->viewData('search');
-        $listings = $payload['listings'];
+        $listings = $payload['data'];
 
         $this->assertCount(2, $listings);
         foreach ($listings as $listing) {
@@ -350,8 +365,8 @@ class SearchTest extends TestCase
 
         $payload = $response->viewData('search');
 
-        $this->assertCount(1, $payload['listings']);
-        $this->assertSame($matchAll->id, $payload['listings'][0]['id']);
+        $this->assertCount(1, $payload['data']);
+        $this->assertSame($matchAll->id, $payload['data'][0]['id']);
 
         $this->assertSame(['apartment'], $payload['filters']['type']);
         $this->assertSame('carmen',      $payload['filters']['area']);
@@ -377,7 +392,7 @@ class SearchTest extends TestCase
 
         $payload = $response->viewData('search');
 
-        $this->assertCount(5, $payload['listings']);
+        $this->assertCount(5, $payload['data']);
 
         $this->assertSame(
             ['q' => '', 'budget_min' => null, 'budget_max' => null, 'area' => null, 'type' => []],
@@ -405,18 +420,18 @@ class SearchTest extends TestCase
         $payload = $response->viewData('search');
 
         // Spillover apartments — 24 on page 1, 6 on page 2.
-        $this->assertCount(6, $payload['listings']);
-        foreach ($payload['listings'] as $row) {
+        $this->assertCount(6, $payload['data']);
+        foreach ($payload['data'] as $row) {
             $this->assertSame('apartment', $row['type']);
         }
 
         // CRITICAL: total reflects FILTERED count, not unfiltered.
         // If appends() weren't there or filters were dropped, total would be 35.
-        $this->assertSame(2,  $payload['pagination']['current_page']);
-        $this->assertSame(2,  $payload['pagination']['last_page']);
-        $this->assertSame(30, $payload['pagination']['total']);
-        $this->assertSame(25, $payload['pagination']['from']);
-        $this->assertSame(30, $payload['pagination']['to']);
+        $this->assertSame(2,  $payload['meta']['current_page']);
+        $this->assertSame(2,  $payload['meta']['last_page']);
+        $this->assertSame(30, $payload['meta']['total']);
+        $this->assertSame(25, $payload['meta']['from']);
+        $this->assertSame(30, $payload['meta']['to']);
 
         $this->assertSame(['apartment'], $payload['filters']['type']);
     }
@@ -445,7 +460,7 @@ class SearchTest extends TestCase
         $response->assertOk();
 
         $payload = $response->viewData('search');
-        $prices = collect($payload['listings'])->pluck('price_monthly')->sort()->values()->all();
+        $prices = collect($payload['data'])->pluck('price_monthly')->sort()->values()->all();
 
         $this->assertSame([15000, 20000, 25000], $prices, 'budget_min uses inclusive >= comparison');
         $this->assertSame(15000, $payload['filters']['budget_min']);
@@ -460,7 +475,7 @@ class SearchTest extends TestCase
         $response->assertOk();
 
         $payload = $response->viewData('search');
-        $prices = collect($payload['listings'])->pluck('price_monthly')->sort()->values()->all();
+        $prices = collect($payload['data'])->pluck('price_monthly')->sort()->values()->all();
 
         $this->assertSame([5000, 10000, 15000], $prices, 'budget_max uses inclusive <= comparison');
         $this->assertNull($payload['filters']['budget_min']);
@@ -478,7 +493,7 @@ class SearchTest extends TestCase
         $response->assertOk();
 
         $payload = $response->viewData('search');
-        $prices = collect($payload['listings'])->pluck('price_monthly')->sort()->values()->all();
+        $prices = collect($payload['data'])->pluck('price_monthly')->sort()->values()->all();
 
         $this->assertSame([10000, 15000, 20000], $prices);
         $this->assertSame(10000, $payload['filters']['budget_min']);
@@ -497,7 +512,7 @@ class SearchTest extends TestCase
         $response->assertOk();
 
         $payload = $response->viewData('search');
-        $this->assertCount(5, $payload['listings'], 'Malformed bounds drop silently → no filter applied');
+        $this->assertCount(5, $payload['data'], 'Malformed bounds drop silently → no filter applied');
         $this->assertNull($payload['filters']['budget_min']);
         $this->assertNull($payload['filters']['budget_max']);
     }
@@ -513,7 +528,7 @@ class SearchTest extends TestCase
         $response->assertOk();
 
         $payload = $response->viewData('search');
-        $prices = collect($payload['listings'])->pluck('price_monthly')->sort()->values()->all();
+        $prices = collect($payload['data'])->pluck('price_monthly')->sort()->values()->all();
 
         // After swap → effective range [5000, 20000] inclusive.
         $this->assertSame([5000, 10000, 15000, 20000], $prices);
@@ -603,7 +618,7 @@ class SearchTest extends TestCase
         $response->assertStatus(200);
 
         $payload = $response->viewData('search');
-        $this->assertCount(3, $payload['listings']);
+        $this->assertCount(3, $payload['data']);
         $this->assertNull($payload['filters']['budget_min']);
         $this->assertNull($payload['filters']['budget_max']);
     }

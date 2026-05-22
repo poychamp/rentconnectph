@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\Barangay;
 use App\Enums\ListingType;
-use App\Http\Resources\SearchResource;
+use App\Http\Resources\ListingCardResource;
 use App\Models\Listing;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -60,14 +60,22 @@ class SearchController extends Controller
 
         $listings->appends($request->only(['q', 'budget_min', 'budget_max', 'area', 'type']));
 
-        $payload = (new SearchResource($listings))->resolve();
-        $payload['filters'] = [
-            'q'          => $q,
-            'budget_min' => $min,
-            'budget_max' => $max,
-            'area'       => $area,
-            'type'       => $type,
-        ];
+        $payload = ListingCardResource::collection($listings)
+            ->additional([
+                'filters' => [
+                    'q'          => $q,
+                    'budget_min' => $min,
+                    'budget_max' => $max,
+                    'area'       => $area,
+                    'type'       => $type,
+                ],
+                'catalogs' => [
+                    'listing_types' => $this->enumCatalog(ListingType::class),
+                    'barangays'     => $this->enumCatalog(Barangay::class),
+                ],
+            ])
+            ->response()
+            ->getData(true);
 
         return view('search', ['search' => $payload]);
     }
@@ -122,6 +130,17 @@ class SearchController extends Controller
             ->filter(fn ($v) => $v !== '' && in_array($v, $allowed, true))
             ->unique()
             ->values()
+            ->all();
+    }
+
+    /**
+     * @param  class-string<\Spatie\Enum\Enum>  $enum
+     * @return array<int, array{value: string, label: string}>
+     */
+    private function enumCatalog(string $enum): array
+    {
+        return collect($enum::toValues())
+            ->map(fn ($v) => ['value' => $v, 'label' => $enum::from($v)->label])
             ->all();
     }
 }
