@@ -72,10 +72,10 @@ function onRemoved(uuid) {
         <div class="flex-1 flex flex-col min-w-0">
             <FieldTopBar title="Priority Listings" :subtitle="subtitle" />
 
-            <main class="flex-1 overflow-y-auto px-6 pt-2 pb-6 lg:px-10 lg:pt-3 lg:pb-10">
+            <main class="flex-1 overflow-y-auto p-6 lg:p-8">
                 <div
                     v-if="isEmpty"
-                    class="mt-6 rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-12 text-center"
+                    class="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-12 text-center"
                 >
                     <svg class="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
@@ -96,7 +96,6 @@ function onRemoved(uuid) {
 
                 <FieldPriorityListingsTable
                     v-else
-                    class="mt-4"
                     :rows="rows"
                     :saving="saving"
                     @reorder="onReorder"

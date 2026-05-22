@@ -3,7 +3,7 @@ defineProps({ amenities: { type: Array, required: true } });
 </script>
 
 <template>
-    <div class="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-5 py-4">
+    <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm p-6">
         <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Amenities</h3>
         <div v-if="amenities.length" class="flex flex-wrap gap-1.5">
             <span

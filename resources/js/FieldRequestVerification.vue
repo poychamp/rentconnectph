@@ -242,17 +242,10 @@ const allPrereqsPass = computed(() => Object.values(livePrereqs.value).every(Boo
         <div class="flex-1 flex flex-col min-w-0">
             <FieldTopBar title="Request Verification" :subtitle="listing.title" />
 
-            <main ref="mainRef" class="flex-1 overflow-y-auto px-6 pt-2 pb-6 lg:px-10 lg:pt-3 lg:pb-10">
-                <a
-                    :href="backHref"
-                    class="inline-flex items-center gap-1 text-sm text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 mt-4 mb-2"
-                >
-                    {{ backLabel }}
-                </a>
-
+            <main ref="mainRef" class="flex-1 overflow-y-auto p-6 lg:p-8">
                 <div
                     v-if="errorCount > 0"
-                    class="mt-4 rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 px-4 py-3"
+                    class="mb-4 rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 px-4 py-3"
                     role="alert"
                 >
                     <p class="text-sm font-medium text-red-800 dark:text-red-300">
@@ -266,7 +259,6 @@ const allPrereqsPass = computed(() => Object.values(livePrereqs.value).every(Boo
                 </div>
 
                 <FieldRequestVerificationChecklist
-                    class="mt-4"
                     :prereqs="livePrereqs"
                 />
 

@@ -45,7 +45,7 @@ async function removePriority(uuid) {
 <template>
     <div class="relative bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm overflow-hidden">
         <div v-if="isBusy" class="absolute inset-x-0 top-0 h-0.5 overflow-hidden z-10">
-            <div class="h-full w-1/3 bg-amber-500 dark:bg-amber-400 animate-[priority-loading-slide_1.2s_ease-in-out_infinite]"></div>
+            <div class="h-full w-1/3 bg-orange-500 dark:bg-orange-400 animate-[priority-loading-slide_1.2s_ease-in-out_infinite]"></div>
         </div>
 
         <div class="overflow-x-auto">
@@ -124,7 +124,7 @@ async function removePriority(uuid) {
                                         type="button"
                                         :disabled="removingByUuid[row.uuid]"
                                         @click="removePriority(row.uuid)"
-                                        class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                                        class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/30 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                                         title="Remove from priority"
                                     >
                                         <svg
@@ -165,6 +165,6 @@ async function removePriority(uuid) {
     opacity: 0.35;
 }
 .priority-drag {
-    box-shadow: 0 8px 24px rgba(217, 119, 6, 0.25);
+    box-shadow: 0 8px 24px rgba(249, 115, 22, 0.25);
 }
 </style>

@@ -197,7 +197,7 @@ const iconPaths = {
             <a
                 href="/auth/profile"
                 title="Edit profile"
-                class="w-9 h-9 rounded-full bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold flex items-center justify-center shrink-0 transition"
+                class="w-9 h-9 rounded-full bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white text-sm font-semibold flex items-center justify-center shrink-0 transition"
             >
                 {{ user.initials }}
             </a>

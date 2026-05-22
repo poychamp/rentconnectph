@@ -10,7 +10,7 @@ const formattedPrice = computed(() =>
 </script>
 
 <template>
-    <div class="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-5 py-4">
+    <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm p-6">
         <div class="flex items-start justify-between gap-3">
             <div class="flex-1 min-w-0">
                 <h2 class="text-xl font-bold text-gray-900 dark:text-white tracking-tight">{{ listing.title }}</h2>

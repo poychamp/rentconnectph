@@ -19,7 +19,7 @@ const user = ref(initial.user ?? {
         <FieldSidebar :user="user" />
         <div class="flex-1 flex flex-col min-w-0">
             <FieldTopBar title="Dashboard" subtitle="Field operations" />
-            <main class="flex-1 p-6 lg:p-10">
+            <main class="flex-1 p-6 lg:p-8">
                 <FieldGreeting />
             </main>
         </div>

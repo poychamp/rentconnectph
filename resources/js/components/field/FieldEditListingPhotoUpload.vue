@@ -191,9 +191,8 @@ onUnmounted(() => {
             @dragleave="onDragLeaveFiles"
             @drop.prevent="onDropFiles"
             :disabled="photos.length >= MAX_PHOTOS"
-            style="border-width: 1.5px;"
             :class="[
-                'mt-1 w-full text-center rounded-[10px] border-dashed px-4 py-3.5 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed',
+                'mt-1 w-full text-center rounded-lg border border-dashed px-4 py-3.5 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed',
                 isDraggingFile
                     ? 'border-orange-400 bg-orange-50 dark:border-orange-500 dark:bg-orange-950/30'
                     : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800',
