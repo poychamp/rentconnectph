@@ -17,7 +17,9 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1')->name('v1.')->group(function () {
     Route::get('home', HomeController::class)->name('home');
 
-    Route::get('search', SearchController::class)->name('search');
+    Route::get('search', SearchController::class)
+        ->middleware('throttle:api-search')
+        ->name('search');
 
     Route::get('listings/{listing:uuid}', [ListingController::class, 'show'])
         ->name('listings.show');

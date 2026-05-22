@@ -7,12 +7,29 @@ use App\Enums\ListingType;
 use App\Models\Listing;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
 use Tests\SeedDatabaseAfterRefresh;
 use Tests\TestCase;
 
 class SearchFetchTest extends TestCase
 {
     use RefreshDatabase, SeedDatabaseAfterRefresh;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        RateLimiter::clear($this->throttleKey('api-search', 'minute:127.0.0.1'));
+        RateLimiter::clear($this->throttleKey('api-search', 'hour:127.0.0.1'));
+    }
+
+    // Laravel's ThrottleRequests middleware md5-hashes the cache key as
+    // md5($limiterName . $limit->key) before storing. Tests pre-filling the
+    // bucket must match that derivation.
+    private function throttleKey(string $limiter, string $byKey): string
+    {
+        return md5($limiter.$byKey);
+    }
 
     private function endpoint(array $query = []): string
     {
@@ -282,5 +299,62 @@ class SearchFetchTest extends TestCase
         $this->assertCount(count(Barangay::toValues()),    $barangays);
         $this->assertSame(['label', 'value'], collect(array_keys($types[0]))->sort()->values()->all());
         $this->assertSame(['label', 'value'], collect(array_keys($barangays[0]))->sort()->values()->all());
+    }
+
+    // =====================================================================
+    // Throttle — dual bucket (minute + hour), IP-keyed
+    // =====================================================================
+
+    public function test_it_throttles_when_minute_bucket_hits_cap(): void
+    {
+        // Pre-fill the minute bucket to its 60-request cap.
+        // Tests run from 127.0.0.1 by default.
+        for ($i = 0; $i < 60; $i++) {
+            RateLimiter::hit($this->throttleKey('api-search', 'minute:127.0.0.1'), 60);
+        }
+
+        $this->getJson($this->endpoint())->assertStatus(429);
+    }
+
+    public function test_it_throttles_when_hour_bucket_hits_cap(): void
+    {
+        // Pre-fill the hour bucket to its 600-request cap.
+        for ($i = 0; $i < 600; $i++) {
+            RateLimiter::hit($this->throttleKey('api-search', 'hour:127.0.0.1'), 3600);
+        }
+
+        $this->getJson($this->endpoint())->assertStatus(429);
+    }
+
+    public function test_it_does_not_throttle_just_below_caps(): void
+    {
+        // 59 minute hits + 599 hour hits — both buckets just below cap. Request
+        // succeeds; this pins that the caps are STRICT (>=, not >) on the
+        // ThrottleRequests side.
+        for ($i = 0; $i < 59; $i++) {
+            RateLimiter::hit($this->throttleKey('api-search', 'minute:127.0.0.1'), 60);
+        }
+        for ($i = 0; $i < 599; $i++) {
+            RateLimiter::hit($this->throttleKey('api-search', 'hour:127.0.0.1'), 3600);
+        }
+
+        $this->getJson($this->endpoint())->assertOk();
+    }
+
+    // =====================================================================
+    // Middleware
+    // =====================================================================
+
+    public function test_it_applies_api_search_throttle_middleware(): void
+    {
+        $middleware = Route::getRoutes()
+            ->getByName('api.v1.search')
+            ->gatherMiddleware();
+
+        $this->assertContains(
+            'throttle:api-search',
+            $middleware,
+            'GET /api/v1/search must use the api-search throttle (60/min + 600/hr by IP).',
+        );
     }
 }

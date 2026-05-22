@@ -60,6 +60,15 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by($request->ip());
         });
 
+        RateLimiter::for('api-search', function (Request $request) {
+            $ip = $request->ip();
+
+            return [
+                Limit::perMinute(60)->by('minute:'.$ip),
+                Limit::perHour(600)->by('hour:'.$ip),
+            ];
+        });
+
         RateLimiter::for('api-update-name', function (Request $request) {
             return Limit::perHour(10)->by($request->user()->id);
         });
