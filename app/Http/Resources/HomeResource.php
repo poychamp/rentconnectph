@@ -19,6 +19,7 @@ class HomeResource extends JsonResource
             'barangays' => collect(Barangay::toValues())
                 ->map(fn ($v) => ['value' => $v, 'label' => Barangay::from($v)->label])
                 ->values(),
+            'appStoreUrl' => config('services.app_store.ios_url'),
         ];
     }
 }

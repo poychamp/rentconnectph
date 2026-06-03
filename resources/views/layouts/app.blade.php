@@ -86,7 +86,7 @@
                 <div class="font-semibold text-gray-900 dark:text-white text-sm leading-tight">RentConnectPH</div>
             </div>
             <a
-                href="#"
+                href="{{ config('services.app_store.ios_url') }}"
                 data-banner-open
                 class="shrink-0 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
             >
@@ -101,8 +101,7 @@
             var ua = navigator.userAgent || '';
             var isIOS = /iPhone|iPad|iPod/i.test(ua);
             var isIPadOS = /Mac/i.test(ua) && navigator.maxTouchPoints > 1;
-            var isAndroid = /Android/i.test(ua);
-            if (!isIOS && !isIPadOS && !isAndroid) {
+            if (!isIOS && !isIPadOS) {
                 host.remove();
                 return;
             }
@@ -118,12 +117,6 @@
                 dismissBtn.addEventListener('click', function () {
                     document.cookie = 'app_banner_dismissed=1; path=/; SameSite=Lax';
                     host.remove();
-                });
-            }
-            var openBtn = host.querySelector('[data-banner-open]');
-            if (openBtn) {
-                openBtn.addEventListener('click', function (e) {
-                    e.preventDefault();
                 });
             }
         })();

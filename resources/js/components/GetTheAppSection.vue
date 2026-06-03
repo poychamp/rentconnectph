@@ -1,4 +1,11 @@
-<script setup></script>
+<script setup>
+defineProps({
+    appStoreUrl: {
+        type: String,
+        default: '',
+    },
+});
+</script>
 
 <template>
     <section class="border-t border-gray-100 dark:border-gray-800 py-16 md:py-20 mt-12">
@@ -12,8 +19,10 @@
                 </p>
                 <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
                     <a
-                        href="#"
-                        @click.prevent
+                        :href="appStoreUrl || '#'"
+                        :target="appStoreUrl ? '_blank' : null"
+                        :rel="appStoreUrl ? 'noopener' : null"
+                        @click="(e) => { if (!appStoreUrl) e.preventDefault(); }"
                         aria-label="Download on the App Store"
                         class="block transition-opacity hover:opacity-90 active:opacity-70"
                     >

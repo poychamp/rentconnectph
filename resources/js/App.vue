@@ -8,7 +8,7 @@ import Footer from './components/Footer.vue';
 import BottomNav from './components/BottomNav.vue';
 import GetTheAppSection from './components/GetTheAppSection.vue';
 
-const home = window.__INITIAL_HOME__ || { featured: [], recently: [], listingTypes: [], barangays: [] };
+const home = window.__INITIAL_HOME__ || { featured: [], recently: [], listingTypes: [], barangays: [], appStoreUrl: '' };
 const featured = ref(home.featured);
 const recently = ref(home.recently);
 const listingTypes = ref(home.listingTypes);
@@ -38,7 +38,7 @@ const barangays = ref(home.barangays);
                 show-view-all
             />
         </main>
-        <GetTheAppSection />
+        <GetTheAppSection :app-store-url="home.appStoreUrl" />
         <Footer />
         <BottomNav />
     </div>

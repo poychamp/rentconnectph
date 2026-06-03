@@ -47,4 +47,9 @@ return [
         'measurement_id' => env('GA_MEASUREMENT_ID'),
     ],
 
+    'app_store' => [
+        'ios_url' => 'https://apps.apple.com/app/rentconnectph/id6769903800',
+        'ios_app_id' => '9Z8K9V5LK6.com.rentconnectph.app',
+    ],
+
 ];
