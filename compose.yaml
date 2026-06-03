@@ -1,0 +1,130 @@
+services:
+    app:
+        build:
+            context: .
+            dockerfile: docker/config/php/Dockerfile
+            args:
+                UID: ${UID:-1000}
+                GID: ${GID:-1000}
+        image: rentconnectph-app:latest
+        restart: unless-stopped
+        networks:
+            - rentconnectph
+        env_file:
+            - .env
+        environment:
+            DB_CONNECTION: mysql
+            DB_HOST: mysql
+            DB_PORT: 3306
+            DB_DATABASE: ${DB_DATABASE:-rentconnectph}
+            DB_USERNAME: ${DB_USERNAME:-root}
+            DB_PASSWORD: ${DB_PASSWORD:-secret}
+            MAIL_MAILER: smtp
+            MAIL_HOST: mailpit
+            MAIL_PORT: 1025
+            MAIL_USERNAME: ""
+            MAIL_PASSWORD: ""
+            MAIL_ENCRYPTION: ""
+            SCOUT_DRIVER: database
+            FILESYSTEM_DISK: local
+        volumes:
+            - ./:/var/www/html
+            - vendor:/var/www/html/vendor
+        ports:
+            - "80:8000"
+        depends_on:
+            mysql:
+                condition: service_healthy
+            mailpit:
+                condition: service_started
+        command: >
+            sh -lc "[ -f vendor/autoload.php ] || composer install &&
+            php artisan storage:link --force &&
+            php artisan serve --host=0.0.0.0 --port=8000"
+
+    queue:
+        image: rentconnectph-app:latest
+        restart: unless-stopped
+        networks:
+            - rentconnectph
+        env_file:
+            - .env
+        environment:
+            DB_CONNECTION: mysql
+            DB_HOST: mysql
+            DB_PORT: 3306
+            DB_DATABASE: ${DB_DATABASE:-rentconnectph}
+            DB_USERNAME: ${DB_USERNAME:-root}
+            DB_PASSWORD: ${DB_PASSWORD:-secret}
+            MAIL_MAILER: smtp
+            MAIL_HOST: mailpit
+            MAIL_PORT: 1025
+            MAIL_USERNAME: ""
+            MAIL_PASSWORD: ""
+            MAIL_ENCRYPTION: ""
+            SCOUT_DRIVER: database
+            FILESYSTEM_DISK: local
+        volumes:
+            - ./:/var/www/html
+            - vendor:/var/www/html/vendor
+        depends_on:
+            app:
+                condition: service_started
+            mysql:
+                condition: service_healthy
+        command: >
+            sh -lc "until [ -f vendor/autoload.php ]; do sleep 1; done &&
+            php artisan queue:listen --tries=1 --timeout=0"
+
+    node:
+        build:
+            context: .
+            dockerfile: docker/config/node/Dockerfile
+        image: rentconnectph-node:latest
+        restart: unless-stopped
+        networks:
+            - rentconnectph
+        env_file:
+            - .env
+        volumes:
+            - ./:/var/www/html
+            - node_modules:/var/www/html/node_modules
+        ports:
+            - "5173:5173"
+        command: >
+            sh -lc "npm ci &&
+            npm run dev -- --host 0.0.0.0"
+
+    mysql:
+        image: mysql:8.0
+        restart: unless-stopped
+        networks:
+            - rentconnectph
+        environment:
+            MYSQL_DATABASE: ${DB_DATABASE:-rentconnectph}
+            MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-secret}
+        volumes:
+            - mysql_data:/var/lib/mysql
+        ports:
+            - "3306:3306"
+        healthcheck:
+            test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p${DB_PASSWORD:-secret}"]
+            interval: 5s
+            timeout: 5s
+            retries: 20
+
+    mailpit:
+        image: axllent/mailpit:v1.27
+        restart: unless-stopped
+        networks:
+            - rentconnectph
+        ports:
+            - "8025:8025"
+
+networks:
+    rentconnectph:
+
+volumes:
+    mysql_data:
+    node_modules:
+    vendor:

@@ -1,0 +1,89 @@
+<?php
+
+use App\Http\Controllers\Api\V1\Auth\FieldLoginController;
+use App\Http\Controllers\Api\V1\Auth\LogoutController;
+use App\Http\Controllers\Api\V1\ContactController;
+use App\Http\Controllers\Api\V1\Field\ListingController as FieldListingController;
+use App\Http\Controllers\Api\V1\Field\ProfileNameController as FieldProfileNameController;
+use App\Http\Controllers\Api\V1\Field\ProfilePasswordController as FieldProfilePasswordController;
+use App\Http\Controllers\Api\V1\Field\Vapor\SignedStorageUrlController as FieldVaporSignedStorageUrlController;
+use App\Http\Controllers\Api\V1\HomeController;
+use App\Http\Controllers\Api\V1\InquiryController;
+use App\Http\Controllers\Api\V1\ListingController;
+use App\Http\Controllers\Api\V1\MeController;
+use App\Http\Controllers\Api\V1\SearchController;
+use Illuminate\Support\Facades\Route;
+
+Route::prefix('v1')->name('v1.')->group(function () {
+    Route::get('home', HomeController::class)->name('home');
+
+    Route::get('search', SearchController::class)
+        ->middleware('throttle:api-search')
+        ->name('search');
+
+    Route::get('listings/{listing:uuid}', [ListingController::class, 'show'])
+        ->name('listings.show');
+
+    Route::post('listings/{listing:uuid}/inquiries', [InquiryController::class, 'store'])
+        ->middleware('throttle:api-inquiry-submit')
+        ->name('listings.inquiries.store');
+
+    Route::post('contact', ContactController::class)
+        ->middleware('throttle:api-contact-send')
+        ->name('contact');
+
+    Route::post('auth/field-login', FieldLoginController::class)
+        ->name('auth.field-login');
+
+    Route::post('auth/logout', LogoutController::class)
+        ->middleware('auth:sanctum')
+        ->name('auth.logout');
+
+    Route::get('me', MeController::class)
+        ->middleware('auth:sanctum')
+        ->name('me');
+
+    Route::middleware(['auth:sanctum', 'abilities:field'])
+        ->prefix('field')->name('field.')->group(function () {
+            Route::get('listings/queued', [FieldListingController::class, 'queued'])
+                ->name('listings.queued');
+
+            Route::get('listings/priority', [FieldListingController::class, 'priority'])
+                ->name('listings.priority');
+
+            Route::get('listings/submitted', [FieldListingController::class, 'submitted'])
+                ->name('listings.submitted');
+
+            Route::get('listings/verified', [FieldListingController::class, 'verified'])
+                ->name('listings.verified');
+
+            Route::get('listings/counts', [FieldListingController::class, 'counts'])
+                ->name('listings.counts');
+
+            Route::patch('listings/priority-sort', [FieldListingController::class, 'prioritySort'])
+                ->name('listings.priority-sort');
+
+            Route::get('listings/{listing:uuid}', [FieldListingController::class, 'show'])
+                ->name('listings.show');
+
+            Route::patch('listings/{listing:uuid}', [FieldListingController::class, 'update'])
+                ->name('listings.update');
+
+            Route::patch('listings/{listing:uuid}/request-verification', [FieldListingController::class, 'requestVerification'])
+                ->name('listings.request-verification');
+
+            Route::patch('listings/{listing:uuid}/priority-toggle', [FieldListingController::class, 'priorityToggle'])
+                ->name('listings.priority-toggle');
+
+            Route::post('vapor/signed-storage-url', [FieldVaporSignedStorageUrlController::class, 'store'])
+                ->name('vapor.signed-storage-url');
+
+            Route::patch('profile/name', FieldProfileNameController::class)
+                ->middleware('throttle:api-update-name')
+                ->name('profile.name');
+
+            Route::patch('profile/password', FieldProfilePasswordController::class)
+                ->middleware('throttle:api-update-password')
+                ->name('profile.password');
+        });
+});
