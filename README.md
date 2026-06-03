@@ -1,59 +1,97 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# RentConnectPH
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+**A rental listing platform for Cagayan de Oro, Philippines** — connecting renters directly with property owners.
 
-## About Laravel
+[![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20?logo=laravel&logoColor=white)](https://laravel.com)
+[![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vuedotjs&logoColor=white)](https://vuejs.org)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38BDF8?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4?logo=php&logoColor=white)](https://www.php.net)
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+🌐 **[rentconnectph.com](https://rentconnectph.com)**
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Tech Stack
 
-## Learning Laravel
+| Layer | Technology |
+|---|---|
+| Backend | Laravel 12 (PHP 8.2+) |
+| Frontend | Vue 3 (Composition API), mounted per page via Vite |
+| Styling | Tailwind CSS 4 |
+| UI components | PrimeVue 4 (Aura preset, brand orange) |
+| HTTP | Axios |
+| Search | Laravel Scout (database driver locally, hosted search in production) |
+| Auth (API) | Laravel Sanctum |
+| Permissions | spatie/laravel-permission |
+| Hosting | Serverless (AWS via Laravel Vapor) |
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## Getting Started
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### Prerequisites
 
-## Laravel Sponsors
+- PHP 8.2+
+- Composer
+- Node.js 18+ and npm
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### Installation
 
-### Premium Partners
+```bash
+# Install dependencies
+composer install
+npm install
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+# Set up your environment
+cp .env.example .env
+php artisan key:generate
 
-## Contributing
+# Configure your database in .env, then run migrations
+php artisan migrate
+php artisan db:seed
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Running locally
 
-## Code of Conduct
+Run the Vite dev server (with hot module replacement) and the Laravel app:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+# Terminal 1 — frontend assets
+npm run dev
 
-## Security Vulnerabilities
+# Terminal 2 — application server
+php artisan serve
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+The app will be available at the URL printed by `php artisan serve`.
+
+## Available Commands
+
+```bash
+npm run dev      # Start the Vite dev server (HMR)
+npm run build    # Build production frontend assets
+php artisan test # Run the test suite
+```
+
+## Testing
+
+The application is covered by feature tests built on PHPUnit:
+
+```bash
+php artisan test
+```
+
+Tests run against an isolated database and never touch development data.
+
+## Deployment
+
+The application is deployed to a serverless environment on AWS using Laravel Vapor.
+Frontend assets are served from a CDN, and images are stored on S3.
+
+## Security
+
+If you discover a security vulnerability, please report it privately to
+**info@rentconnectph.com** rather than opening a public issue. We take all reports
+seriously and will respond as quickly as possible.
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+© 2026 RentConnectPH. All rights reserved. This is proprietary software and is not licensed for redistribution.
