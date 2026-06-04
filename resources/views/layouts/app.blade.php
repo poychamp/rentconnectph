@@ -8,6 +8,8 @@
 
     <link rel="canonical" href="{{ rtrim(config('app.url'), '/') . request()->getRequestUri() }}">
 
+    <meta name="apple-itunes-app" content="app-id={{ config('services.app_store.ios_app_store_id') }}, app-argument={{ rtrim(config('app.url'), '/') . request()->getRequestUri() }}">
+
     <meta property="og:site_name" content="RentConnectPH">
     <meta property="og:locale" content="en_PH">
     <meta property="og:type" content="@yield('og_type', 'website')">
@@ -86,7 +88,7 @@
                 <div class="font-semibold text-gray-900 dark:text-white text-sm leading-tight">RentConnectPH</div>
             </div>
             <a
-                href="{{ config('services.app_store.ios_url') }}"
+                href="#"
                 data-banner-open
                 class="shrink-0 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
             >
@@ -99,9 +101,8 @@
             var host = document.querySelector('[data-banner-host]');
             if (!host) return;
             var ua = navigator.userAgent || '';
-            var isIOS = /iPhone|iPad|iPod/i.test(ua);
-            var isIPadOS = /Mac/i.test(ua) && navigator.maxTouchPoints > 1;
-            if (!isIOS && !isIPadOS) {
+            var isAndroid = /Android/i.test(ua);
+            if (!isAndroid) {
                 host.remove();
                 return;
             }

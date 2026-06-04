@@ -17,6 +17,8 @@ class AppSiteAssociationController extends Controller
                             ['/' => '/admin/*', 'exclude' => true],
                             ['/' => '/field/*', 'exclude' => true],
                             ['/' => '/api/*', 'exclude' => true],
+                            ['/' => '/privacy', 'exclude' => true],
+                            ['/' => '/terms', 'exclude' => true],
                             ['/' => '/*'],
                         ],
                     ],

@@ -50,6 +50,7 @@ return [
     'app_store' => [
         'ios_url' => 'https://apps.apple.com/app/rentconnectph/id6769903800',
         'ios_app_id' => '9Z8K9V5LK6.com.rentconnectph.app',
+        'ios_app_store_id' => '6769903800',
     ],
 
 ];
