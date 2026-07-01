@@ -8,6 +8,8 @@
 
     <link rel="canonical" href="{{ rtrim(config('app.url'), '/') . request()->getRequestUri() }}">
 
+    <meta name="apple-itunes-app" content="app-id={{ config('services.app_store.ios_app_store_id') }}, app-argument={{ rtrim(config('app.url'), '/') . request()->getRequestUri() }}">
+
     <meta property="og:site_name" content="RentConnectPH">
     <meta property="og:locale" content="en_PH">
     <meta property="og:type" content="@yield('og_type', 'website')">
@@ -86,11 +88,14 @@
                 <div class="font-semibold text-gray-900 dark:text-white text-sm leading-tight">RentConnectPH</div>
             </div>
             <a
-                href="#"
+                href="{{ config('services.app_store.android_url') }}"
+                target="_blank"
+                rel="noopener"
                 data-banner-open
+                data-android-package="{{ config('services.app_store.android_package') }}"
                 class="shrink-0 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
             >
-                Open app
+                Get the app
             </a>
         </div>
     </div>
@@ -99,10 +104,8 @@
             var host = document.querySelector('[data-banner-host]');
             if (!host) return;
             var ua = navigator.userAgent || '';
-            var isIOS = /iPhone|iPad|iPod/i.test(ua);
-            var isIPadOS = /Mac/i.test(ua) && navigator.maxTouchPoints > 1;
             var isAndroid = /Android/i.test(ua);
-            if (!isIOS && !isIPadOS && !isAndroid) {
+            if (!isAndroid) {
                 host.remove();
                 return;
             }
@@ -120,11 +123,21 @@
                     host.remove();
                 });
             }
+
             var openBtn = host.querySelector('[data-banner-open]');
-            if (openBtn) {
-                openBtn.addEventListener('click', function (e) {
-                    e.preventDefault();
-                });
+            if (openBtn && 'getInstalledRelatedApps' in navigator) {
+                navigator.getInstalledRelatedApps().then(function (apps) {
+                    if (apps.length > 0) {
+                        var fallback = openBtn.href;
+                        var pkg = openBtn.getAttribute('data-android-package');
+                        openBtn.setAttribute('href', 'intent://' + location.host + location.pathname + location.search
+                            + '#Intent;scheme=https;package=' + pkg
+                            + ';S.browser_fallback_url=' + encodeURIComponent(fallback) + ';end');
+                        openBtn.removeAttribute('target');
+                        openBtn.removeAttribute('rel');
+                        openBtn.textContent = 'Open app';
+                    }
+                }).catch(function () {});
             }
         })();
     </script>

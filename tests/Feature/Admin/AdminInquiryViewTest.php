@@ -230,6 +230,32 @@ class AdminInquiryViewTest extends TestCase
     }
 
     // ---------------------------------------------------------------------
+    // Search — listing contact name substring
+    // ---------------------------------------------------------------------
+
+    public function test_it_filters_by_listing_contact_name_substring(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $this->actingAs($admin, 'admin');
+
+        $villanueva = ListingContact::factory()->create(['name' => 'Maria Villanueva']);
+        $santos     = ListingContact::factory()->create(['name' => 'Juan Santos']);
+
+        $villanuevaListing = Listing::factory()->verified()->create(['listing_contact_id' => $villanueva->id]);
+        $santosListing     = Listing::factory()->verified()->create(['listing_contact_id' => $santos->id]);
+
+        Inquiry::factory()->for($villanuevaListing)->create();
+        Inquiry::factory()->for($santosListing)->create();
+
+        $response = $this->get(route('admin.inquiries.index', ['q' => 'villanueva']));
+        $response->assertOk();
+
+        $rows = $response->viewData('inquiries')['data'];
+        $this->assertCount(1, $rows, '?q=villanueva must match the listing contact name and exclude Santos (case-insensitive LIKE on listing_contact.name)');
+        $this->assertSame('Maria Villanueva', $rows[0]['listing']['listing_contact']['name']);
+    }
+
+    // ---------------------------------------------------------------------
     // Resource shape — uuid, submitted_at, notes, renter, listing
     // ---------------------------------------------------------------------
 

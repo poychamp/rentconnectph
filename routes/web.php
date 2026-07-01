@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\AboutController;
+use App\Http\Controllers\AppSiteAssociationController;
+use App\Http\Controllers\AssetLinksController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InquiryController;
@@ -52,3 +54,5 @@ Route::post('/inquiries', [InquiryController::class, 'store'])
 Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 Route::get('/robots.txt', [RobotsController::class, 'index'])->name('robots');
 Route::get('/manifest.json', [ManifestController::class, 'index'])->name('manifest');
+Route::get('/.well-known/apple-app-site-association', [AppSiteAssociationController::class, 'index'])->name('apple-app-site-association');
+Route::get('/.well-known/assetlinks.json', [AssetLinksController::class, 'index'])->name('assetlinks');
