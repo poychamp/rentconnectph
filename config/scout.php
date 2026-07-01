@@ -139,19 +139,6 @@ return [
                 'minWordSizefor1Typo' => 6,
                 'minWordSizefor2Typos' => 9,
             ],
-            env('SCOUT_PREFIX', '') . 'inquiries' => [
-                'searchableAttributes' => [
-                    'renter_name',
-                    'renter_phone',
-                    'listing_title',
-                    'listing_contact_phone',
-                ],
-                'customRanking' => [
-                    'desc(updated_at)',
-                ],
-                'minWordSizefor1Typo' => 6,
-                'minWordSizefor2Typos' => 9,
-            ],
         ],
     ],
 

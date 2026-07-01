@@ -27,14 +27,25 @@ class InquiryController extends Controller
                 ->orderByDesc('id')
                 ->paginate(10);
         } else {
-            // Search: Scout against the JOINed renters + listings + listing_contacts
-            // (see Inquiry::newScoutQuery + toSearchableArray dotted keys).
-            // Phone-shaped input gets normalized to E.164 so 0917… and +639…
-            // both match the canonical stored form. Non-phone input passes raw.
+            // Search: LIKE across renter (name/phone), listing title, and listing
+            // contact phone. Phone-shaped input normalizes to E.164 so 0917… and
+            // +639… both match the canonical stored form; non-phone input passes
+            // raw. whereHas('listing') keeps the soft-delete + orphan guard (see
+            // the browse path); the nested whereHas relations apply their own
+            // SoftDeletes scopes, so matches only surface for live records.
             $searchInput = PhMobile::normalize($q) ?? $q;
+            $like = '%' . $searchInput . '%';
 
-            $rows = Inquiry::search($searchInput)
-                ->query(fn ($qb) => $qb->whereHas('listing')->with(['renter', 'listing.listingContact']))
+            $rows = Inquiry::query()
+                ->whereHas('listing')
+                ->where(function ($w) use ($like) {
+                    $w->whereHas('renter', fn ($r) => $r->where('name', 'like', $like)->orWhere('phone', 'like', $like))
+                        ->orWhereHas('listing', fn ($l) => $l->where('title', 'like', $like))
+                        ->orWhereHas('listing.listingContact', fn ($c) => $c->where('phone', 'like', $like));
+                })
+                ->with(['renter', 'listing.listingContact'])
+                ->orderByDesc('updated_at')
+                ->orderByDesc('id')
                 ->paginate(10)
                 ->appends($request->only(['q']));
         }

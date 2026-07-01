@@ -4,10 +4,6 @@ namespace App\Providers;
 
 use App\Enums\AppGuard;
 use App\Enums\AppRole;
-use App\Models\Listing;
-use App\Models\Renter;
-use App\Observers\ListingObserver;
-use App\Observers\RenterObserver;
 use App\Support\PhMobile;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -76,11 +72,5 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('api-update-password', function (Request $request) {
             return Limit::perHour(10)->by($request->user()->id);
         });
-
-        // Propagate Renter / Listing updates to child Inquiry Algolia
-        // documents — only when the attributes that flow into Inquiry's
-        // toSearchableArray actually changed. See observer classes.
-        Renter::observe(RenterObserver::class);
-        Listing::observe(ListingObserver::class);
     }
 }
