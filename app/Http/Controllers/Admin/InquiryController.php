@@ -41,7 +41,7 @@ class InquiryController extends Controller
                 ->where(function ($w) use ($like) {
                     $w->whereHas('renter', fn ($r) => $r->where('name', 'like', $like)->orWhere('phone', 'like', $like))
                         ->orWhereHas('listing', fn ($l) => $l->where('title', 'like', $like))
-                        ->orWhereHas('listing.listingContact', fn ($c) => $c->where('phone', 'like', $like));
+                        ->orWhereHas('listing.listingContact', fn ($c) => $c->where('phone', 'like', $like)->orWhere('name', 'like', $like));
                 })
                 ->with(['renter', 'listing.listingContact'])
                 ->orderByDesc('updated_at')
