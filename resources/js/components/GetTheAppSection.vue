@@ -4,6 +4,10 @@ defineProps({
         type: String,
         default: '',
     },
+    androidUrl: {
+        type: String,
+        default: '',
+    },
 });
 </script>
 
@@ -44,8 +48,10 @@ defineProps({
                         </svg>
                     </a>
                     <a
-                        href="#"
-                        @click.prevent
+                        :href="androidUrl || '#'"
+                        :target="androidUrl ? '_blank' : null"
+                        :rel="androidUrl ? 'noopener' : null"
+                        @click="(e) => { if (!androidUrl) e.preventDefault(); }"
                         aria-label="Get it on Google Play"
                         class="block transition-opacity hover:opacity-90 active:opacity-70"
                     >

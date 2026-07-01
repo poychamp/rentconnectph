@@ -20,6 +20,7 @@ class HomeResource extends JsonResource
                 ->map(fn ($v) => ['value' => $v, 'label' => Barangay::from($v)->label])
                 ->values(),
             'appStoreUrl' => config('services.app_store.ios_url'),
+            'androidUrl' => config('services.app_store.android_url'),
         ];
     }
 }

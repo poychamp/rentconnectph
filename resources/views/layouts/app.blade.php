@@ -88,7 +88,9 @@
                 <div class="font-semibold text-gray-900 dark:text-white text-sm leading-tight">RentConnectPH</div>
             </div>
             <a
-                href="#"
+                href="{{ config('services.app_store.android_url') }}"
+                target="_blank"
+                rel="noopener"
                 data-banner-open
                 class="shrink-0 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
             >
