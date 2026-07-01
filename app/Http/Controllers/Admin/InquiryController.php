@@ -21,6 +21,7 @@ class InquiryController extends Controller
             // — reference lookup is "what changed recently?" not "what came in
             // recently?".
             $rows = Inquiry::query()
+                ->whereHas('listing')
                 ->with(['renter', 'listing.listingContact'])
                 ->orderByDesc('updated_at')
                 ->orderByDesc('id')
@@ -33,7 +34,7 @@ class InquiryController extends Controller
             $searchInput = PhMobile::normalize($q) ?? $q;
 
             $rows = Inquiry::search($searchInput)
-                ->query(fn ($qb) => $qb->with(['renter', 'listing.listingContact']))
+                ->query(fn ($qb) => $qb->whereHas('listing')->with(['renter', 'listing.listingContact']))
                 ->paginate(10)
                 ->appends($request->only(['q']));
         }
