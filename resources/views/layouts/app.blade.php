@@ -71,6 +71,13 @@
     @stack('scripts')
 </head>
 <body class="font-sans antialiased">
+    @php
+        $androidUrl = config('services.app_store.android_url');
+        $androidHost = parse_url(config('app.url'), PHP_URL_HOST);
+        $androidIntentUrl = 'intent://'.$androidHost.request()->getRequestUri()
+            .'#Intent;scheme=https;package='.config('services.app_store.android_package')
+            .';S.browser_fallback_url='.urlencode($androidUrl).';end';
+    @endphp
     <div data-banner-host class="lg:hidden sticky top-0 z-50 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800">
         <div class="max-w-7xl mx-auto px-3 py-2 flex items-center gap-3">
             <button
@@ -88,13 +95,14 @@
                 <div class="font-semibold text-gray-900 dark:text-white text-sm leading-tight">RentConnectPH</div>
             </div>
             <a
-                href="{{ config('services.app_store.android_url') }}"
+                href="{{ $androidUrl }}"
                 target="_blank"
                 rel="noopener"
                 data-banner-open
+                data-open-url="{{ $androidIntentUrl }}"
                 class="shrink-0 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
             >
-                Open app
+                Get the app
             </a>
         </div>
     </div>
@@ -121,6 +129,18 @@
                     document.cookie = 'app_banner_dismissed=1; path=/; SameSite=Lax';
                     host.remove();
                 });
+            }
+
+            var openBtn = host.querySelector('[data-banner-open]');
+            if (openBtn && 'getInstalledRelatedApps' in navigator) {
+                navigator.getInstalledRelatedApps().then(function (apps) {
+                    if (apps.length > 0) {
+                        openBtn.setAttribute('href', openBtn.getAttribute('data-open-url'));
+                        openBtn.removeAttribute('target');
+                        openBtn.removeAttribute('rel');
+                        openBtn.textContent = 'Open app';
+                    }
+                }).catch(function () {});
             }
         })();
     </script>
