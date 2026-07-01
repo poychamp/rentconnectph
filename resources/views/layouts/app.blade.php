@@ -71,13 +71,6 @@
     @stack('scripts')
 </head>
 <body class="font-sans antialiased">
-    @php
-        $androidUrl = config('services.app_store.android_url');
-        $androidHost = parse_url(config('app.url'), PHP_URL_HOST);
-        $androidIntentUrl = 'intent://'.$androidHost.request()->getRequestUri()
-            .'#Intent;scheme=https;package='.config('services.app_store.android_package')
-            .';S.browser_fallback_url='.urlencode($androidUrl).';end';
-    @endphp
     <div data-banner-host class="lg:hidden sticky top-0 z-50 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800">
         <div class="max-w-7xl mx-auto px-3 py-2 flex items-center gap-3">
             <button
@@ -95,11 +88,11 @@
                 <div class="font-semibold text-gray-900 dark:text-white text-sm leading-tight">RentConnectPH</div>
             </div>
             <a
-                href="{{ $androidUrl }}"
+                href="{{ config('services.app_store.android_url') }}"
                 target="_blank"
                 rel="noopener"
                 data-banner-open
-                data-open-url="{{ $androidIntentUrl }}"
+                data-android-package="{{ config('services.app_store.android_package') }}"
                 class="shrink-0 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
             >
                 Get the app
@@ -135,7 +128,11 @@
             if (openBtn && 'getInstalledRelatedApps' in navigator) {
                 navigator.getInstalledRelatedApps().then(function (apps) {
                     if (apps.length > 0) {
-                        openBtn.setAttribute('href', openBtn.getAttribute('data-open-url'));
+                        var fallback = openBtn.href;
+                        var pkg = openBtn.getAttribute('data-android-package');
+                        openBtn.setAttribute('href', 'intent://' + location.host + location.pathname + location.search
+                            + '#Intent;scheme=https;package=' + pkg
+                            + ';S.browser_fallback_url=' + encodeURIComponent(fallback) + ';end');
                         openBtn.removeAttribute('target');
                         openBtn.removeAttribute('rel');
                         openBtn.textContent = 'Open app';
